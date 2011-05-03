@@ -37,6 +37,7 @@
 
 #include "graphics/surface.h"
 #include "graphics/colormasks.h"
+#include "graphics/palette.h"
 #include "graphics/pixelformat.h"
 
 #include "audio/mixer_intern.h"
@@ -93,7 +94,7 @@ protected:
 	uint16 *_screenPalette; // Array for palette entries (256 colors max)
 
 #ifndef N64_EXTREME_MEMORY_SAVING
-	uint32 *_screenExactPalette; // Array for palette entries, as received by setPalette(), no precision loss
+	uint8 *_screenExactPalette; // Array for palette entries, as received by setPalette(), no precision loss
 #endif
 	uint16 _cursorPalette[256]; // Palette entries for the cursor
 
@@ -111,7 +112,10 @@ protected:
 	bool _cursorPaletteDisabled;
 	bool _dirtyPalette;
 
-	uint _cursorWidth, _cursorHeight;
+	// FIXME: This must be left as "int" for now, to fix the sign-comparison problem
+	// there is a little more work involved than an int->uint change
+	int _cursorWidth, _cursorHeight;
+	
 	int _cursorKeycolor;
 
 	uint16	_overlayHeight, _overlayWidth;

@@ -24,9 +24,10 @@
  */
 
 #include "common/file.h"
-
+#include "common/textconsole.h"
 
 #include "graphics/cursorman.h"
+#include "graphics/palette.h"
 
 #include "agi/agi.h"
 #include "agi/graphics.h"
@@ -685,14 +686,14 @@ void GfxMgr::drawFrame(int x1, int y1, int x2, int y2, int c1, int c2) {
 	}
 }
 
-void GfxMgr::drawBox(int x1, int y1, int x2, int y2, int colour1, int colour2, int m) {
+void GfxMgr::drawBox(int x1, int y1, int x2, int y2, int color1, int color2, int m) {
 	x1 += m;
 	y1 += m;
 	x2 -= m;
 	y2 -= m;
 
-	drawRectangle(x1, y1, x2, y2, colour1);
-	drawFrame(x1 + 2, y1 + 2, x2 - 2, y2 - 2, colour2, colour2);
+	drawRectangle(x1, y1, x2, y2, color1);
+	drawFrame(x1 + 2, y1 + 2, x2 - 2, y2 - 2, color2, color2);
 	flushBlock(x1, y1, x2, y2);
 }
 
@@ -752,7 +753,7 @@ void GfxMgr::rawDrawButton(int x, int y, const char *s, int fgcolor, int bgcolor
 
 	// Draw a filled rectangle that's larger than the button. Used for drawing
 	// a border around the button as the button itself is drawn after this.
-	drawRectangle(x1, y1, x2, y2, border ? BUTTON_BORDER : MSG_BOX_COLOUR);
+	drawRectangle(x1, y1, x2, y2, border ? BUTTON_BORDER : MSG_BOX_COLOR);
 
 	while (*s) {
 		putTextCharacter(0, x + textOffset, y + textOffset, *s++, fgcolor, bgcolor);
@@ -799,9 +800,8 @@ void GfxMgr::initPalette(const uint8 *p, uint colorCount, uint fromBits, uint to
 	const uint destMax = (1 << toBits) - 1;
 	for (uint col = 0; col < colorCount; col++) {
 		for (uint comp = 0; comp < 3; comp++) { // Convert RGB components
-			_palette[col * 4 + comp] = (p[col * 3 + comp] * destMax) / srcMax;
+			_palette[col * 3 + comp] = (p[col * 3 + comp] * destMax) / srcMax;
 		}
-		_palette[col * 4 + 3] = 0; // Set alpha to zero
 	}
 }
 
@@ -928,11 +928,11 @@ static const byte appleIIgsMouseCursor[] = {
 };
 
 /**
- * RGBA-palette for the black and white SCI and Apple IIGS arrow cursors.
+ * RGB-palette for the black and white SCI and Apple IIGS arrow cursors.
  */
 static const byte sciMouseCursorPalette[] = {
-	0x00, 0x00, 0x00,	0x00, // Black
-	0xFF, 0xFF, 0xFF,	0x00  // White
+	0x00, 0x00, 0x00, // Black
+	0xFF, 0xFF, 0xFF  // White
 };
 
 /**
@@ -957,13 +957,13 @@ static const byte amigaMouseCursor[] = {
 };
 
 /**
- * RGBA-palette for the Amiga-style arrow cursor
+ * RGB-palette for the Amiga-style arrow cursor
  * and the Amiga-style busy cursor.
  */
 static const byte amigaMouseCursorPalette[] = {
-	0x00, 0x00, 0x00,	0x00, // Black
-	0xDE, 0x20, 0x21,	0x00, // Red
-	0xFF, 0xCF, 0xAD,	0x00  // Light red
+	0x00, 0x00, 0x00, // Black
+	0xDE, 0x20, 0x21, // Red
+	0xFF, 0xCF, 0xAD  // Light red
 };
 
 /**
@@ -994,17 +994,17 @@ static const byte busyAmigaMouseCursor[] = {
 
 void GfxMgr::setCursor(bool amigaStyleCursor, bool busy) {
 	if (busy) {
-		CursorMan.replaceCursorPalette(amigaMouseCursorPalette, 1, ARRAYSIZE(amigaMouseCursorPalette) / 4);
+		CursorMan.replaceCursorPalette(amigaMouseCursorPalette, 1, ARRAYSIZE(amigaMouseCursorPalette) / 3);
 		CursorMan.replaceCursor(busyAmigaMouseCursor, 13, 16, 7, 8, 0);
 
 		return;
 	}
 
 	if (!amigaStyleCursor) {
-		CursorMan.replaceCursorPalette(sciMouseCursorPalette, 1, ARRAYSIZE(sciMouseCursorPalette) / 4);
+		CursorMan.replaceCursorPalette(sciMouseCursorPalette, 1, ARRAYSIZE(sciMouseCursorPalette) / 3);
 		CursorMan.replaceCursor(sciMouseCursor, 11, 16, 1, 1, 0);
 	} else { // amigaStyleCursor
-		CursorMan.replaceCursorPalette(amigaMouseCursorPalette, 1, ARRAYSIZE(amigaMouseCursorPalette) / 4);
+		CursorMan.replaceCursorPalette(amigaMouseCursorPalette, 1, ARRAYSIZE(amigaMouseCursorPalette) / 3);
 		CursorMan.replaceCursor(amigaMouseCursor, 8, 11, 1, 1, 0);
 	}
 }
@@ -1012,12 +1012,12 @@ void GfxMgr::setCursor(bool amigaStyleCursor, bool busy) {
 void GfxMgr::setCursorPalette(bool amigaStyleCursor) {
 	if (!amigaStyleCursor) {
 		if (_currentCursorPalette != 1) {
-			CursorMan.replaceCursorPalette(sciMouseCursorPalette, 1, ARRAYSIZE(sciMouseCursorPalette) / 4);
+			CursorMan.replaceCursorPalette(sciMouseCursorPalette, 1, ARRAYSIZE(sciMouseCursorPalette) / 3);
 			_currentCursorPalette = 1;
 		}
 	} else { // amigaStyleCursor
 		if (_currentCursorPalette != 2) {
-			CursorMan.replaceCursorPalette(amigaMouseCursorPalette, 1, ARRAYSIZE(amigaMouseCursorPalette) / 4);
+			CursorMan.replaceCursorPalette(amigaMouseCursorPalette, 1, ARRAYSIZE(amigaMouseCursorPalette) / 3);
 			_currentCursorPalette = 2;
 		}
 	}

@@ -24,6 +24,7 @@
  */
 
 #include "common/frac.h"
+#include "common/textconsole.h"
 
 #include "engines/darkseed2/roomconfig.h"
 #include "engines/darkseed2/resources.h"

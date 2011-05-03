@@ -32,8 +32,8 @@
 #include "engines/darkseed2/saveable.h"
 #include "engines/darkseed2/sprite.h"
 
-namespace Common {
-	class NECursor;
+namespace Graphics {
+	class WinCursor;
 }
 
 namespace DarkSeed2 {
@@ -100,7 +100,7 @@ private:
 	Common::String _exeName; ///< Name of the NE EXE
 
 	/** Load a cursor from a NE resource. */
-	bool loadFromResource(Cursor &cursor, const Common::NECursor &resource);
+	bool loadFromResource(Cursor &cursor, const ::Graphics::WinCursor &resource);
 };
 
 class CursorsSaturn : public Cursors {

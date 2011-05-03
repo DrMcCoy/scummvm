@@ -23,6 +23,8 @@
  *
  */
 
+#include "common/debug.h"
+#include "common/textconsole.h"
 #include "common/types.h"
 
 #include "audio/audiostream.h"

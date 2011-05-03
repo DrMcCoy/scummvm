@@ -23,6 +23,8 @@
  *
  */
 
+#include "common/textconsole.h"
+
 #include "engines/darkseed2/darkseed2.h"
 #include "engines/darkseed2/versionformats.h"
 #include "engines/darkseed2/font.h"

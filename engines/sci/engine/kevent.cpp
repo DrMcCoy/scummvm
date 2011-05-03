@@ -35,10 +35,9 @@
 #include "sci/event.h"
 #include "sci/graphics/coordadjuster.h"
 #include "sci/graphics/cursor.h"
+#include "sci/graphics/maciconbar.h"
 
 namespace Sci {
-
-#define SCI_VARIABLE_GAME_SPEED 3
 
 reg_t kGetEvent(EngineState *s, int argc, reg_t *argv) {
 	int mask = argv[0].toUint16();
@@ -48,17 +47,25 @@ reg_t kGetEvent(EngineState *s, int argc, reg_t *argv) {
 	SegManager *segMan = s->_segMan;
 	Common::Point mousePos;
 
-	// Limit the mouse cursor position, if necessary
-	g_sci->_gfxCursor->refreshPosition();
-	mousePos = g_sci->_gfxCursor->getPosition();
-#ifdef ENABLE_SCI32
-	if (getSciVersion() >= SCI_VERSION_2_1)
-		g_sci->_gfxCoordAdjuster->fromDisplayToScript(mousePos.y, mousePos.x);
-#endif
+	// For Mac games with an icon bar, handle possible icon bar events first
+	if (g_sci->hasMacIconBar()) {
+		reg_t iconObj = g_sci->_gfxMacIconBar->handleEvents();
+		if (!iconObj.isNull())
+			invokeSelector(s, iconObj, SELECTOR(select), argc, argv, 0, NULL);
+	}
 
 	// If there's a simkey pending, and the game wants a keyboard event, use the
 	// simkey instead of a normal event
 	if (g_debug_simulated_key && (mask & SCI_EVENT_KEYBOARD)) {
+		// In case we use a simulated event we query the current mouse position
+		mousePos = g_sci->_gfxCursor->getPosition();
+#ifdef ENABLE_SCI32
+		if (getSciVersion() >= SCI_VERSION_2_1)
+			g_sci->_gfxCoordAdjuster->fromDisplayToScript(mousePos.y, mousePos.x);
+#endif
+		// Limit the mouse cursor position, if necessary
+		g_sci->_gfxCursor->refreshPosition();
+
 		writeSelectorValue(segMan, obj, SELECTOR(type), SCI_EVENT_KEYBOARD); // Keyboard event
 		writeSelectorValue(segMan, obj, SELECTOR(message), g_debug_simulated_key);
 		writeSelectorValue(segMan, obj, SELECTOR(modifiers), SCI_KEYMOD_NUMLOCK); // Numlock on
@@ -69,6 +76,15 @@ reg_t kGetEvent(EngineState *s, int argc, reg_t *argv) {
 	}
 
 	curEvent = g_sci->getEventManager()->getSciEvent(mask);
+
+	// For a real event we use its associated mouse position
+	mousePos = curEvent.mousePos;
+#ifdef ENABLE_SCI32
+	if (getSciVersion() >= SCI_VERSION_2_1)
+		g_sci->_gfxCoordAdjuster->fromDisplayToScript(mousePos.y, mousePos.x);
+#endif
+	// Limit the mouse cursor position, if necessary
+	g_sci->_gfxCursor->refreshPosition();
 
 	if (g_sci->getVocabulary())
 		g_sci->getVocabulary()->parser_event = NULL_REG; // Invalidate parser event
@@ -137,7 +153,11 @@ reg_t kGetEvent(EngineState *s, int argc, reg_t *argv) {
 		break;
 
 	default:
-		s->r_acc = NULL_REG; // Unknown or no event
+		// Return a null event
+		writeSelectorValue(segMan, obj, SELECTOR(type), SCI_EVENT_NONE);
+		writeSelectorValue(segMan, obj, SELECTOR(message), 0);
+		writeSelectorValue(segMan, obj, SELECTOR(modifiers), curEvent.modifiers & modifier_mask);
+		s->r_acc = NULL_REG;
 	}
 
 	if ((s->r_acc.offset) && (g_sci->_debugState.stopOnEvent)) {
@@ -188,57 +208,42 @@ reg_t kGetEvent(EngineState *s, int argc, reg_t *argv) {
 	return s->r_acc;
 }
 
+struct KeyDirMapping {
+	uint16 key;
+	uint16 direction;
+};
+
+const KeyDirMapping keyToDirMap[] = {
+	{ SCI_KEY_HOME,   8 }, { SCI_KEY_UP,     1 }, { SCI_KEY_PGUP,   2 },
+	{ SCI_KEY_LEFT,   7 }, { SCI_KEY_CENTER, 0 }, { SCI_KEY_RIGHT,  3 },
+	{ SCI_KEY_END,    6 }, { SCI_KEY_DOWN,   5 }, { SCI_KEY_PGDOWN, 4 },
+};
+
 reg_t kMapKeyToDir(EngineState *s, int argc, reg_t *argv) {
 	reg_t obj = argv[0];
 	SegManager *segMan = s->_segMan;
 
 	if (readSelectorValue(segMan, obj, SELECTOR(type)) == SCI_EVENT_KEYBOARD) { // Keyboard
-		int mover = -1;
-		switch (readSelectorValue(segMan, obj, SELECTOR(message))) {
-		case SCI_KEY_HOME:
-			mover = 8;
-			break;
-		case SCI_KEY_UP:
-			mover = 1;
-			break;
-		case SCI_KEY_PGUP:
-			mover = 2;
-			break;
-		case SCI_KEY_LEFT:
-			mover = 7;
-			break;
-		case SCI_KEY_CENTER:
-		case 76:
-			mover = 0;
-			break;
-		case SCI_KEY_RIGHT:
-			mover = 3;
-			break;
-		case SCI_KEY_END:
-			mover = 6;
-			break;
-		case SCI_KEY_DOWN:
-			mover = 5;
-			break;
-		case SCI_KEY_PGDOWN:
-			mover = 4;
-			break;
-		default:
-			break;
+		uint16 message = readSelectorValue(segMan, obj, SELECTOR(message));
+		uint16 eventType = SCI_EVENT_DIRECTION;
+		// Check if the game is using cursor views. These games allowed control
+		// of the mouse cursor via the keyboard controls (the so called
+		// "PseudoMouse" functionality in script 933).
+		if (g_sci->_features->detectSetCursorType() == SCI_VERSION_1_1)
+			eventType |= SCI_EVENT_KEYBOARD;
+
+		for (int i = 0; i < 9; i++) {
+			if (keyToDirMap[i].key == message) {
+				writeSelectorValue(segMan, obj, SELECTOR(type), eventType);
+				writeSelectorValue(segMan, obj, SELECTOR(message), keyToDirMap[i].direction);
+				return TRUE_REG;	// direction mapped
+			}
 		}
 
-		if (mover >= 0) {
-			if (g_sci->getEventManager()->getUsesNewKeyboardDirectionType())
-				writeSelectorValue(segMan, obj, SELECTOR(type), SCI_EVENT_KEYBOARD | SCI_EVENT_DIRECTION);
-			else
-				writeSelectorValue(segMan, obj, SELECTOR(type), SCI_EVENT_DIRECTION);
-			writeSelectorValue(segMan, obj, SELECTOR(message), mover);
-			return make_reg(0, 1);
-		} else
-			return NULL_REG;
+		return NULL_REG;	// unknown direction
 	}
 
-	return s->r_acc;
+	return s->r_acc;	// no keyboard event to map, leave accumulator unchanged
 }
 
 reg_t kGlobalToLocal(EngineState *s, int argc, reg_t *argv) {

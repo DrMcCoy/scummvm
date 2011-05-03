@@ -28,13 +28,18 @@
 #include "common/debug-channels.h"
 #include "common/events.h"
 #include "common/EventRecorder.h"
-#include "common/file.h"
 #include "common/fs.h"
 #include "common/system.h"
+#include "common/archive.h"
+#include "common/debug.h"
+#include "common/error.h"
+#include "common/keyboard.h"
+#include "common/textconsole.h"
 
 #include "engines/util.h"
 #include "graphics/cursorman.h"
-#include "audio/mididrv.h"
+#include "graphics/palette.h"
+#include "gui/debugger.h"
 
 #include "touche/midi.h"
 #include "touche/touche.h"
@@ -44,7 +49,6 @@ namespace Touche {
 
 ToucheEngine::ToucheEngine(OSystem *system, Common::Language language)
 	: Engine(system), _midiPlayer(0), _language(language) {
-
 	_saveLoadCurrentPage = 0;
 	_saveLoadCurrentSlot = 0;
 	_hideInventoryTexts = false;
@@ -103,9 +107,8 @@ Common::Error ToucheEngine::run() {
 
 	_midiPlayer = new MidiPlayer;
 
-	_mixer->setVolumeForSoundType(Audio::Mixer::kSFXSoundType, ConfMan.getInt("sfx_volume"));
-	_mixer->setVolumeForSoundType(Audio::Mixer::kSpeechSoundType, ConfMan.getInt("speech_volume"));
-	_mixer->setVolumeForSoundType(Audio::Mixer::kMusicSoundType, ConfMan.getInt("music_volume"));
+	// Setup mixer
+	syncSoundSettings();
 
 	res_openDataFile();
 	res_allocateTables();
@@ -245,10 +248,9 @@ Common::Point ToucheEngine::getMousePos() const {
 }
 
 void ToucheEngine::syncSoundSettings() {
+	Engine::syncSoundSettings();
+
 	readConfigurationSettings();
-	_mixer->setVolumeForSoundType(Audio::Mixer::kSFXSoundType, ConfMan.getInt("sfx_volume"));
-	_mixer->setVolumeForSoundType(Audio::Mixer::kSpeechSoundType, ConfMan.getInt("speech_volume"));
-	_mixer->setVolumeForSoundType(Audio::Mixer::kMusicSoundType, ConfMan.getInt("music_volume"));
 }
 
 void ToucheEngine::mainLoop() {
@@ -3243,23 +3245,21 @@ void ToucheEngine::clearDirtyRects() {
 }
 
 void ToucheEngine::setPalette(int firstColor, int colorCount, int rScale, int gScale, int bScale) {
-	uint8 pal[256 * 4];
+	uint8 pal[256 * 3];
 	for (int i = firstColor; i < firstColor + colorCount; ++i) {
-		int r = _paletteBuffer[i * 4 + 0];
+		int r = _paletteBuffer[i * 3 + 0];
 		r = (r * rScale) >> 8;
-		pal[i * 4 + 0] = (uint8)r;
+		pal[i * 3 + 0] = (uint8)r;
 
-		int g = _paletteBuffer[i * 4 + 1];
+		int g = _paletteBuffer[i * 3 + 1];
 		g = (g * gScale) >> 8;
-		pal[i * 4 + 1] = (uint8)g;
+		pal[i * 3 + 1] = (uint8)g;
 
-		int b = _paletteBuffer[i * 4 + 2];
+		int b = _paletteBuffer[i * 3 + 2];
 		b = (b * bScale) >> 8;
-		pal[i * 4 + 2] = (uint8)b;
-
-		pal[i * 4 + 3] = 0;
+		pal[i * 3 + 2] = (uint8)b;
 	}
-	_system->getPaletteManager()->setPalette(&pal[firstColor * 4], firstColor, colorCount);
+	_system->getPaletteManager()->setPalette(&pal[firstColor * 3], firstColor, colorCount);
 }
 
 void ToucheEngine::updateScreenArea(int x, int y, int w, int h) {

@@ -19,6 +19,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+// Allow use of stuff in <time.h>
+#define FORBIDDEN_SYMBOL_EXCEPTION_time_h
+
+// Allow printf for debugging
+#define FORBIDDEN_SYMBOL_EXCEPTION_printf
+
 #include <unistd.h>
 
 #include <ogc/conf.h>
@@ -26,6 +32,7 @@
 #include <ogc/lwp_watchdog.h>
 
 #include "common/config-manager.h"
+#include "common/textconsole.h"
 #include "backends/fs/wii/wii-fs-factory.h"
 
 #include "osystem.h"

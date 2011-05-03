@@ -26,6 +26,7 @@
 #include "common/scummsys.h"
 #include "common/endian.h"
 #include "common/system.h"
+#include "common/textconsole.h"
 
 #include "audio/decoders/raw.h"
 
@@ -38,9 +39,8 @@ namespace DarkSeed2 {
 class SegaFilmRawCodec : public Video::Codec {
 public:
 	SegaFilmRawCodec(uint16 width, uint16 height, byte bitsPerPixel) {
-		_pixelFormat = g_system->getScreenFormat();
 		_surface = new Graphics::Surface();
-		_surface->create(width, height, _pixelFormat.bytesPerPixel);
+		_surface->create(width, height, g_system->getScreenFormat());
 		_bitsPerPixel = bitsPerPixel;
 	}
 
@@ -65,18 +65,17 @@ public:
 			byte g = stream->readByte();
 			byte b = stream->readByte();
 
-			*((uint16 *)_surface->pixels + i) = _pixelFormat.RGBToColor(r, g, b);
+			*((uint16 *)_surface->pixels + i) = _surface->format.RGBToColor(r, g, b);
 		}
 
 		return _surface;
 	}
 
-	::Graphics::PixelFormat getPixelFormat() const { return _pixelFormat; }
+	::Graphics::PixelFormat getPixelFormat() const { return _surface->format; }
 
 private:
 	::Graphics::Surface *_surface;
 	byte _bitsPerPixel;
-	::Graphics::PixelFormat _pixelFormat;
 };
 
 SegaFILMDecoder::SegaFILMDecoder(Audio::Mixer *mixer, Audio::Mixer::SoundType soundType) :
@@ -95,7 +94,7 @@ bool SegaFILMDecoder::loadStream(Common::SeekableReadStream *stream) {
 	_stream = stream;
 
 	// FILM Header
-	if (_stream->readUint32BE() != MKID_BE('FILM'))
+	if (_stream->readUint32BE() != MKTAG('F', 'I', 'L', 'M'))
 		return false;
 
 	uint32 filmHeaderLength = _stream->readUint32BE();
@@ -107,7 +106,7 @@ bool SegaFILMDecoder::loadStream(Common::SeekableReadStream *stream) {
 		return false;
 
 	// FDSC Chunk
-	if (_stream->readUint32BE() != MKID_BE('FDSC'))
+	if (_stream->readUint32BE() != MKTAG('F', 'D', 'S', 'C'))
 		return false;
 
 	/* uint32 fdscChunkSize = */ _stream->readUint32BE();
@@ -123,7 +122,7 @@ bool SegaFILMDecoder::loadStream(Common::SeekableReadStream *stream) {
 	_stream->skip(6);
 
 	// STAB Chunk
-	if (_stream->readUint32BE() != MKID_BE('STAB'))
+	if (_stream->readUint32BE() != MKTAG('S', 'T', 'A', 'B'))
 		return false;
 
 	// The STAB chunk size changes definitions depending on the version anyway...
@@ -148,9 +147,9 @@ bool SegaFILMDecoder::loadStream(Common::SeekableReadStream *stream) {
 	}
 
 	// Create the Cinepak decoder, if we're using it
-	if (codecTag == MKID_BE('cvid'))
+	if (codecTag == MKTAG('c', 'v', 'i', 'd'))
 		_codec = new Video::CinepakDecoder();
-	else if (codecTag == MKID_BE('raw '))
+	else if (codecTag == MKTAG('r', 'a', 'w', ' '))
 		_codec = new SegaFilmRawCodec(_width, _height, bitsPerPixel);
 	else if (codecTag != 0) {
 		warning("Unknown Sega FILM codec tag '%s'", tag2str(codecTag));

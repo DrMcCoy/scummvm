@@ -27,6 +27,7 @@
 
 
 #include "common/file.h"
+#include "common/textconsole.h"
 
 #include "agos/debug.h"
 #include "agos/agos.h"
@@ -436,7 +437,7 @@ static const byte bmp_hdr[] = {
 	0x00, 0x01, 0x00, 0x00,
 };
 
-void dumpBMP(const char *filename, int16 w, int16 h, const byte *bytes, const uint32 *palette) {
+void dumpBMP(const char *filename, int16 w, int16 h, const byte *bytes, const byte *palette) {
 	Common::DumpFile out;
 	byte my_hdr[sizeof(bmp_hdr)];
 	int i;
@@ -454,11 +455,11 @@ void dumpBMP(const char *filename, int16 w, int16 h, const byte *bytes, const ui
 
 	out.write(my_hdr, sizeof(my_hdr));
 
-	for (i = 0; i != 256; i++, palette++) {
+	for (i = 0; i != 256; i++, palette += 3) {
 		byte color[4];
-		color[0] = (byte)(*palette >> 16);
-		color[1] = (byte)(*palette >> 8);
-		color[2] = (byte)(*palette);
+		color[0] = palette[2];
+		color[1] = palette[1];
+		color[2] = palette[0];
 		color[3] = 0;
 		out.write(color, 4);
 	}
@@ -565,7 +566,7 @@ void AGOSEngine::dumpBitmap(const char *filename, const byte *offs, uint16 w, ui
 		}
 	}
 
-	dumpBMP(filename, w, h, imageBuffer, (const uint32 *)palette);
+	dumpBMP(filename, w, h, imageBuffer, palette);
 	free(imageBuffer);
 }
 
@@ -594,7 +595,7 @@ void AGOSEngine::palLoad(byte *pal, const byte *vga1, int a, int b) {
 	}
 
 	if (getGameType() == GType_PN && (getFeatures() & GF_EGA)) {
-		memcpy(palptr, _displayPalette, 64);
+		memcpy(palptr, _displayPalette, 3 * 16);
 	} else if (getGameType() == GType_PN || getGameType() == GType_ELVIRA1 || getGameType() == GType_ELVIRA2 || getGameType() == GType_WW) {
 		src = vga1 + READ_BE_UINT16(vga1 + 6) + b * 32;
 
@@ -603,9 +604,8 @@ void AGOSEngine::palLoad(byte *pal, const byte *vga1, int a, int b) {
 			palptr[0] = ((color & 0xf00) >> 8) * 32;
 			palptr[1] = ((color & 0x0f0) >> 4) * 32;
 			palptr[2] = ((color & 0x00f) >> 0) * 32;
-			palptr[3] = 0;
 
-			palptr += 4;
+			palptr += 3;
 			src += 2;
 		} while (--num);
 	} else {
@@ -615,9 +615,8 @@ void AGOSEngine::palLoad(byte *pal, const byte *vga1, int a, int b) {
 			palptr[0] = src[0] << 2;
 			palptr[1] = src[1] << 2;
 			palptr[2] = src[2] << 2;
-			palptr[3] = 0;
 
-			palptr += 4;
+			palptr += 3;
 			src += 3;
 		} while (--num);
 	}
@@ -627,7 +626,7 @@ void AGOSEngine::dumpVgaBitmaps(uint16 zoneNum) {
 	uint16 width, height, flags;
 	uint32 offs, curOffs = 0;
 	const byte *p2;
-	byte pal[1024];
+	byte pal[768];
 
 	uint16 zone = (getGameType() == GType_PN) ? 0 : zoneNum;
 	VgaPointersEntry *vpe = &_vgaBufferPointers[zone];

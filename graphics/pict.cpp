@@ -23,9 +23,12 @@
  *
  */
 
+#include "common/debug.h"
+#include "common/endian.h"
+#include "common/stream.h"
 #include "common/substream.h"
+#include "common/textconsole.h"
 
-#include "graphics/conversion.h"
 #include "graphics/jpeg.h"
 #include "graphics/pict.h"
 #include "graphics/surface.h"
@@ -95,10 +98,10 @@ Surface *PictDecoder::decodeImage(Common::SeekableReadStream *stream, byte *pale
 		} else if (opcode == 0x001E) { // DefHilite
 			// Ignore, Contains no Data
 		} else if (opcode == 0x0098) { // PackBitsRect
-			decodeDirectBitsRect(stream, _imageRect.width(), _imageRect.height(), true);
+			decodeDirectBitsRect(stream, true);
 			_isPaletted = true;
 		} else if (opcode == 0x009A) { // DirectBitsRect
-			decodeDirectBitsRect(stream, _imageRect.width(), _imageRect.height(), false);
+			decodeDirectBitsRect(stream, false);
 		} else if (opcode == 0x00A1) { // LongComment
 			stream->readUint16BE();
 			uint16 dataSize = stream->readUint16BE();
@@ -127,7 +130,7 @@ Surface *PictDecoder::decodeImage(Common::SeekableReadStream *stream, byte *pale
 
 	// If we got a palette throughout this nonsense, go and grab it
 	if (palette && _isPaletted)
-		memcpy(palette, _palette, 256 * 4);
+		memcpy(palette, _palette, 256 * 3);
 
 	return _outputSurface;
 }
@@ -162,7 +165,7 @@ struct DirectBitsRectData {
 	uint16 mode;
 };
 
-void PictDecoder::decodeDirectBitsRect(Common::SeekableReadStream *stream, uint16 width, uint16 height, bool hasPalette) {
+void PictDecoder::decodeDirectBitsRect(Common::SeekableReadStream *stream, bool hasPalette) {
 	static const PixelFormat directBitsFormat16 = PixelFormat(2, 5, 5, 5, 0, 10, 5, 0, 0);
 
 	// Clear the palette
@@ -180,9 +183,9 @@ void PictDecoder::decodeDirectBitsRect(Common::SeekableReadStream *stream, uint1
 
 		for (uint32 i = 0; i < colorCount; i++) {
 			stream->readUint16BE();
-			_palette[i * 4] = stream->readUint16BE() >> 8;
-			_palette[i * 4 + 1] = stream->readUint16BE() >> 8;
-			_palette[i * 4 + 2] = stream->readUint16BE() >> 8;
+			_palette[i * 3] = stream->readUint16BE() >> 8;
+			_palette[i * 3 + 1] = stream->readUint16BE() >> 8;
+			_palette[i * 3 + 2] = stream->readUint16BE() >> 8;
 		}
 	}
 
@@ -196,6 +199,9 @@ void PictDecoder::decodeDirectBitsRect(Common::SeekableReadStream *stream, uint1
 	directBitsData.dstRect.right = stream->readUint16BE();
 	directBitsData.mode = stream->readUint16BE();
 
+	uint16 width = directBitsData.srcRect.width();
+	uint16 height = directBitsData.srcRect.height();
+
 	byte bytesPerPixel = 0;
 
 	if (directBitsData.pixMap.pixelSize <= 8)
@@ -206,7 +212,7 @@ void PictDecoder::decodeDirectBitsRect(Common::SeekableReadStream *stream, uint1
 		bytesPerPixel = directBitsData.pixMap.pixelSize / 8;
 
 	_outputSurface = new Graphics::Surface();
-	_outputSurface->create(width, height, (bytesPerPixel == 1) ? 1 : _pixelFormat.bytesPerPixel);
+	_outputSurface->create(width, height, (bytesPerPixel == 1) ? PixelFormat::createFormatCLUT8() : _pixelFormat);
 	byte *buffer = new byte[width * height * bytesPerPixel];
 
 	// Read in amount of data per row

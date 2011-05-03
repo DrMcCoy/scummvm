@@ -27,12 +27,9 @@
 
 #include "kyra/lol.h"
 #include "kyra/screen_lol.h"
-#include "kyra/resource.h"
 
-#include "common/endian.h"
 #include "common/savefile.h"
 #include "common/substream.h"
-#include "common/system.h"
 
 #include "graphics/scaler.h"
 
@@ -263,7 +260,7 @@ Common::Error LoLEngine::loadGameState(int slot) {
 	int t = _credits;
 	_credits = 0;
 	giveCredits(t, 0);
-	setHandItem(_itemInHand);
+	setDelayedCursorUpdate();
 	loadLevel(_currentLevel);
 	gui_drawPlayField();
 	timerSpecialCharacterUpdate(0);

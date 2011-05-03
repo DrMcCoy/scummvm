@@ -35,21 +35,31 @@
 #define VIDEO_QT_DECODER_H
 
 #include "common/scummsys.h"
-#include "common/queue.h"
 #include "common/rational.h"
 
 #include "video/video_decoder.h"
-#include "video/codecs/codec.h"
 
-#include "audio/audiostream.h"
 #include "audio/mixer.h"
+#include "audio/timestamp.h"
 
 namespace Common {
-	class File;
-	class MacResManager;
+class MacResManager;
+class SeekableReadStream;
+}
+
+namespace Audio {
+class AudioStream;
+class QueuingAudioStream;
+}
+
+namespace Graphics {
+struct PixelFormat;
+struct Surface;
 }
 
 namespace Video {
+
+class Codec;
 
 /**
  * Decoder for QuickTime videos.
@@ -122,6 +132,7 @@ public:
 	// SeekableVideoDecoder API
 	void seekToFrame(uint32 frame);
 	void seekToTime(Audio::Timestamp time);
+	uint32 getDuration() const { return _duration * 1000 / _timeScale; }
 
 private:
 	// This is the file handle from which data is read from. It can be the actual file handle or a decompressed stream.
@@ -147,6 +158,12 @@ private:
 		uint32 first;
 		uint32 count;
 		uint32 id;
+	};
+
+	struct EditListEntry {
+		uint32 trackDuration;
+		int32 mediaTime;
+		Common::Rational mediaRate;
 	};
 
 	struct STSDEntry {
@@ -183,7 +200,6 @@ private:
 		uint32 *chunk_offsets;
 		int stts_count;
 		MOVstts *stts_data;
-		int edit_count; /* number of 'edit' (elst atom) */
 		uint32 sample_to_chunk_sz;
 		MOVstsc *sample_to_chunk;
 		uint32 sample_size;
@@ -200,6 +216,9 @@ private:
 
 		uint32 stsdEntryCount;
 		STSDEntry *stsdEntries;
+
+		uint32 editCount;
+		EditListEntry *editList;
 
 		Common::SeekableReadStream *extradata;
 

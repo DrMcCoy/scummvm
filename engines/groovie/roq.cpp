@@ -30,7 +30,11 @@
 #include "groovie/graphics.h"
 #include "groovie/groovie.h"
 
+#include "common/debug.h"
+#include "common/textconsole.h"
+
 #include "graphics/jpeg.h"
+#include "graphics/palette.h"
 
 #ifdef USE_RGB_COLOR
 // Required for the YUV to RGB conversion
@@ -53,46 +57,37 @@ ROQPlayer::ROQPlayer(GroovieEngine *vm) :
 	_prevBuf = new Graphics::Surface();
 
 	if (_vm->_mode8bit) {
-		byte pal[256 * 4];
+		byte pal[256 * 3];
 #ifdef DITHER
-		byte pal3[256 * 3];
 		// Initialize to a black palette
-		for (int i = 0; i < 256 * 3; i++) {
-			pal3[i] = 0;
-		}
+		memset(pal, 0, 256 * 3);
 
 		// Build a basic color palette
 		for (int r = 0; r < 4; r++) {
 			for (int g = 0; g < 4; g++) {
 				for (int b = 0; b < 4; b++) {
 					byte col = (r << 4) | (g << 2) | (b << 0);
-					pal3[3 * col + 0] = r << 6;
-					pal3[3 * col + 1] = g << 6;
-					pal3[3 * col + 2] = b << 6;
+					pal[3 * col + 0] = r << 6;
+					pal[3 * col + 1] = g << 6;
+					pal[3 * col + 2] = b << 6;
 				}
 			}
 		}
 
 		// Initialize the dithering algorithm
 		_paletteLookup = new Graphics::PaletteLUT(8, Graphics::PaletteLUT::kPaletteYUV);
-		_paletteLookup->setPalette(pal3, Graphics::PaletteLUT::kPaletteRGB, 8);
+		_paletteLookup->setPalette(pal, Graphics::PaletteLUT::kPaletteRGB, 8);
 		for (int i = 0; (i < 64) && !_vm->shouldQuit(); i++) {
 			debug("Groovie::ROQ: Building palette table: %02d/63", i);
 			_paletteLookup->buildNext();
 		}
 
-		// Prepare the palette to show
-		for (int i = 0; i < 256; i++) {
-			pal[(i * 4) + 0] = pal3[(i * 3) + 0];
-			pal[(i * 4) + 1] = pal3[(i * 3) + 1];
-			pal[(i * 4) + 2] = pal3[(i * 3) + 2];
-		}
 #else // !DITHER
 		// Set a grayscale palette
 		for (int i = 0; i < 256; i++) {
-			pal[(i * 4) + 0] = i;
-			pal[(i * 4) + 1] = i;
-			pal[(i * 4) + 2] = i;
+			pal[(i * 3) + 0] = i;
+			pal[(i * 3) + 1] = i;
+			pal[(i * 3) + 2] = i;
 		}
 #endif // DITHER
 
@@ -184,7 +179,7 @@ void ROQPlayer::buildShowBuf() {
 			// Skip to the next pixel
 			out += _vm->_pixelFormat.bytesPerPixel;
 			if (!(x % _scaleX))
-				in += _currBuf->bytesPerPixel;
+				in += _currBuf->format.bytesPerPixel;
 		}
 #ifdef DITHER
 		_dither->nextLine();
@@ -337,8 +332,13 @@ bool ROQPlayer::processBlockInfo(ROQBlockHeader &blockHeader) {
 		_prevBuf->free();
 
 		// Allocate new buffers
-		_currBuf->create(width, height, 3);
-		_prevBuf->create(width, height, 3);
+		// These buffers use YUV data, since we can not describe it with a
+		// PixelFormat struct we just add some dummy PixelFormat with the
+		// correct bytes per pixel value. Since the surfaces are only used
+		// internally and no code assuming RGB data is present is used on
+		// them it should be just fine.
+		_currBuf->create(width, height, Graphics::PixelFormat(3, 0, 0, 0, 0, 0, 0, 0, 0));
+		_prevBuf->create(width, height, Graphics::PixelFormat(3, 0, 0, 0, 0, 0, 0, 0, 0));
 
 		// Clear the buffers with black YUV values
 		byte *ptr1 = (byte *)_currBuf->getBasePtr(0, 0);
@@ -706,7 +706,7 @@ void ROQPlayer::copy(byte size, int destx, int desty, int offx, int offy) {
 
 	for (int i = 0; i < size; i++) {
 		// Copy the current line
-		memcpy(dst, src, size * _currBuf->bytesPerPixel);
+		memcpy(dst, src, size * _currBuf->format.bytesPerPixel);
 
 		// Move to the beginning of the next line
 		dst += _currBuf->pitch;

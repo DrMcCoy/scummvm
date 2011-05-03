@@ -26,8 +26,11 @@
 #include "groovie/cursor.h"
 #include "groovie/groovie.h"
 
+#include "common/debug.h"
 #include "common/archive.h"
+#include "common/file.h"
 #include "common/macresman.h"
+#include "common/textconsole.h"
 #include "graphics/cursorman.h"
 
 namespace Groovie {
@@ -226,13 +229,8 @@ byte *GrvCursorMan_t7g::loadImage(Common::SeekableReadStream &file) {
 }
 
 byte *GrvCursorMan_t7g::loadPalette(Common::SeekableReadStream &file) {
-	byte *palette = new byte[4 * 32];
-	for (uint8 colournum = 0; colournum < 32; colournum++) {
-		palette[colournum * 4 + 0] = file.readByte();
-		palette[colournum * 4 + 1] = file.readByte();
-		palette[colournum * 4 + 2] = file.readByte();
-		palette[colournum * 4 + 3] = 0;
-	}
+	byte *palette = new byte[3 * 32];
+	file.read(palette, 3 * 32);
 	return palette;
 }
 
@@ -409,7 +407,7 @@ GrvCursorMan_v2::GrvCursorMan_v2(OSystem *system) :
 	// Verify the signature
 	uint32 tmp32 = iconsFile.readUint32BE();
 	uint16 tmp16 = iconsFile.readUint16LE();
-	if (tmp32 != MKID_BE('icon') || tmp16 != 1)
+	if (tmp32 != MKTAG('i','c','o','n') || tmp16 != 1)
 		error("Groovie::Cursor: icons.ph signature failed: %s %d", tag2str(tmp32), tmp16);
 
 

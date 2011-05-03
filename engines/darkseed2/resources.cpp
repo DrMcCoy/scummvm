@@ -23,11 +23,12 @@
  *
  */
 
+#include "common/archive.h"
+#include "common/debug.h"
+#include "common/macresman.h"
 #include "common/memstream.h"
 #include "common/file.h"
-
-#include "common/archive.h"
-#include "common/macresman.h"
+#include "common/textconsole.h"
 
 #include "engines/darkseed2/resources.h"
 
@@ -835,23 +836,23 @@ bool Resources::indexMacResources() {
 
 	// Resource forks with 'snd ' resources in the sound folder (Voices/Sound Effects)
 	for (int i = 0; i < ARRAYSIZE(soundFiles); i++)
-		if (!addMacResourceFork(Common::String("sounds/") + soundFiles[i], MKID_BE('snd ')))
+		if (!addMacResourceFork(Common::String("sounds/") + soundFiles[i], MKTAG('s', 'n', 'd', ' ')))
 			return false;
 
 	// "action" resource fork with 'Sprt' resources (Animations)
-	if (!addMacResourceFork("action", MKID_BE('Sprt')))
+	if (!addMacResourceFork("action", MKTAG('S', 'p', 'r', 't')))
 		return false;
 
 	// "art" resource fork with 'PICT' resources (Inventory Images)
-	if (!addMacResourceFork("art", MKID_BE('PICT')))
+	if (!addMacResourceFork("art", MKTAG('P', 'I', 'C', 'T')))
 		return false;
 
 	// "music" resource fork with 'Tune' resources (QuickTime MIDI)
-	if (!addMacResourceFork("music", MKID_BE('Tune')))
+	if (!addMacResourceFork("music", MKTAG('T', 'u', 'n', 'e')))
 		return false;
 
 	// "talk" resource fork with 'TEXT' resources (Game Scripts)
-	if (!addMacResourceFork("talk", MKID_BE('TEXT')))
+	if (!addMacResourceFork("talk", MKTAG('T', 'E', 'X', 'T')))
 		return false;
 
 	// "text" file (Subtitles)

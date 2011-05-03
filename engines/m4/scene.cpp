@@ -149,11 +149,11 @@ void Scene::showCodes() {
 		for (int i = 0; i < _walkSurface->width() * _walkSurface->height(); i++)
 			destP[i] = (srcP[i] & 0x10) ? 0xFF : 0;
 
-		byte colors[256 * 4];
+		byte colors[256 * 3];
 		memset(colors, 0, sizeof(colors));
-		colors[255 * 4 + 0] = 255;
-		colors[255 * 4 + 1] = 255;
-		colors[255 * 4 + 2] = 255;
+		colors[255 * 3 + 0] = 255;
+		colors[255 * 3 + 1] = 255;
+		colors[255 * 3 + 2] = 255;
 		_vm->_palette->setPalette(colors, 0, 256);
 	} else {
 		// MADS handling
@@ -163,7 +163,7 @@ void Scene::showCodes() {
 
 		// Show all the scene's walk nodes
 		SceneNodeList &nodeList = _madsVm->scene()->getSceneResources()._nodes;
-		_backgroundSurface->setColour(_madsVm->_palette->WHITE);
+		_backgroundSurface->setColor(_madsVm->_palette->WHITE);
 		for (uint i = 0; i < nodeList.size() - 2; ++i) {
 			// Draw a little cross at the node's position
 			_backgroundSurface->hLine(nodeList[i].pt.x - 2, nodeList[i].pt.x + 2, nodeList[i].pt.y);

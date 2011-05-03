@@ -23,6 +23,8 @@
  *
  */
 
+#define FORBIDDEN_SYMBOL_EXCEPTION_printf
+
 #include "Gs2dScreen.h"
 #include <kernel.h>
 #include <malloc.h>
@@ -398,7 +400,7 @@ Graphics::Surface *Gs2dScreen::lockScreen() {
 	_framebuffer.w = _width;
 	_framebuffer.h = _height;
 	_framebuffer.pitch = _width; // -not- _pitch; ! It's EE mem, not Tex
-	_framebuffer.bytesPerPixel = 1;
+	_framebuffer.format = Graphics::PixelFormat::createFormatCLUT8();
 
 	return &_framebuffer;
 }
@@ -408,32 +410,40 @@ void Gs2dScreen::unlockScreen() {
 	SignalSema(g_DmacSema);
 }
 
-void Gs2dScreen::setPalette(const uint32 *pal, uint8 start, uint16 num) {
+void Gs2dScreen::setPalette(const uint8 *pal, uint8 start, uint16 num) {
 	assert(start + num <= 256);
 
 	WaitSema(g_DmacSema);
 	for (uint16 cnt = 0; cnt < num; cnt++) {
 		uint16 dest = start + cnt;
 		dest = (dest & 0xE7) | ((dest & 0x8) << 1) | ((dest & 0x10) >> 1); // rearrange like the GS expects it
-		_clut[dest] = pal[cnt] & 0xFFFFFF;
+
+		uint32 color = pal[0] | (pal[1] << 8) | (pal[2] << 16);
+		_clut[dest] = color;
+		pal += 3;
 	}
 	_clutChanged = true;
 	SignalSema(g_DmacSema);
 }
 
-void Gs2dScreen::grabPalette(uint32 *pal, uint8 start, uint16 num) {
+void Gs2dScreen::grabPalette(uint8 *pal, uint8 start, uint16 num) {
 	assert(start + num <= 256);
 	for (uint16 cnt = 0; cnt < num; cnt++) {
 		uint16 src = start + cnt;
 		src = (src & 0xE7) | ((src & 0x8) << 1) | ((src & 0x10) >> 1);
-		pal[cnt] = _clut[src];
+
+		uint32 color = _clut[src];
+		pal[0] = (color >>  0) & 0xFF;
+		pal[1] = (color >>  8) & 0xFF;
+		pal[2] = (color >> 16) & 0xFF;
+		pal += 3;
 	}
 }
 
 void Gs2dScreen::grabScreen(Graphics::Surface *surf) {
 	assert(surf);
 	WaitSema(g_DmacSema);
-	surf->create(_width, _height, 1);
+	surf->create(_width, _height, Graphics::PixelFormat::createFormatCLUT8());
 	memcpy(surf->pixels, _screenBuf, _width * _height);
 	SignalSema(g_DmacSema);
 }
@@ -672,7 +682,7 @@ void Gs2dScreen::animThread(void) {
 		{ SCALE(1),   SCALE(1) }, { SCALE(1),   SCALE(14) },
 		{ SCALE(128), SCALE(1) }, { SCALE(128), SCALE(14) }
 	};
-	float angleStep = ((2 * PI) / _tvHeight);
+	float angleStep = ((2 * M_PI) / _tvHeight);
 
 	while (!_systemQuit) {
 		do {
@@ -731,7 +741,7 @@ void Gs2dScreen::animThread(void) {
 				float z[4];
 				GsVertex nodes[4];
 
-				float angle = PI / 2 + angleStep * drawY;
+				float angle = M_PI / 2 + angleStep * drawY;
 				float rotSin = sinf(angle);
 				float rotCos = cosf(angle);
 				for (int coord = 0; coord < 4; coord++) {

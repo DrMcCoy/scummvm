@@ -29,10 +29,10 @@
 #include "engines/engine.h"
 
 #include "common/array.h"
+#include "common/error.h"
 #include "common/events.h"
 #include "common/random.h"
 #include "common/hashmap.h"
-#include "common/system.h"
 
 #include "audio/mixer.h"
 
@@ -43,6 +43,10 @@ namespace Common {
 class SeekableReadStream;
 class WriteStream;
 } // End of namespace Common
+
+namespace Graphics {
+struct Surface;
+}
 
 class KyraMetaEngine;
 
@@ -166,7 +170,6 @@ enum MusicDataID {
 class Screen;
 class Resource;
 class Sound;
-class Movie;
 class TextDisplayer;
 class StaticResource;
 class TimerManager;
@@ -247,7 +250,7 @@ protected:
 		Common::Error err;
 		registerDefaultSettings();
 		err = init();
-		if (err != Common::kNoError)
+		if (err.getCode() != Common::kNoError)
 			return err;
 		return go();
 	}
@@ -342,6 +345,9 @@ protected:
 
 	virtual void setHandItem(Item item) = 0;
 	virtual void removeHandItem() = 0;
+
+	void setDelayedCursorUpdate() { _updateHandItemCursor = true; }
+	bool _updateHandItemCursor;
 
 	// game flags
 	uint8 _flagsTable[100]; // TODO: check this value

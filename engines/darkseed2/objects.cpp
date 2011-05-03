@@ -23,6 +23,9 @@
  *
  */
 
+#include "common/debug.h"
+#include "common/textconsole.h"
+
 #include "engines/darkseed2/objects.h"
 #include "engines/darkseed2/variables.h"
 #include "engines/darkseed2/datfile.h"

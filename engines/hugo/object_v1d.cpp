@@ -30,6 +30,7 @@
  *
  */
 
+#include "common/debug.h"
 #include "common/system.h"
 #include "common/random.h"
 
@@ -334,7 +335,7 @@ void ObjectHandler_v1d::moveObjects() {
 	}
 
 	// If maze mode is enabled, do special maze processing
-	if (_maze.enabledFl) {
+	if (_vm->_maze.enabledFl) {
 		seq_t *currImage = _vm->_hero->currImagePtr;// Get ptr to current image
 		// hero coordinates
 		int x1 = _vm->_hero->x + currImage->x1;     // Left edge of object

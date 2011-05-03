@@ -68,9 +68,6 @@ public:
 	/** Stop the music. */
 	void stop();
 
-	/** Apply volume settings. */
-	void syncSettings(const Options &options);
-
 protected:
 	bool saveLoad(Common::Serializer &serializer, Resources &resources);
 	bool loading(Resources &resources);
@@ -78,7 +75,9 @@ protected:
 private:
 	Audio::Mixer *_mixer;
 
-	MidiPlayer *_midiPlayer;
+	MidiDriver *_midiDriver;
+	MidiParser *_midiParser;
+	byte *_midiData;
 
 	Common::String _name; ///< The currently playing music.
 	MidiMode _midiMode;   ///< The current MIDI mode.
@@ -87,74 +86,6 @@ private:
 
 	bool playMID(Common::SeekableReadStream &mid);
 	bool playMID(const Resource &resource);
-};
-
-// Taken from Draci, which took it from MADE, which took it from SAGA.
-
-class MidiPlayer : public MidiDriver {
-public:
-	MidiPlayer(MidiDriver *driver, const char *pathMask);
-	~MidiPlayer();
-
-	bool isPlaying();
-	void setPlaying(bool playing);
-
-	void setVolume(int volume);
-	int getVolume();
-	void syncVolume();
-
-	void setNativeMT32(bool b);
-	bool hasNativeMT32();
-
-	void loadSMF(Common::SeekableReadStream &stream);
-
-	void play(bool loop);
-	void stop(bool unload = true);
-	void pause();
-	void resume();
-	void setLoop(bool loop);
-	void setPassThrough(bool b);
-
-	void setGM(bool isGM);
-
-	// MidiDriver interface implementation
-	int open();
-	void close();
-	void send(uint32 b);
-
-	void metaEvent(byte type, byte *data, uint16 length);
-
-	void setTimerCallback(void *timerParam, void (*timerProc)(void *));
-	uint32 getBaseTempo();
-
-	//Channel allocation functions
-	MidiChannel *allocateChannel();
-	MidiChannel *getPercussionChannel();
-
-	MidiParser *_parser;
-	Common::Mutex _mutex;
-
-protected:
-
-	static void onTimer(void *data);
-	void setChannelVolume(int channel);
-
-	MidiChannel *_channel[16];
-	MidiDriver *_driver;
-	MidiParser *_smfParser;
-	Common::String _pathMask;
-	byte _channelVolume[16];
-	bool _nativeMT32;
-	bool _isGM;
-	bool _passThrough;
-
-	bool _isPlaying;
-	bool _looping;
-	byte _masterVolume;
-	int _track;
-
-	int _midiMusicSize;
-	byte *_midiMusicData;
 };
 
 } // End of namespace DarkSeed2

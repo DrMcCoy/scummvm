@@ -23,8 +23,9 @@
  *
  */
 
-#include "common/types.h"
 #include "common/str-array.h"
+#include "common/textconsole.h"
+#include "common/types.h"
 
 #include "graphics/fontman.h"
 
@@ -354,11 +355,11 @@ void Saturn2Byte::drawChar(uint32 c, ::Graphics::Surface &surface, int32 x, int3
 		for (int n = 0; n < 2; n++) {
 			byte charData = *charOffset++;
 
-			for (int dX = 0; dX < 8; dX++, imgRow += surface.bytesPerPixel) {
+			for (int dX = 0; dX < 8; dX++, imgRow += surface.format.bytesPerPixel) {
 				if ((charData & 0x80) != 0) {
-					if (surface.bytesPerPixel == 1)
+					if (surface.format.bytesPerPixel == 1)
 						*imgRow = color;
-					else if (surface.bytesPerPixel == 2)
+					else if (surface.format.bytesPerPixel == 2)
 						*((uint16 *) imgRow) = color;
 				}
 				charData <<= 1;

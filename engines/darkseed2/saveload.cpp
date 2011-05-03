@@ -23,6 +23,7 @@
  *
  */
 
+#include "common/rect.h"
 #include "common/system.h"
 
 #include "graphics/surface.h"

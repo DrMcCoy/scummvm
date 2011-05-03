@@ -62,6 +62,7 @@ public:
 	int16 _confiscatedInventory[35];
 	int32 _numInventoryItems;
 	int32 _numConfiscatedInventoryItems;
+	bool _inMenu;
 	bool _inCloseUp;
 	bool _inCutaway;
 	bool _inConversation;
@@ -80,7 +81,6 @@ public:
 	int32 _nextSpecialEnterX;
 	int32 _nextSpecialEnterY;
 
-
 	bool _timerEnabled[2];
 	int32 _timerTimeout[2];
 	int32 _timerDelay[2];
@@ -93,7 +93,6 @@ public:
 
 	void loadConversations(Common::ReadStream *stream);
 	void saveConversations(Common::WriteStream *stream);
-
 };
 
 } // End of namespace Toon

@@ -23,21 +23,16 @@
  *
  */
 
-#include "common/config-manager.h"
-#include "common/debug-channels.h"
-#include "common/EventRecorder.h"
-
-#include "audio/mididrv.h"
-#include "audio/mixer.h"
-
 #include "kyra/kyra_v1.h"
 #include "kyra/sound_intern.h"
 #include "kyra/resource.h"
-#include "kyra/screen.h"
-#include "kyra/text.h"
 #include "kyra/timer.h"
-#include "kyra/script.h"
 #include "kyra/debugger.h"
+
+#include "common/error.h"
+#include "common/config-manager.h"
+#include "common/debug-channels.h"
+#include "common/EventRecorder.h"
 
 namespace Kyra {
 
@@ -65,6 +60,7 @@ KyraEngine_v1::KyraEngine_v1(OSystem *system, const GameFlags &flags)
 	_gameToLoad = -1;
 
 	_mouseState = -1;
+	_updateHandItemCursor = false;
 	_deathHandler = -1;
 
 	memset(_flagsTable, 0, sizeof(_flagsTable));
@@ -128,10 +124,11 @@ Common::Error KyraEngine_v1::init() {
 			_sound = new SoundAdLibPC(this, _mixer);
 		} else {
 			Sound::kType type;
+			const MusicType midiType = MidiDriver::getMusicType(dev);
 
-			if (MidiDriver::getMusicType(dev) == MT_PCSPK)
+			if (midiType == MT_PCSPK || midiType == MT_NULL)
 				type = Sound::kPCSpkr;
-			else if (MidiDriver::getMusicType(dev) == MT_MT32 || ConfMan.getBool("native_mt32"))
+			else if (midiType == MT_MT32 || ConfMan.getBool("native_mt32"))
 				type = Sound::kMidiMT32;
 			else
 				type = Sound::kMidiGM;

@@ -23,6 +23,8 @@
  *
  */
 
+#include "graphics/palette.h"
+
 #include "engines/darkseed2/imageconverter.h"
 #include "engines/darkseed2/palette.h"
 
@@ -62,15 +64,15 @@ void ImageConverter::convert8bit(::Graphics::Surface &trueColor,
 	assert(trueColor.w == paletted.w);
 	assert(trueColor.h == paletted.h);
 
-	assert(paletted.bytesPerPixel == 1);
-	assert(trueColor.bytesPerPixel == _format.bytesPerPixel);
+	assert(paletted.format.bytesPerPixel == 1);
+	assert(trueColor.format == _format);
 
 	if (palette.empty() && (&palette != getStandardPalette()))
 		// If the palette empty and not the standard palette, use that one instead
 		return convert8bit(trueColor, paletted);
 
 	// For now, we only support 8bit->16bit conversion
-	assert(trueColor.bytesPerPixel == 2);
+	assert(trueColor.format.bytesPerPixel == 2);
 
 	uint16 *dst = (uint16 *) trueColor.pixels;
 	const byte *src = (const byte *) paletted.pixels;
@@ -96,11 +98,11 @@ void ImageConverter::convert8bitSystem(::Graphics::Surface &trueColor,
 	assert(trueColor.w == paletted.w);
 	assert(trueColor.h == paletted.h);
 
-	assert(paletted.bytesPerPixel == 1);
-	assert(trueColor.bytesPerPixel == _format.bytesPerPixel);
+	assert(paletted.format.bytesPerPixel == 1);
+	assert(trueColor.format == _format);
 
 	// For now, we only support 8bit->16bit conversion
-	assert(trueColor.bytesPerPixel == 2);
+	assert(trueColor.format.bytesPerPixel == 2);
 
 	uint16 *dst = (uint16 *) trueColor.pixels;
 	const byte *src = (const byte *) paletted.pixels;

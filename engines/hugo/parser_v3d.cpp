@@ -32,6 +32,7 @@
 
 // parser.c - handles all keyboard/command input
 
+#include "common/debug.h"
 #include "common/system.h"
 
 #include "hugo/hugo.h"
@@ -116,26 +117,22 @@ void Parser_v3d::lineHandler() {
 	// Special meta commands
 	// EXIT/QUIT
 	if (!strcmp("exit", _vm->_line) || strstr(_vm->_line, "quit")) {
-		if (Utils::Box(kBoxYesNo, "%s", _vm->_text->getTextParser(kTBExit_1d)) != 0)
+		if (Utils::yesNoBox(_vm->_text->getTextParser(kTBExit_1d)))
 			_vm->endGame();
 		return;
 	}
 
 	// SAVE/RESTORE
 	if (!strcmp("save", _vm->_line)) {
-		_vm->_config.soundFl = false;
 		if (gameStatus.gameOverFl)
-			Utils::gameOverMsg();
+			_vm->gameOverMsg();
 		else
 			_vm->_file->saveGame(-1, Common::String());
 		return;
 	}
 
 	if (!strcmp("restore", _vm->_line)) {
-		_vm->_config.soundFl = false;
 		_vm->_file->restoreGame(-1);
-		_vm->_scheduler->restoreScreen(*_vm->_screen_p);
-		gameStatus.viewState = kViewPlay;
 		return;
 	}
 
@@ -147,7 +144,7 @@ void Parser_v3d::lineHandler() {
 
 	if (gameStatus.gameOverFl) {
 		// No commands allowed!
-		Utils::gameOverMsg();
+		_vm->gameOverMsg();
 		return;
 	}
 
@@ -174,19 +171,19 @@ void Parser_v3d::lineHandler() {
 	}
 
 	// No objects match command line, try background and catchall commands
-	if (isBackgroundWord_v3(_vm->_backgroundObjects[*_vm->_screen_p]))
+	if (isBackgroundWord_v3(_backgroundObjects[*_vm->_screen_p]))
 		return;
-	if (isCatchallVerb_v3(_vm->_backgroundObjects[*_vm->_screen_p]))
+	if (isCatchallVerb_v3(_backgroundObjects[*_vm->_screen_p]))
 		return;
 
-	if (isBackgroundWord_v3(_vm->_catchallList))
+	if (isBackgroundWord_v3(_catchallList))
 		return;
-	if (isCatchallVerb_v3(_vm->_catchallList))
+	if (isCatchallVerb_v3(_catchallList))
 		return;
 
 	// If a not-near comment was generated, print it
 	if (*farComment != '\0') {
-		Utils::Box(kBoxAny, "%s", farComment);
+		Utils::notifyBox(farComment);
 		return;
 	}
 
@@ -195,13 +192,13 @@ void Parser_v3d::lineHandler() {
 	const char *noun = findNoun();
 
 	if (verb && noun) {                             // A combination I didn't think of
-		Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBNoPoint));
+		Utils::notifyBox(_vm->_text->getTextParser(kTBNoPoint));
 	} else if (noun) {
-		Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBNoun));
+		Utils::notifyBox(_vm->_text->getTextParser(kTBNoun));
 	} else if (verb) {
-		Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBVerb));
+		Utils::notifyBox(_vm->_text->getTextParser(kTBVerb));
 	} else {
-		Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBEh));
+		Utils::notifyBox(_vm->_text->getTextParser(kTBEh));
 	}
 }
 
@@ -219,26 +216,26 @@ bool Parser_v3d::isObjectVerb_v3(object_t *obj, char *comment) {
 		return false;
 
 	int i;
-	for (i = 0; _vm->_cmdList[cmdIndex][i].verbIndex != 0; i++) {                 // For each cmd
-		if (isWordPresent(_vm->_text->getVerbArray(_vm->_cmdList[cmdIndex][i].verbIndex)))        // Was this verb used?
+	for (i = 0; _cmdList[cmdIndex][i].verbIndex != 0; i++) {                           // For each cmd
+		if (isWordPresent(_vm->_text->getVerbArray(_cmdList[cmdIndex][i].verbIndex)))  // Was this verb used?
 			break;
 	}
 
-	if (_vm->_cmdList[cmdIndex][i].verbIndex == 0)   // No verbs used.
+	if (_cmdList[cmdIndex][i].verbIndex == 0)       // No verbs used.
 		return false;
 
 	// Verb match found.  Check if object is Near
-	char *verb = *_vm->_text->getVerbArray(_vm->_cmdList[cmdIndex][i].verbIndex);
+	char *verb = *_vm->_text->getVerbArray(_cmdList[cmdIndex][i].verbIndex);
 	if (!isNear_v3(obj, verb, comment))
 		return false;
 
 	// Check all required objects are being carried
-	cmd *cmnd = &_vm->_cmdList[cmdIndex][i];         // ptr to struct cmd
+	cmd *cmnd = &_cmdList[cmdIndex][i];             // ptr to struct cmd
 	if (cmnd->reqIndex) {                           // At least 1 thing in list
-		uint16 *reqs = _vm->_arrayReqs[cmnd->reqIndex];      // ptr to list of required objects
+		uint16 *reqs = _arrayReqs[cmnd->reqIndex];  // ptr to list of required objects
 		for (i = 0; reqs[i]; i++) {                 // for each obj
 			if (!_vm->_object->isCarrying(reqs[i])) {
-				Utils::Box(kBoxAny, "%s", _vm->_text->getTextData(cmnd->textDataNoCarryIndex));
+				Utils::notifyBox(_vm->_text->getTextData(cmnd->textDataNoCarryIndex));
 				return true;
 			}
 		}
@@ -246,14 +243,14 @@ bool Parser_v3d::isObjectVerb_v3(object_t *obj, char *comment) {
 
 	// Required objects are present, now check state is correct
 	if ((obj->state != cmnd->reqState) && (cmnd->reqState != kStateDontCare)) {
-		Utils::Box(kBoxAny, "%s", _vm->_text->getTextData(cmnd->textDataWrongIndex));
+		Utils::notifyBox(_vm->_text->getTextData(cmnd->textDataWrongIndex));
 		return true;
 	}
 
 	// Everything checked.  Change the state and carry out any actions
 	if (cmnd->reqState != kStateDontCare)           // Don't change new state if required state didn't care
 		obj->state = cmnd->newState;
-	Utils::Box(kBoxAny, "%s", _vm->_text->getTextData(cmnd->textDataDoneIndex));
+	Utils::notifyBox(_vm->_text->getTextData(cmnd->textDataDoneIndex));
 	_vm->_scheduler->insertActionList(cmnd->actIndex);
 
 	// See if any additional generic actions
@@ -275,35 +272,35 @@ bool Parser_v3d::isGenericVerb_v3(object_t *obj, char *comment) {
 	if (isWordPresent(_vm->_text->getVerbArray(_vm->_look)) && isNear_v3(obj, _vm->_text->getVerb(_vm->_look, 0), comment)) {
 		// Test state-dependent look before general look
 		if ((obj->genericCmd & LOOK_S) == LOOK_S) {
-			Utils::Box(kBoxAny, "%s", _vm->_text->getTextData(obj->stateDataIndex[obj->state]));
+			Utils::notifyBox(_vm->_text->getTextData(obj->stateDataIndex[obj->state]));
 		} else {
 			if ((LOOK & obj->genericCmd) == LOOK) {
 				if (obj->dataIndex != 0)
-					Utils::Box(kBoxAny, "%s", _vm->_text->getTextData(obj->dataIndex));
+					Utils::notifyBox(_vm->_text->getTextData(obj->dataIndex));
 				else
 					return false;
 			} else {
-				Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBUnusual));
+				Utils::notifyBox(_vm->_text->getTextParser(kTBUnusual));
 			}
 		}
 	} else if (isWordPresent(_vm->_text->getVerbArray(_vm->_take)) && isNear_v3(obj, _vm->_text->getVerb(_vm->_take, 0), comment)) {
 		if (obj->carriedFl)
-			Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBHave));
+			Utils::notifyBox(_vm->_text->getTextParser(kTBHave));
 		else if ((TAKE & obj->genericCmd) == TAKE)
 			takeObject(obj);
 		else if (obj->cmdIndex)                     // No comment if possible commands
 			return false;
 		else if (!obj->verbOnlyFl && (TAKE & obj->genericCmd) == TAKE)  // Make sure not taking object in context!
-			Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBNoUse));
+			Utils::notifyBox(_vm->_text->getTextParser(kTBNoUse));
 		else
 			return false;
 	} else if (isWordPresent(_vm->_text->getVerbArray(_vm->_drop))) {
 		if (!obj->carriedFl && ((DROP & obj->genericCmd) == DROP))
-			Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBDontHave));
+			Utils::notifyBox(_vm->_text->getTextParser(kTBDontHave));
 		else if (obj->carriedFl && ((DROP & obj->genericCmd) == DROP))
 			dropObject(obj);
 		else if (obj->cmdIndex == 0)
-			Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBNeed));
+			Utils::notifyBox(_vm->_text->getTextParser(kTBNeed));
 		else
 			return false;
 	} else {                                        // It was not a generic cmd
@@ -385,7 +382,7 @@ void Parser_v3d::takeObject(object_t *obj) {
 
 	if (obj->seqNumb > 0)                           // If object has an image, force walk to dropped
 		obj->viewx = -1;                            // (possibly moved) object next time taken!
-	Utils::Box(kBoxAny, TAKE_TEXT, _vm->_text->getNoun(obj->nounIndex, TAKE_NAME));
+	Utils::notifyBox(Common::String::format(TAKE_TEXT, _vm->_text->getNoun(obj->nounIndex, TAKE_NAME)));
 }
 
 /**
@@ -404,7 +401,7 @@ void Parser_v3d::dropObject(object_t *obj) {
 	obj->y = _vm->_hero->y + _vm->_hero->currImagePtr->y2 - 1;
 	obj->y = (obj->y + obj->currImagePtr->y2 < kYPix) ? obj->y : kYPix - obj->currImagePtr->y2 - 10;
 	_vm->adjustScore(-obj->objValue);
-	Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBOk));
+	Utils::notifyBox(_vm->_text->getTextParser(kTBOk));
 }
 
 /**
@@ -416,7 +413,7 @@ void Parser_v3d::dropObject(object_t *obj) {
 bool Parser_v3d::isCatchallVerb_v3(objectList_t obj) const {
 	debugC(1, kDebugParser, "isCatchallVerb(object_list_t obj)");
 
-	if (_maze.enabledFl)
+	if (_vm->_maze.enabledFl)
 		return false;
 
 	for (int i = 0; obj[i].verbIndex != 0; i++) {
@@ -424,7 +421,7 @@ bool Parser_v3d::isCatchallVerb_v3(objectList_t obj) const {
 		   (!obj[i].matchFl || !findNoun()) &&
 		   ((obj[i].roomState == kStateDontCare) ||
 		    (obj[i].roomState == _vm->_screenStates[*_vm->_screen_p]))) {
-			Utils::Box(kBoxAny, "%s", _vm->_file->fetchString(obj[i].commentIndex));
+			Utils::notifyBox(_vm->_file->fetchString(obj[i].commentIndex));
 			_vm->_scheduler->processBonus(obj[i].bonusIndex);
 
 			// If this is LOOK (without a noun), show any takeable objects
@@ -444,7 +441,7 @@ bool Parser_v3d::isCatchallVerb_v3(objectList_t obj) const {
 bool Parser_v3d::isBackgroundWord_v3(objectList_t obj) const {
 	debugC(1, kDebugParser, "isBackgroundWord(object_list_t obj)");
 
-	if (_maze.enabledFl)
+	if (_vm->_maze.enabledFl)
 		return false;
 
 	for (int i = 0; obj[i].verbIndex != 0; i++) {
@@ -452,7 +449,7 @@ bool Parser_v3d::isBackgroundWord_v3(objectList_t obj) const {
 		    isWordPresent(_vm->_text->getNounArray(obj[i].nounIndex)) &&
 		    ((obj[i].roomState == kStateDontCare) ||
 		     (obj[i].roomState == _vm->_screenStates[*_vm->_screen_p]))) {
-			Utils::Box(kBoxAny, "%s", _vm->_file->fetchString(obj[i].commentIndex));
+			Utils::notifyBox(_vm->_file->fetchString(obj[i].commentIndex));
 			_vm->_scheduler->processBonus(obj[i].bonusIndex);
 			return true;
 		}

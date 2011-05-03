@@ -26,6 +26,7 @@
 #ifdef ENABLE_HE
 
 #include "common/system.h"
+#include "graphics/palette.h"
 #include "scumm/scumm.h"
 #include "scumm/he/intern_he.h"
 #include "scumm/resource.h"
@@ -192,7 +193,7 @@ void ScummEngine_v90he::setHEPaletteFromCostume(int palSlot, int resId) {
 	assertRange(1, palSlot, _numPalettes, "palette");
 	const uint8 *data = getResourceAddress(rtCostume, resId);
 	assert(data);
-	const uint8 *rgbs = findResourceData(MKID_BE('RGBS'), data);
+	const uint8 *rgbs = findResourceData(MKTAG('R','G','B','S'), data);
 	assert(rgbs);
 	setHEPaletteFromPtr(palSlot, rgbs);
 }
@@ -202,7 +203,7 @@ void ScummEngine_v90he::setHEPaletteFromImage(int palSlot, int resId, int state)
 	assertRange(1, palSlot, _numPalettes, "palette");
 	uint8 *data = getResourceAddress(rtImage, resId);
 	assert(data);
-	const uint8 *rgbs = findWrappedBlock(MKID_BE('RGBS'), data, state, 0);
+	const uint8 *rgbs = findWrappedBlock(MKTAG('R','G','B','S'), data, state, 0);
 	if (rgbs)
 		setHEPaletteFromPtr(palSlot, rgbs);
 }
@@ -212,7 +213,7 @@ void ScummEngine_v90he::setHEPaletteFromRoom(int palSlot, int resId, int state) 
 	assertRange(1, palSlot, _numPalettes, "palette");
 	const uint8 *data = getResourceAddress(rtRoom, resId);
 	assert(data);
-	const uint8 *pals = findResourceData(MKID_BE('PALS'), data);
+	const uint8 *pals = findResourceData(MKTAG('P','A','L','S'), data);
 	assert(pals);
 	const uint8 *rgbs = findPalInPals(pals, state);
 	assert(rgbs);
@@ -380,21 +381,8 @@ void ScummEngine_v99he::updatePalette() {
 		return;
 
 	int num = _palDirtyMax - _palDirtyMin + 1;
-	int i;
 
-	byte palette_colors[1024];
-	byte *p = palette_colors;
-
-	for (i = _palDirtyMin; i <= _palDirtyMax; i++) {
-		byte *data = _hePalettes + 1024 + i * 3;
-
-		*p++ = data[0];
-		*p++ = data[1];
-		*p++ = data[2];
-		*p++ = 0;
-	}
-
-	_system->getPaletteManager()->setPalette(palette_colors, _palDirtyMin, num);
+	_system->getPaletteManager()->setPalette(_hePalettes + 1024 + _palDirtyMin * 3, _palDirtyMin, num);
 
 	_palDirtyMax = -1;
 	_palDirtyMin = 256;

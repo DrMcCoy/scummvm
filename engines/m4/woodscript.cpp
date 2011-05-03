@@ -26,6 +26,7 @@
 #include "m4/woodscript.h"
 
 #include "common/memstream.h"
+#include "graphics/palette.h"
 
 namespace M4 {
 
@@ -164,7 +165,7 @@ WoodScript::WoodScript(MadsM4Engine *vm) {
 
 	_backgroundSurface = NULL;
 
-	Common::Rect viewBounds = Common::Rect(0, 0, 640, 480);
+	//Common::Rect viewBounds = Common::Rect(0, 0, 640, 480);
 	//_surfaceView = new View(viewBounds);
 }
 
@@ -321,12 +322,12 @@ void WoodScript::update() {
 
 	{
 		// FIXME: This should be done when a new palette is set
-		byte palette[1024];
+		byte palette[768];
 		g_system->getPaletteManager()->grabPalette(palette, 0, 256);
 		for (int i = 0; i < 256; i++) {
-			_mainPalette[i].r = palette[i * 4 + 0];
-			_mainPalette[i].g = palette[i * 4 + 1];
-			_mainPalette[i].b = palette[i * 4 + 2];
+			_mainPalette[i].r = palette[i * 3 + 0];
+			_mainPalette[i].g = palette[i * 3 + 1];
+			_mainPalette[i].b = palette[i * 3 + 2];
 		}
 	}
 

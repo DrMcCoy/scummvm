@@ -24,9 +24,8 @@
  */
 
 #include "common/events.h"
-#include "common/util.h"
-#include "common/stack.h"
 #include "common/system.h"
+#include "graphics/palette.h"
 #include "graphics/surface.h"
 
 #include "sci/sci.h"
@@ -39,8 +38,8 @@ namespace Sci {
 
 //#define DISABLE_TRANSITIONS	// uncomment to disable room transitions (for development only! helps in testing games quickly)
 
-GfxTransitions::GfxTransitions(GfxScreen *screen, GfxPalette *palette, bool isVGA)
-	: _screen(screen), _palette(palette), _isVGA(isVGA) {
+GfxTransitions::GfxTransitions(GfxScreen *screen, GfxPalette *palette)
+	: _screen(screen), _palette(palette) {
 	init();
 }
 
@@ -124,6 +123,7 @@ void GfxTransitions::setup(int16 number, bool blackoutFlag) {
 		_number = SCI_TRANSITIONS_NONE;
 #endif
 		_blackoutFlag = blackoutFlag;
+		debugC(kDebugLevelGraphics, "Transition %d, blackout %d", number, blackoutFlag);
 	}
 }
 
@@ -272,8 +272,7 @@ void GfxTransitions::doTransition(int16 number, bool blackoutFlag) {
 
 void GfxTransitions::setNewPalette(bool blackoutFlag) {
 	if (!blackoutFlag)
-		if (_isVGA)
-			_palette->setOnScreen();
+		_palette->setOnScreen();
 }
 
 void GfxTransitions::setNewScreen(bool blackoutFlag) {
@@ -303,7 +302,7 @@ void GfxTransitions::copyRectToScreen(const Common::Rect rect, bool blackoutFlag
 // Note: don't do too many steps in here, otherwise cpu will crap out because of
 // the load
 void GfxTransitions::fadeOut() {
-	byte oldPalette[4 * 256], workPalette[4 * 256];
+	byte oldPalette[3 * 256], workPalette[3 * 256];
 	int16 stepNr, colorNr;
 	// Sierra did not fade in/out color 255 for sci1.1, but they used it in
 	//  several pictures (e.g. qfg3 demo/intro), so the fading looked weird
@@ -312,12 +311,18 @@ void GfxTransitions::fadeOut() {
 	g_system->getPaletteManager()->grabPalette(oldPalette, 0, 256);
 
 	for (stepNr = 100; stepNr >= 0; stepNr -= 10) {
-		for (colorNr = 1; colorNr < tillColorNr; colorNr++){
-			workPalette[colorNr * 4 + 0] = oldPalette[colorNr * 4] * stepNr / 100;
-			workPalette[colorNr * 4 + 1] = oldPalette[colorNr * 4 + 1] * stepNr / 100;
-			workPalette[colorNr * 4 + 2] = oldPalette[colorNr * 4 + 2] * stepNr / 100;
+		for (colorNr = 1; colorNr < tillColorNr; colorNr++) {
+			if (_palette->colorIsFromMacClut(colorNr)) {
+				workPalette[colorNr * 3 + 0] = oldPalette[colorNr * 3];
+				workPalette[colorNr * 3 + 1] = oldPalette[colorNr * 3 + 1];
+				workPalette[colorNr * 3 + 2] = oldPalette[colorNr * 3 + 2];
+			} else {
+				workPalette[colorNr * 3 + 0] = oldPalette[colorNr * 3] * stepNr / 100;
+				workPalette[colorNr * 3 + 1] = oldPalette[colorNr * 3 + 1] * stepNr / 100;
+				workPalette[colorNr * 3 + 2] = oldPalette[colorNr * 3 + 2] * stepNr / 100;
+			}
 		}
-		g_system->getPaletteManager()->setPalette(workPalette + 4, 1, 254);
+		g_system->getPaletteManager()->setPalette(workPalette + 3, 1, 254);
 		g_sci->getEngineState()->wait(2);
 	}
 }
@@ -457,7 +462,6 @@ void GfxTransitions::scrollCopyOldToScreen(Common::Rect screenRect, int16 x, int
 // Scroll old screen (up/down/left/right) and insert new screen that way - works
 // on _picRect area only.
 void GfxTransitions::scroll(int16 number) {
-	int16 screenWidth, screenHeight;
 	int16 stepNr = 0;
 	Common::Rect oldMoveRect = _picRect;
 	Common::Rect oldScreenRect = _picRect;
@@ -466,7 +470,6 @@ void GfxTransitions::scroll(int16 number) {
 	uint32 msecCount = 0;
 
 	_screen->copyFromScreen(_oldScreen);
-	screenWidth = _screen->getDisplayWidth(); screenHeight = _screen->getDisplayHeight();
 
 	switch (number) {
 	case SCI_TRANSITIONS_SCROLL_LEFT:
@@ -510,7 +513,7 @@ void GfxTransitions::scroll(int16 number) {
 		newScreenRect.bottom = newScreenRect.top;
 		newMoveRect.top = newMoveRect.bottom;
 		while (oldMoveRect.top < oldMoveRect.bottom) {
-			oldMoveRect.top++; oldScreenRect.top++; 
+			oldMoveRect.top++; oldScreenRect.top++;
 			newScreenRect.bottom++;	newMoveRect.top--;
 
 			msecCount += 5;

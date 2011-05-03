@@ -28,6 +28,7 @@
 
 #include "sci/sci.h"
 #include "sci/graphics/helpers.h"
+#include "sci/graphics/view.h"
 
 #include "graphics/sjis.h"
 
@@ -51,7 +52,7 @@ enum GfxScreenMasks {
 };
 
 enum {
-	SCI_SCREEN_UNDITHERMEMORIAL_SIZE = 256
+	DITHERED_BG_COLORS_SIZE = 256
 };
 
 /**
@@ -89,35 +90,37 @@ public:
 	void drawLine(int16 left, int16 top, int16 right, int16 bottom, byte color, byte prio, byte control) {
 		drawLine(Common::Point(left, top), Common::Point(right, bottom), color, prio, control);
 	}
-	int getUpscaledHires() const {
+
+	GfxScreenUpscaledMode getUpscaledHires() const {
 		return _upscaledHires;
 	}
+
 	bool getUnditherState() const {
 		return _unditherState;
 	}
+
 	void putKanjiChar(Graphics::FontSJIS *commonFont, int16 x, int16 y, uint16 chr, byte color);
 	byte getVisual(int x, int y);
 	byte getPriority(int x, int y);
 	byte getControl(int x, int y);
-	byte isFillMatch(int16 x, int16 y, byte drawMask, byte t_color, byte t_pri, byte t_con);
+	byte isFillMatch(int16 x, int16 y, byte drawMask, byte t_color, byte t_pri, byte t_con, bool isEGA);
 
 	int bitsGetDataSize(Common::Rect rect, byte mask);
 	void bitsSave(Common::Rect rect, byte mask, byte *memoryPtr);
 	void bitsGetRect(byte *memoryPtr, Common::Rect *destRect);
 	void bitsRestore(byte *memoryPtr);
 
-	void getPalette(Palette *pal);
-	void setPalette(Palette *pal);
-
 	void scale2x(const byte *src, byte *dst, int16 srcWidth, int16 srcHeight, byte bytesPerPixel = 1);
 
-	void adjustToUpscaledCoordinates(int16 &y, int16 &x);
-	void adjustBackUpscaledCoordinates(int16 &y, int16 &x);
+	void adjustToUpscaledCoordinates(int16 &y, int16 &x, Sci32ViewNativeResolution viewScalingType = SCI_VIEW_NATIVERES_NONE);
+	void adjustBackUpscaledCoordinates(int16 &y, int16 &x, Sci32ViewNativeResolution viewScalingType = SCI_VIEW_NATIVERES_NONE);
 
 	void dither(bool addToFlag);
-	void ditherForceMemorial(byte color);
+
+	// Force a color combination as a dithered color
+	void ditherForceDitheredColor(byte color);
 	void debugUnditherSetState(bool flag);
-	int16 *unditherGetMemorial();
+	int16 *unditherGetDitheredBgColors();
 
 	void debugShowMap(int mapNo);
 
@@ -149,7 +152,7 @@ private:
 	void setVerticalShakePos(uint16 shakePos);
 
 	bool _unditherState;
-	int16 _unditherMemorial[SCI_SCREEN_UNDITHERMEMORIAL_SIZE];
+	int16 _ditheredPicColors[DITHERED_BG_COLORS_SIZE];
 
 	// These screens have the real resolution of the game engine (320x200 for
 	// SCI0/SCI1/SCI11 games, 640x480 for SCI2 games). SCI0 games will be
@@ -175,7 +178,7 @@ private:
 
 	// This variable defines, if upscaled hires is active and what upscaled mode
 	// is used.
-	int _upscaledHires;
+	GfxScreenUpscaledMode _upscaledHires;
 
 	// This here holds a translation for vertical coordinates between native
 	// (visual) and actual (display) screen.
@@ -184,6 +187,8 @@ private:
 	// This defines whether or not the font we're drawing is already scaled
 	// to the screen size (and we therefore should not upscale it ourselves).
 	bool _fontIsUpscaled;
+
+	uint16 getLowResScreenHeight();
 };
 
 } // End of namespace Sci

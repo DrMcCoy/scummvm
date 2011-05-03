@@ -28,6 +28,7 @@
 
 #include "common/system.h"
 #include "common/file.h"
+#include "common/textconsole.h"
 
 #include "sword2/sword2.h"
 #include "sword2/defs.h"
@@ -1859,15 +1860,15 @@ int32 Logic::fnSetScrollRightMouse(int32 *params) {
 	return IR_CONT;
 }
 
-int32 Logic::fnColour(int32 *params) {
-	// set border colour - useful during script development
-	// eg. set to colour during a timer situation, then black when timed
+int32 Logic::fnColor(int32 *params) {
+	// set border color - useful during script development
+	// eg. set to color during a timer situation, then black when timed
 	// out
 
-	// params	0: colour (see defines above)
+	// params	0: color (see defines above)
 
 #ifdef SWORD2_DEBUG
-	// what colour?
+	// what color?
 	switch (params[0]) {
 	case BLACK:
 		_vm->_screen->setPalette(0, 1, black, RDPAL_INSTANT);
@@ -1897,22 +1898,22 @@ int32 Logic::fnColour(int32 *params) {
 #define GREEN	3
 #define BLUE	4
 
-static const uint8 black[4]	= {  0,    0,   0,   0 };
-static const uint8 white[4]	= { 255, 255, 255,   0 };
-static const uint8 red[4]	= { 255,   0,   0,   0 };
-static const uint8 green[4]	= {   0, 255,   0,   0 };
-static const uint8 blue[4]	= {   0,   0, 255,   0 };
+static const uint8 black[3]	= {  0,    0,   0 };
+static const uint8 white[3]	= { 255, 255, 255 };
+static const uint8 red[3]	= { 255,   0,   0 };
+static const uint8 green[3]	= {   0, 255,   0 };
+static const uint8 blue[3]	= {   0,   0, 255 };
 #endif
 
 int32 Logic::fnFlash(int32 *params) {
-	// flash colour 0 (ie. border) - useful during script development
+	// flash color 0 (ie. border) - useful during script development
 	// eg. fnFlash(BLUE) where a text line is missed; RED when some code
 	// missing, etc
 
-	// params:	0 colour to flash
+	// params:	0 color to flash
 
 #ifdef SWORD2_DEBUG
-	// what colour?
+	// what color?
 	switch (params[0]) {
 	case WHITE:
 		_vm->_screen->setPalette(0, 1, white, RDPAL_INSTANT);
@@ -2163,7 +2164,7 @@ int32 Logic::fnPlaySequence(int32 *params) {
 
 	// zero the entire palette in case we're about to fade up!
 
-	byte pal[4 * 256];
+	byte pal[3 * 256];
 
 	memset(pal, 0, sizeof(pal));
 	_vm->_screen->setPalette(0, 256, pal, RDPAL_INSTANT);

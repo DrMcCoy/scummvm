@@ -24,6 +24,7 @@
  */
 
 #include "common/serializer.h"
+#include "common/textconsole.h"
 
 #include "engines/darkseed2/inventorybox.h"
 #include "engines/darkseed2/imageconverter.h"

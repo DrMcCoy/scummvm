@@ -24,26 +24,19 @@
  */
 
 #include "kyra/kyra_lok.h"
+#include "kyra/resource.h"
+#include "kyra/seqplayer.h"
+#include "kyra/sprites.h"
+#include "kyra/animator_lok.h"
+#include "kyra/debugger.h"
+#include "kyra/timer.h"
+#include "kyra/sound.h"
 
-#include "common/file.h"
 #include "common/system.h"
-#include "common/savefile.h"
 #include "common/config-manager.h"
 #include "common/debug-channels.h"
 
 #include "gui/message.h"
-
-#include "kyra/resource.h"
-#include "kyra/screen.h"
-#include "kyra/script.h"
-#include "kyra/seqplayer.h"
-#include "kyra/sound.h"
-#include "kyra/sprites.h"
-#include "kyra/wsamovie.h"
-#include "kyra/animator_lok.h"
-#include "kyra/text.h"
-#include "kyra/debugger.h"
-#include "kyra/timer.h"
 
 namespace Kyra {
 
@@ -92,10 +85,22 @@ KyraEngine_LoK::KyraEngine_LoK(OSystem *system, const GameFlags &flags)
 	memset(_panPagesTable, 0, sizeof(_panPagesTable));
 	memset(_sceneAnimTable, 0, sizeof(_sceneAnimTable));
 	_currHeadShape = 0;
+	_currentHeadFrameTableIndex = 0;
 	_speechPlayTime = 0;
 	_seqPlayerFlag = false;
 
+	memset(&_characterFacingZeroCount, 0, sizeof(_characterFacingZeroCount));
+	memset(&_characterFacingFourCount, 0, sizeof(_characterFacingFourCount));
+
 	memset(&_itemBkgBackUp, 0, sizeof(_itemBkgBackUp));
+
+	_beadStateTimer1 = _beadStateTimer2 = 0;
+	memset(&_beadState1, 0, sizeof(_beadState1));
+	_beadState1.x = -1;
+	memset(&_beadState2, 0, sizeof(_beadState2));
+
+	_malcolmFrame = 0;
+	_malcolmTimer1 = _malcolmTimer2 = 0;
 }
 
 KyraEngine_LoK::~KyraEngine_LoK() {
@@ -817,6 +822,14 @@ void KyraEngine_LoK::updateMousePointer(bool forceUpdate) {
 		shape = 6;
 		newX = 4;
 		newY = 4;
+	}
+
+	if (_updateHandItemCursor) {
+		// This works around an issue which would occur when setHandItem(_itemInHand)
+		// was called from inside loadGameState(). When loading via GMM the
+		// mouse cursor would not be set correctly.
+		_updateHandItemCursor = false;
+		setHandItem(_itemInHand);
 	}
 
 	if ((newMouseState && _mouseState != newMouseState) || (newMouseState && forceUpdate)) {

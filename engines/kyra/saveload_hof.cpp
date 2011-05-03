@@ -23,16 +23,14 @@
  *
  */
 
-#include "common/endian.h"
+#include "kyra/kyra_hof.h"
+#include "kyra/screen_v2.h"
+#include "kyra/sound.h"
+#include "kyra/timer.h"
+
 #include "common/savefile.h"
 #include "common/substream.h"
 #include "common/system.h"
-
-#include "kyra/kyra_v2.h"
-#include "kyra/screen_v2.h"
-#include "kyra/resource.h"
-#include "kyra/sound.h"
-#include "kyra/timer.h"
 
 namespace Kyra {
 
@@ -311,7 +309,7 @@ Common::Error KyraEngine_HoF::loadGameState(int slot) {
 	_mainCharacter.facing = 4;
 
 	enterNewScene(_mainCharacter.sceneId, _mainCharacter.facing, 0, 0, 1);
-	setHandItem(_itemInHand);
+	setDelayedCursorUpdate();
 
 	if (_lastMusicCommand >= 0 && !_unkSceneScreenFlag1)
 		snd_playWanderScoreViaMap(_lastMusicCommand, 1);

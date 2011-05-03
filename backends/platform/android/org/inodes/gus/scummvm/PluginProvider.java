@@ -13,6 +13,8 @@ import android.util.Log;
 import java.util.ArrayList;
 
 public class PluginProvider extends BroadcastReceiver {
+	private final static String LOG_TAG = "ScummVM";
+
 	public final static String META_UNPACK_LIB =
 		"org.inodes.gus.scummvm.meta.UNPACK_LIB";
 
@@ -26,9 +28,9 @@ public class PluginProvider extends BroadcastReceiver {
 		try {
 			info = context.getPackageManager()
 				.getReceiverInfo(new ComponentName(context, this.getClass()),
-								 PackageManager.GET_META_DATA);
+									PackageManager.GET_META_DATA);
 		} catch (PackageManager.NameNotFoundException e) {
-			Log.e(this.toString(), "Error finding my own info?", e);
+			Log.e(LOG_TAG, "Error finding my own info?", e);
 			return;
 		}
 
@@ -36,17 +38,17 @@ public class PluginProvider extends BroadcastReceiver {
 		if (mylib != null) {
 			ArrayList<String> all_libs =
 				extras.getStringArrayList(ScummVMApplication.EXTRA_UNPACK_LIBS);
-
 			all_libs.add(new Uri.Builder()
-						 .scheme("plugin")
-						 .authority(context.getPackageName())
-						 .path(mylib)
-						 .toString());
+							.scheme("plugin")
+							.authority(context.getPackageName())
+							.path(mylib)
+							.toString());
 
 			extras.putStringArrayList(ScummVMApplication.EXTRA_UNPACK_LIBS,
-									  all_libs);
+										all_libs);
 		}
 
 		setResultExtras(extras);
 	}
 }
+

@@ -23,6 +23,8 @@
  *
  */
 
+#include "common/textconsole.h"
+
 #include "engines/darkseed2/talk.h"
 #include "engines/darkseed2/imageconverter.h"
 #include "engines/darkseed2/resources.h"

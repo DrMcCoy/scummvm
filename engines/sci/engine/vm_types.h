@@ -37,10 +37,34 @@ struct reg_t {
 	SegmentId segment;
 	uint16 offset;
 
-	bool isNull() const {
-		return !(offset || segment);
+	inline bool isNull() const {
+		return (offset | segment) == 0;
 	}
 
+	inline uint16 toUint16() const {
+		return offset;
+	}
+
+	inline int16 toSint16() const {
+		return (int16)offset;
+	}
+
+	bool isNumber() const {
+		return segment == 0;
+	}
+
+	bool isPointer() const {
+		return segment != 0 && segment != 0xFFFF;
+	}
+
+	uint16 requireUint16() const;
+	int16 requireSint16() const;
+
+	inline bool isInitialized() const {
+		return segment != 0xFFFF;
+	}
+
+	// Comparison operators
 	bool operator==(const reg_t &x) const {
 		return (offset == x.offset) && (segment == x.segment);
 	}
@@ -49,13 +73,73 @@ struct reg_t {
 		return (offset != x.offset) || (segment != x.segment);
 	}
 
-	uint16 toUint16() const {
-		return offset;
+	bool operator>(const reg_t right) const {
+		return cmp(right, false) > 0;
 	}
 
-	int16 toSint16() const {
-		return (int16) offset;
+	bool operator>=(const reg_t right) const {
+		return cmp(right, false) >= 0;
 	}
+
+	bool operator<(const reg_t right) const {
+		return cmp(right, false) < 0;
+	}
+
+	bool operator<=(const reg_t right) const {
+		return cmp(right, false) <= 0;
+	}
+
+	// Same as the normal operators, but perform unsigned
+	// integer checking
+	bool gtU(const reg_t right) const {
+		return cmp(right, true) > 0;
+	}
+
+	bool geU(const reg_t right) const {
+		return cmp(right, true) >= 0;
+	}
+
+	bool ltU(const reg_t right) const {
+		return cmp(right, true) < 0;
+	}
+
+	bool leU(const reg_t right) const {
+		return cmp(right, true) <= 0;
+	}
+
+	// Arithmetic operators
+	reg_t operator+(const reg_t right) const;
+	reg_t operator-(const reg_t right) const;
+	reg_t operator*(const reg_t right) const;
+	reg_t operator/(const reg_t right) const;
+	reg_t operator%(const reg_t right) const;
+	reg_t operator>>(const reg_t right) const;
+	reg_t operator<<(const reg_t right) const;
+
+	reg_t operator+(int16 right) const;
+	reg_t operator-(int16 right) const;
+
+	void operator+=(const reg_t &right) { *this = *this + right; }
+	void operator-=(const reg_t &right) { *this = *this - right; }
+	void operator+=(int16 right) { *this = *this + right; }
+	void operator-=(int16 right) { *this = *this - right; }
+
+	// Boolean operators
+	reg_t operator&(const reg_t right) const;
+	reg_t operator|(const reg_t right) const;
+	reg_t operator^(const reg_t right) const;
+
+private:
+	/**
+	 * Compares two reg_t's.
+	 * Returns:
+	 * - a positive number if *this > right
+	 * - 0 if *this == right
+	 * - a negative number if *this < right
+	 */
+	int cmp(const reg_t right, bool treatAsUnsigned) const;
+	reg_t lookForWorkaround(const reg_t right) const;
+	bool pointerComparisonWithInteger(const reg_t right) const;
 };
 
 static inline reg_t make_reg(SegmentId segment, uint16 offset) {

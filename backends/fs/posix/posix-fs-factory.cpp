@@ -23,8 +23,13 @@
  */
 
 #if defined(UNIX)
+
+// Re-enable some forbidden symbols  to avoid clashes with stat.h and unistd.h.
+#define FORBIDDEN_SYMBOL_EXCEPTION_unistd_h
+#define FORBIDDEN_SYMBOL_EXCEPTION_mkdir
+
 #include "backends/fs/posix/posix-fs-factory.h"
-#include "backends/fs/posix/posix-fs.cpp"
+#include "backends/fs/posix/posix-fs.h"
 
 AbstractFSNode *POSIXFilesystemFactory::makeRootFileNode() const {
 	return new POSIXFilesystemNode("/");

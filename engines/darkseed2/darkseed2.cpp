@@ -32,6 +32,8 @@
 #include "common/EventRecorder.h"
 #include "common/debug-channels.h"
 #include "common/macresman.h"
+#include "common/textconsole.h"
+#include "common/error.h"
 
 #include "engines/util.h"
 
@@ -182,7 +184,6 @@ void DarkSeed2Engine::syncSoundSettings() {
 	_options->syncSettings();
 
 	_sound->syncSettings(*_options);
-	_music->syncSettings(*_options);
 	_talkMan->syncSettings(*_options);
 }
 
@@ -352,10 +353,7 @@ bool DarkSeed2Engine::doLoadDialog() {
 	dialog->setSaveMode(false);
 	int slot = dialog->runModalWithPluginAndTarget(plugin, ConfMan.getActiveDomainName());
 
-	bool result = false;
-	if (slot >= 0)
-		if (!loadGameState(slot))
-			result = true;
+	bool result = ((slot >= 0) && (loadGameState(slot).getCode() == Common::kNoError));
 
 	delete dialog;
 	return result;

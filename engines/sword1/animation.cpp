@@ -24,15 +24,16 @@
  */
 
 #include "common/file.h"
+#include "common/events.h"
+#include "common/keyboard.h"
+#include "common/textconsole.h"
 #include "sword1/sword1.h"
 #include "sword1/animation.h"
 #include "sword1/text.h"
-#include "audio/decoders/vorbis.h"
 
-#include "common/config-manager.h"
-#include "common/endian.h"
 #include "common/str.h"
 #include "common/system.h"
+#include "graphics/palette.h"
 #include "graphics/surface.h"
 
 #include "gui/message.h"
@@ -174,7 +175,7 @@ void MoviePlayer::play() {
 	// previous location would be momentarily drawn, before switching to
 	// the new one. Work around this by setting the palette to black.
 
-	byte pal[4 * 256];
+	byte pal[3 * 256];
 	memset(pal, 0, sizeof(pal));
 	_system->getPaletteManager()->setPalette(pal, 0, 256);
 }

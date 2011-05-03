@@ -32,7 +32,9 @@
 
 // This module contains all the scheduling and timing stuff
 
+#include "common/debug.h"
 #include "common/system.h"
+#include "common/textconsole.h"
 
 #include "hugo/hugo.h"
 #include "hugo/schedule.h"
@@ -48,11 +50,17 @@
 
 namespace Hugo {
 
-Scheduler::Scheduler(HugoEngine *vm) : _vm(vm), _actListArr(0), _curTick(0), _oldTime(0), _refreshTimeout(0) {
+Scheduler::Scheduler(HugoEngine *vm) : _vm(vm), _actListArr(0), _curTick(0), _oldTime(0), _refreshTimeout(0), _points(0), _screenActs(0) {
 	memset(_events, 0, sizeof(_events));
+	_numBonuses = 0;
+	_screenActsSize = 0;
 }
 
 Scheduler::~Scheduler() {
+}
+
+void Scheduler::initCypher() {
+	_cypher = getCypher();
 }
 
 /**
@@ -127,7 +135,7 @@ uint32 Scheduler::getDosTicks(const bool updateFl) {
 	if (_oldTime == 0)
 		_oldTime = (uint32) floor((double) (g_system->getMillis() * _vm->getTPS() / 1000));
 	// Calculate current wall time in ticks
-	t_now = g_system->getMillis() * _vm->getTPS() / 1000	;
+	t_now = g_system->getMillis() * _vm->getTPS() / 1000;
 
 	if ((t_now - _oldTime) > 0) {
 		_oldTime = t_now;
@@ -142,9 +150,9 @@ uint32 Scheduler::getDosTicks(const bool updateFl) {
 void Scheduler::processBonus(const int bonusIndex) {
 	debugC(1, kDebugSchedule, "processBonus(%d)", bonusIndex);
 
-	if (!_vm->_points[bonusIndex].scoredFl) {
-		_vm->adjustScore(_vm->_points[bonusIndex].score);
-		_vm->_points[bonusIndex].scoredFl = true;
+	if (!_points[bonusIndex].scoredFl) {
+		_vm->adjustScore(_points[bonusIndex].score);
+		_points[bonusIndex].scoredFl = true;
 	}
 }
 
@@ -186,7 +194,7 @@ void Scheduler::newScreen(const int screenIndex) {
 	_vm->readScreenFiles(screenIndex);
 
 	// 4. Schedule action list for this screen
-	_vm->screenActions(screenIndex);
+	_vm->_scheduler->screenActions(screenIndex);
 
 	// 5. Initialise prompt line and status line
 	_vm->_screen->initNewScreenDisplay();
@@ -245,579 +253,379 @@ void Scheduler::loadAlNewscrIndex(Common::ReadStream &in) {
 }
 
 /**
+ * Load Points from Hugo.dat
+ */
+void Scheduler::loadPoints(Common::SeekableReadStream &in) {
+	debugC(6, kDebugSchedule, "loadPoints(&in)");
+
+	for (int varnt = 0; varnt < _vm->_numVariant; varnt++) {
+		uint16 numElem = in.readUint16BE();
+		if (varnt == _vm->_gameVariant) {
+			_numBonuses = numElem;
+			_points = (point_t *)malloc(sizeof(point_t) * _numBonuses);
+			for (int i = 0; i < _numBonuses; i++) {
+				_points[i].score = in.readByte();
+				_points[i].scoredFl = false;
+			}
+		} else {
+			in.skip(numElem);
+		}
+	}
+}
+
+void Scheduler::readAct(Common::ReadStream &in, act &curAct) {
+	uint16 numSubAct;
+
+	curAct.a0.actType = (action_t) in.readByte();
+	switch (curAct.a0.actType) {
+	case ANULL:              // -1
+		break;
+	case ASCHEDULE:          // 0
+		curAct.a0.timer = in.readSint16BE();
+		curAct.a0.actIndex = in.readUint16BE();
+		break;
+	case START_OBJ:          // 1
+		curAct.a1.timer = in.readSint16BE();
+		curAct.a1.objIndex = in.readSint16BE();
+		curAct.a1.cycleNumb = in.readSint16BE();
+		curAct.a1.cycle = (cycle_t) in.readByte();
+		break;
+	case INIT_OBJXY:         // 2
+		curAct.a2.timer = in.readSint16BE();
+		curAct.a2.objIndex = in.readSint16BE();
+		curAct.a2.x = in.readSint16BE();
+		curAct.a2.y = in.readSint16BE();
+		break;
+	case PROMPT:             // 3
+		curAct.a3.timer = in.readSint16BE();
+		curAct.a3.promptIndex = in.readSint16BE();
+		numSubAct = in.readUint16BE();
+		curAct.a3.responsePtr = (int *) malloc(sizeof(int) * numSubAct);
+		for (int k = 0; k < numSubAct; k++)
+			curAct.a3.responsePtr[k] = in.readSint16BE();
+		curAct.a3.actPassIndex = in.readUint16BE();
+		curAct.a3.actFailIndex = in.readUint16BE();
+		curAct.a3.encodedFl = (in.readByte() == 1) ? true : false;
+		break;
+	case BKGD_COLOR:         // 4
+		curAct.a4.timer = in.readSint16BE();
+		curAct.a4.newBackgroundColor = in.readUint32BE();
+		break;
+	case INIT_OBJVXY:        // 5
+		curAct.a5.timer = in.readSint16BE();
+		curAct.a5.objIndex = in.readSint16BE();
+		curAct.a5.vx = in.readSint16BE();
+		curAct.a5.vy = in.readSint16BE();
+		break;
+	case INIT_CARRY:         // 6
+		curAct.a6.timer = in.readSint16BE();
+		curAct.a6.objIndex = in.readSint16BE();
+		curAct.a6.carriedFl = (in.readByte() == 1) ? true : false;
+		break;
+	case INIT_HF_COORD:      // 7
+		curAct.a7.timer = in.readSint16BE();
+		curAct.a7.objIndex = in.readSint16BE();
+		break;
+	case NEW_SCREEN:         // 8
+		curAct.a8.timer = in.readSint16BE();
+		curAct.a8.screenIndex = in.readSint16BE();
+		break;
+	case INIT_OBJSTATE:      // 9
+		curAct.a9.timer = in.readSint16BE();
+		curAct.a9.objIndex = in.readSint16BE();
+		curAct.a9.newState = in.readByte();
+		break;
+	case INIT_PATH:          // 10
+		curAct.a10.timer = in.readSint16BE();
+		curAct.a10.objIndex = in.readSint16BE();
+		curAct.a10.newPathType = in.readSint16BE();
+		curAct.a10.vxPath = in.readByte();
+		curAct.a10.vyPath = in.readByte();
+		break;
+	case COND_R:             // 11
+		curAct.a11.timer = in.readSint16BE();
+		curAct.a11.objIndex = in.readSint16BE();
+		curAct.a11.stateReq = in.readByte();
+		curAct.a11.actPassIndex = in.readUint16BE();
+		curAct.a11.actFailIndex = in.readUint16BE();
+		break;
+	case TEXT:               // 12
+		curAct.a12.timer = in.readSint16BE();
+		curAct.a12.stringIndex = in.readSint16BE();
+		break;
+	case SWAP_IMAGES:        // 13
+		curAct.a13.timer = in.readSint16BE();
+		curAct.a13.objIndex1 = in.readSint16BE();
+		curAct.a13.objIndex2 = in.readSint16BE();
+		break;
+	case COND_SCR:           // 14
+		curAct.a14.timer = in.readSint16BE();
+		curAct.a14.objIndex = in.readSint16BE();
+		curAct.a14.screenReq = in.readSint16BE();
+		curAct.a14.actPassIndex = in.readUint16BE();
+		curAct.a14.actFailIndex = in.readUint16BE();
+		break;
+	case AUTOPILOT:          // 15
+		curAct.a15.timer = in.readSint16BE();
+		curAct.a15.objIndex1 = in.readSint16BE();
+		curAct.a15.objIndex2 = in.readSint16BE();
+		curAct.a15.dx = in.readByte();
+		curAct.a15.dy = in.readByte();
+		break;
+	case INIT_OBJ_SEQ:       // 16
+		curAct.a16.timer = in.readSint16BE();
+		curAct.a16.objIndex = in.readSint16BE();
+		curAct.a16.seqIndex = in.readSint16BE();
+		break;
+	case SET_STATE_BITS:     // 17
+		curAct.a17.timer = in.readSint16BE();
+		curAct.a17.objIndex = in.readSint16BE();
+		curAct.a17.stateMask = in.readSint16BE();
+		break;
+	case CLEAR_STATE_BITS:   // 18
+		curAct.a18.timer = in.readSint16BE();
+		curAct.a18.objIndex = in.readSint16BE();
+		curAct.a18.stateMask = in.readSint16BE();
+		break;
+	case TEST_STATE_BITS:    // 19
+		curAct.a19.timer = in.readSint16BE();
+		curAct.a19.objIndex = in.readSint16BE();
+		curAct.a19.stateMask = in.readSint16BE();
+		curAct.a19.actPassIndex = in.readUint16BE();
+		curAct.a19.actFailIndex = in.readUint16BE();
+		break;
+	case DEL_EVENTS:         // 20
+		curAct.a20.timer = in.readSint16BE();
+		curAct.a20.actTypeDel = (action_t) in.readByte();
+		break;
+	case GAMEOVER:           // 21
+		curAct.a21.timer = in.readSint16BE();
+		break;
+	case INIT_HH_COORD:      // 22
+		curAct.a22.timer = in.readSint16BE();
+		curAct.a22.objIndex = in.readSint16BE();
+		break;
+	case EXIT:               // 23
+		curAct.a23.timer = in.readSint16BE();
+		break;
+	case BONUS:              // 24
+		curAct.a24.timer = in.readSint16BE();
+		curAct.a24.pointIndex = in.readSint16BE();
+		break;
+	case COND_BOX:           // 25
+		curAct.a25.timer = in.readSint16BE();
+		curAct.a25.objIndex = in.readSint16BE();
+		curAct.a25.x1 = in.readSint16BE();
+		curAct.a25.y1 = in.readSint16BE();
+		curAct.a25.x2 = in.readSint16BE();
+		curAct.a25.y2 = in.readSint16BE();
+		curAct.a25.actPassIndex = in.readUint16BE();
+		curAct.a25.actFailIndex = in.readUint16BE();
+		break;
+	case SOUND:              // 26
+		curAct.a26.timer = in.readSint16BE();
+		curAct.a26.soundIndex = in.readSint16BE();
+		break;
+	case ADD_SCORE:          // 27
+		curAct.a27.timer = in.readSint16BE();
+		curAct.a27.objIndex = in.readSint16BE();
+		break;
+	case SUB_SCORE:          // 28
+		curAct.a28.timer = in.readSint16BE();
+		curAct.a28.objIndex = in.readSint16BE();
+		break;
+	case COND_CARRY:         // 29
+		curAct.a29.timer = in.readSint16BE();
+		curAct.a29.objIndex = in.readSint16BE();
+		curAct.a29.actPassIndex = in.readUint16BE();
+		curAct.a29.actFailIndex = in.readUint16BE();
+		break;
+	case INIT_MAZE:          // 30
+		curAct.a30.timer = in.readSint16BE();
+		curAct.a30.mazeSize = in.readByte();
+		curAct.a30.x1 = in.readSint16BE();
+		curAct.a30.y1 = in.readSint16BE();
+		curAct.a30.x2 = in.readSint16BE();
+		curAct.a30.y2 = in.readSint16BE();
+		curAct.a30.x3 = in.readSint16BE();
+		curAct.a30.x4 = in.readSint16BE();
+		curAct.a30.firstScreenIndex = in.readByte();
+		break;
+	case EXIT_MAZE:          // 31
+		curAct.a31.timer = in.readSint16BE();
+		break;
+	case INIT_PRIORITY:      // 32
+		curAct.a32.timer = in.readSint16BE();
+		curAct.a32.objIndex = in.readSint16BE();
+		curAct.a32.priority = in.readByte();
+		break;
+	case INIT_SCREEN:        // 33
+		curAct.a33.timer = in.readSint16BE();
+		curAct.a33.objIndex = in.readSint16BE();
+		curAct.a33.screenIndex = in.readSint16BE();
+		break;
+	case AGSCHEDULE:         // 34
+		curAct.a34.timer = in.readSint16BE();
+		curAct.a34.actIndex = in.readUint16BE();
+		break;
+	case REMAPPAL:           // 35
+		curAct.a35.timer = in.readSint16BE();
+		curAct.a35.oldColorIndex = in.readSint16BE();
+		curAct.a35.newColorIndex = in.readSint16BE();
+		break;
+	case COND_NOUN:          // 36
+		curAct.a36.timer = in.readSint16BE();
+		curAct.a36.nounIndex = in.readUint16BE();
+		curAct.a36.actPassIndex = in.readUint16BE();
+		curAct.a36.actFailIndex = in.readUint16BE();
+		break;
+	case SCREEN_STATE:       // 37
+		curAct.a37.timer = in.readSint16BE();
+		curAct.a37.screenIndex = in.readSint16BE();
+		curAct.a37.newState = in.readByte();
+		break;
+	case INIT_LIPS:          // 38
+		curAct.a38.timer = in.readSint16BE();
+		curAct.a38.lipsObjIndex = in.readSint16BE();
+		curAct.a38.objIndex = in.readSint16BE();
+		curAct.a38.dxLips = in.readByte();
+		curAct.a38.dyLips = in.readByte();
+		break;
+	case INIT_STORY_MODE:    // 39
+		curAct.a39.timer = in.readSint16BE();
+		curAct.a39.storyModeFl = (in.readByte() == 1);
+		break;
+	case WARN:               // 40
+		curAct.a40.timer = in.readSint16BE();
+		curAct.a40.stringIndex = in.readSint16BE();
+		break;
+	case COND_BONUS:         // 41
+		curAct.a41.timer = in.readSint16BE();
+		curAct.a41.BonusIndex = in.readSint16BE();
+		curAct.a41.actPassIndex = in.readUint16BE();
+		curAct.a41.actFailIndex = in.readUint16BE();
+		break;
+	case TEXT_TAKE:          // 42
+		curAct.a42.timer = in.readSint16BE();
+		curAct.a42.objIndex = in.readSint16BE();
+		break;
+	case YESNO:              // 43
+		curAct.a43.timer = in.readSint16BE();
+		curAct.a43.promptIndex = in.readSint16BE();
+		curAct.a43.actYesIndex = in.readUint16BE();
+		curAct.a43.actNoIndex = in.readUint16BE();
+		break;
+	case STOP_ROUTE:         // 44
+		curAct.a44.timer = in.readSint16BE();
+		break;
+	case COND_ROUTE:         // 45
+		curAct.a45.timer = in.readSint16BE();
+		curAct.a45.routeIndex = in.readSint16BE();
+		curAct.a45.actPassIndex = in.readUint16BE();
+		curAct.a45.actFailIndex = in.readUint16BE();
+		break;
+	case INIT_JUMPEXIT:      // 46
+		curAct.a46.timer = in.readSint16BE();
+		curAct.a46.jumpExitFl = (in.readByte() == 1);
+		break;
+	case INIT_VIEW:          // 47
+		curAct.a47.timer = in.readSint16BE();
+		curAct.a47.objIndex = in.readSint16BE();
+		curAct.a47.viewx = in.readSint16BE();
+		curAct.a47.viewy = in.readSint16BE();
+		curAct.a47.direction = in.readSint16BE();
+		break;
+	case INIT_OBJ_FRAME:     // 48
+		curAct.a48.timer = in.readSint16BE();
+		curAct.a48.objIndex = in.readSint16BE();
+		curAct.a48.seqIndex = in.readSint16BE();
+		curAct.a48.frameIndex = in.readSint16BE();
+		break;
+	case OLD_SONG:           //49
+		curAct.a49.timer = in.readSint16BE();
+		curAct.a49.songIndex = in.readUint16BE();
+		break;
+	default:
+		error("Engine - Unknown action type encountered: %d", curAct.a0.actType);
+	}
+}
+
+/**
  * Load actListArr from Hugo.dat
  */
 void Scheduler::loadActListArr(Common::ReadStream &in) {
 	debugC(6, kDebugSchedule, "loadActListArr(&in)");
 
-	int numElem, numSubElem, numSubAct;
+	act tmpAct;
+
+	int numElem, numSubElem;
 	for (int varnt = 0; varnt < _vm->_numVariant; varnt++) {
 		numElem = in.readUint16BE();
 		if (varnt == _vm->_gameVariant) {
 			_actListArrSize = numElem;
 			_actListArr = (act **)malloc(sizeof(act *) * _actListArrSize);
-			for (int i = 0; i < _actListArrSize; i++) {
-				numSubElem = in.readUint16BE();
+		}
+
+		for (int i = 0; i < numElem; i++) {
+			numSubElem = in.readUint16BE();
+			if (varnt == _vm->_gameVariant)
 				_actListArr[i] = (act *) malloc(sizeof(act) * (numSubElem + 1));
-				for (int j = 0; j < numSubElem; j++) {
-					_actListArr[i][j].a0.actType = (action_t) in.readByte();
-					switch (_actListArr[i][j].a0.actType) {
-					case ANULL:              // -1
-						break;
-					case ASCHEDULE:          // 0
-						_actListArr[i][j].a0.timer = in.readSint16BE();
-						_actListArr[i][j].a0.actIndex = in.readUint16BE();
-						break;
-					case START_OBJ:          // 1
-						_actListArr[i][j].a1.timer = in.readSint16BE();
-						_actListArr[i][j].a1.objIndex = in.readSint16BE();
-						_actListArr[i][j].a1.cycleNumb = in.readSint16BE();
-						_actListArr[i][j].a1.cycle = (cycle_t) in.readByte();
-						break;
-					case INIT_OBJXY:         // 2
-						_actListArr[i][j].a2.timer = in.readSint16BE();
-						_actListArr[i][j].a2.objIndex = in.readSint16BE();
-						_actListArr[i][j].a2.x = in.readSint16BE();
-						_actListArr[i][j].a2.y = in.readSint16BE();
-						break;
-					case PROMPT:             // 3
-						_actListArr[i][j].a3.timer = in.readSint16BE();
-						_actListArr[i][j].a3.promptIndex = in.readSint16BE();
-						numSubAct = in.readUint16BE();
-						_actListArr[i][j].a3.responsePtr = (int *) malloc(sizeof(int) * numSubAct);
-						for (int k = 0; k < numSubAct; k++)
-							_actListArr[i][j].a3.responsePtr[k] = in.readSint16BE();
-						_actListArr[i][j].a3.actPassIndex = in.readUint16BE();
-						_actListArr[i][j].a3.actFailIndex = in.readUint16BE();
-						_actListArr[i][j].a3.encodedFl = (in.readByte() == 1) ? true : false;
-						break;
-					case BKGD_COLOR:         // 4
-						_actListArr[i][j].a4.timer = in.readSint16BE();
-						_actListArr[i][j].a4.newBackgroundColor = in.readUint32BE();
-						break;
-					case INIT_OBJVXY:        // 5
-						_actListArr[i][j].a5.timer = in.readSint16BE();
-						_actListArr[i][j].a5.objIndex = in.readSint16BE();
-						_actListArr[i][j].a5.vx = in.readSint16BE();
-						_actListArr[i][j].a5.vy = in.readSint16BE();
-						break;
-					case INIT_CARRY:         // 6
-						_actListArr[i][j].a6.timer = in.readSint16BE();
-						_actListArr[i][j].a6.objIndex = in.readSint16BE();
-						_actListArr[i][j].a6.carriedFl = (in.readByte() == 1) ? true : false;
-						break;
-					case INIT_HF_COORD:      // 7
-						_actListArr[i][j].a7.timer = in.readSint16BE();
-						_actListArr[i][j].a7.objIndex = in.readSint16BE();
-						break;
-					case NEW_SCREEN:         // 8
-						_actListArr[i][j].a8.timer = in.readSint16BE();
-						_actListArr[i][j].a8.screenIndex = in.readSint16BE();
-						break;
-					case INIT_OBJSTATE:      // 9
-						_actListArr[i][j].a9.timer = in.readSint16BE();
-						_actListArr[i][j].a9.objIndex = in.readSint16BE();
-						_actListArr[i][j].a9.newState = in.readByte();
-						break;
-					case INIT_PATH:          // 10
-						_actListArr[i][j].a10.timer = in.readSint16BE();
-						_actListArr[i][j].a10.objIndex = in.readSint16BE();
-						_actListArr[i][j].a10.newPathType = in.readSint16BE();
-						_actListArr[i][j].a10.vxPath = in.readByte();
-						_actListArr[i][j].a10.vyPath = in.readByte();
-						break;
-					case COND_R:             // 11
-						_actListArr[i][j].a11.timer = in.readSint16BE();
-						_actListArr[i][j].a11.objIndex = in.readSint16BE();
-						_actListArr[i][j].a11.stateReq = in.readByte();
-						_actListArr[i][j].a11.actPassIndex = in.readUint16BE();
-						_actListArr[i][j].a11.actFailIndex = in.readUint16BE();
-						break;
-					case TEXT:               // 12
-						_actListArr[i][j].a12.timer = in.readSint16BE();
-						_actListArr[i][j].a12.stringIndex = in.readSint16BE();
-						break;
-					case SWAP_IMAGES:        // 13
-						_actListArr[i][j].a13.timer = in.readSint16BE();
-						_actListArr[i][j].a13.objIndex1 = in.readSint16BE();
-						_actListArr[i][j].a13.objIndex2 = in.readSint16BE();
-						break;
-					case COND_SCR:           // 14
-						_actListArr[i][j].a14.timer = in.readSint16BE();
-						_actListArr[i][j].a14.objIndex = in.readSint16BE();
-						_actListArr[i][j].a14.screenReq = in.readSint16BE();
-						_actListArr[i][j].a14.actPassIndex = in.readUint16BE();
-						_actListArr[i][j].a14.actFailIndex = in.readUint16BE();
-						break;
-					case AUTOPILOT:          // 15
-						_actListArr[i][j].a15.timer = in.readSint16BE();
-						_actListArr[i][j].a15.objIndex1 = in.readSint16BE();
-						_actListArr[i][j].a15.objIndex2 = in.readSint16BE();
-						_actListArr[i][j].a15.dx = in.readByte();
-						_actListArr[i][j].a15.dy = in.readByte();
-						break;
-					case INIT_OBJ_SEQ:       // 16
-						_actListArr[i][j].a16.timer = in.readSint16BE();
-						_actListArr[i][j].a16.objIndex = in.readSint16BE();
-						_actListArr[i][j].a16.seqIndex = in.readSint16BE();
-						break;
-					case SET_STATE_BITS:     // 17
-						_actListArr[i][j].a17.timer = in.readSint16BE();
-						_actListArr[i][j].a17.objIndex = in.readSint16BE();
-						_actListArr[i][j].a17.stateMask = in.readSint16BE();
-						break;
-					case CLEAR_STATE_BITS:   // 18
-						_actListArr[i][j].a18.timer = in.readSint16BE();
-						_actListArr[i][j].a18.objIndex = in.readSint16BE();
-						_actListArr[i][j].a18.stateMask = in.readSint16BE();
-						break;
-					case TEST_STATE_BITS:    // 19
-						_actListArr[i][j].a19.timer = in.readSint16BE();
-						_actListArr[i][j].a19.objIndex = in.readSint16BE();
-						_actListArr[i][j].a19.stateMask = in.readSint16BE();
-						_actListArr[i][j].a19.actPassIndex = in.readUint16BE();
-						_actListArr[i][j].a19.actFailIndex = in.readUint16BE();
-						break;
-					case DEL_EVENTS:         // 20
-						_actListArr[i][j].a20.timer = in.readSint16BE();
-						_actListArr[i][j].a20.actTypeDel = (action_t) in.readByte();
-						break;
-					case GAMEOVER:           // 21
-						_actListArr[i][j].a21.timer = in.readSint16BE();
-						break;
-					case INIT_HH_COORD:      // 22
-						_actListArr[i][j].a22.timer = in.readSint16BE();
-						_actListArr[i][j].a22.objIndex = in.readSint16BE();
-						break;
-					case EXIT:               // 23
-						_actListArr[i][j].a23.timer = in.readSint16BE();
-						break;
-					case BONUS:              // 24
-						_actListArr[i][j].a24.timer = in.readSint16BE();
-						_actListArr[i][j].a24.pointIndex = in.readSint16BE();
-						break;
-					case COND_BOX:           // 25
-						_actListArr[i][j].a25.timer = in.readSint16BE();
-						_actListArr[i][j].a25.objIndex = in.readSint16BE();
-						_actListArr[i][j].a25.x1 = in.readSint16BE();
-						_actListArr[i][j].a25.y1 = in.readSint16BE();
-						_actListArr[i][j].a25.x2 = in.readSint16BE();
-						_actListArr[i][j].a25.y2 = in.readSint16BE();
-						_actListArr[i][j].a25.actPassIndex = in.readUint16BE();
-						_actListArr[i][j].a25.actFailIndex = in.readUint16BE();
-						break;
-					case SOUND:              // 26
-						_actListArr[i][j].a26.timer = in.readSint16BE();
-						_actListArr[i][j].a26.soundIndex = in.readSint16BE();
-						break;
-					case ADD_SCORE:          // 27
-						_actListArr[i][j].a27.timer = in.readSint16BE();
-						_actListArr[i][j].a27.objIndex = in.readSint16BE();
-						break;
-					case SUB_SCORE:          // 28
-						_actListArr[i][j].a28.timer = in.readSint16BE();
-						_actListArr[i][j].a28.objIndex = in.readSint16BE();
-						break;
-					case COND_CARRY:         // 29
-						_actListArr[i][j].a29.timer = in.readSint16BE();
-						_actListArr[i][j].a29.objIndex = in.readSint16BE();
-						_actListArr[i][j].a29.actPassIndex = in.readUint16BE();
-						_actListArr[i][j].a29.actFailIndex = in.readUint16BE();
-						break;
-					case INIT_MAZE:          // 30
-						_actListArr[i][j].a30.timer = in.readSint16BE();
-						_actListArr[i][j].a30.mazeSize = in.readByte();
-						_actListArr[i][j].a30.x1 = in.readSint16BE();
-						_actListArr[i][j].a30.y1 = in.readSint16BE();
-						_actListArr[i][j].a30.x2 = in.readSint16BE();
-						_actListArr[i][j].a30.y2 = in.readSint16BE();
-						_actListArr[i][j].a30.x3 = in.readSint16BE();
-						_actListArr[i][j].a30.x4 = in.readSint16BE();
-						_actListArr[i][j].a30.firstScreenIndex = in.readByte();
-						break;
-					case EXIT_MAZE:          // 31
-						_actListArr[i][j].a31.timer = in.readSint16BE();
-						break;
-					case INIT_PRIORITY:      // 32
-						_actListArr[i][j].a32.timer = in.readSint16BE();
-						_actListArr[i][j].a32.objIndex = in.readSint16BE();
-						_actListArr[i][j].a32.priority = in.readByte();
-						break;
-					case INIT_SCREEN:        // 33
-						_actListArr[i][j].a33.timer = in.readSint16BE();
-						_actListArr[i][j].a33.objIndex = in.readSint16BE();
-						_actListArr[i][j].a33.screenIndex = in.readSint16BE();
-						break;
-					case AGSCHEDULE:         // 34
-						_actListArr[i][j].a34.timer = in.readSint16BE();
-						_actListArr[i][j].a34.actIndex = in.readUint16BE();
-						break;
-					case REMAPPAL:           // 35
-						_actListArr[i][j].a35.timer = in.readSint16BE();
-						_actListArr[i][j].a35.oldColorIndex = in.readSint16BE();
-						_actListArr[i][j].a35.newColorIndex = in.readSint16BE();
-						break;
-					case COND_NOUN:          // 36
-						_actListArr[i][j].a36.timer = in.readSint16BE();
-						_actListArr[i][j].a36.nounIndex = in.readUint16BE();
-						_actListArr[i][j].a36.actPassIndex = in.readUint16BE();
-						_actListArr[i][j].a36.actFailIndex = in.readUint16BE();
-						break;
-					case SCREEN_STATE:       // 37
-						_actListArr[i][j].a37.timer = in.readSint16BE();
-						_actListArr[i][j].a37.screenIndex = in.readSint16BE();
-						_actListArr[i][j].a37.newState = in.readByte();
-						break;
-					case INIT_LIPS:          // 38
-						_actListArr[i][j].a38.timer = in.readSint16BE();
-						_actListArr[i][j].a38.lipsObjIndex = in.readSint16BE();
-						_actListArr[i][j].a38.objIndex = in.readSint16BE();
-						_actListArr[i][j].a38.dxLips = in.readByte();
-						_actListArr[i][j].a38.dyLips = in.readByte();
-						break;
-					case INIT_STORY_MODE:    // 39
-						_actListArr[i][j].a39.timer = in.readSint16BE();
-						_actListArr[i][j].a39.storyModeFl = (in.readByte() == 1);
-						break;
-					case WARN:               // 40
-						_actListArr[i][j].a40.timer = in.readSint16BE();
-						_actListArr[i][j].a40.stringIndex = in.readSint16BE();
-						break;
-					case COND_BONUS:         // 41
-						_actListArr[i][j].a41.timer = in.readSint16BE();
-						_actListArr[i][j].a41.BonusIndex = in.readSint16BE();
-						_actListArr[i][j].a41.actPassIndex = in.readUint16BE();
-						_actListArr[i][j].a41.actFailIndex = in.readUint16BE();
-						break;
-					case TEXT_TAKE:          // 42
-						_actListArr[i][j].a42.timer = in.readSint16BE();
-						_actListArr[i][j].a42.objIndex = in.readSint16BE();
-						break;
-					case YESNO:              // 43
-						_actListArr[i][j].a43.timer = in.readSint16BE();
-						_actListArr[i][j].a43.promptIndex = in.readSint16BE();
-						_actListArr[i][j].a43.actYesIndex = in.readUint16BE();
-						_actListArr[i][j].a43.actNoIndex = in.readUint16BE();
-						break;
-					case STOP_ROUTE:         // 44
-						_actListArr[i][j].a44.timer = in.readSint16BE();
-						break;
-					case COND_ROUTE:         // 45
-						_actListArr[i][j].a45.timer = in.readSint16BE();
-						_actListArr[i][j].a45.routeIndex = in.readSint16BE();
-						_actListArr[i][j].a45.actPassIndex = in.readUint16BE();
-						_actListArr[i][j].a45.actFailIndex = in.readUint16BE();
-						break;
-					case INIT_JUMPEXIT:      // 46
-						_actListArr[i][j].a46.timer = in.readSint16BE();
-						_actListArr[i][j].a46.jumpExitFl = (in.readByte() == 1);
-						break;
-					case INIT_VIEW:          // 47
-						_actListArr[i][j].a47.timer = in.readSint16BE();
-						_actListArr[i][j].a47.objIndex = in.readSint16BE();
-						_actListArr[i][j].a47.viewx = in.readSint16BE();
-						_actListArr[i][j].a47.viewy = in.readSint16BE();
-						_actListArr[i][j].a47.direction = in.readSint16BE();
-						break;
-					case INIT_OBJ_FRAME:     // 48
-						_actListArr[i][j].a48.timer = in.readSint16BE();
-						_actListArr[i][j].a48.objIndex = in.readSint16BE();
-						_actListArr[i][j].a48.seqIndex = in.readSint16BE();
-						_actListArr[i][j].a48.frameIndex = in.readSint16BE();
-						break;
-					case OLD_SONG:           //49
-						_actListArr[i][j].a49.timer = in.readSint16BE();
-						_actListArr[i][j].a49.songIndex = in.readUint16BE();
-						break;
-					default:
-						error("Engine - Unknown action type encountered: %d", _actListArr[i][j].a0.actType);
-					}
+			for (int j = 0; j < numSubElem; j++) {
+				if (varnt == _vm->_gameVariant) {
+					readAct(in, _actListArr[i][j]);
+				} else {
+					readAct(in, tmpAct);
+					if (tmpAct.a0.actType == PROMPT)
+						free(tmpAct.a3.responsePtr);
 				}
+			}
+
+			if (varnt == _vm->_gameVariant)
 				_actListArr[i][numSubElem].a0.actType = ANULL;
+		}
+	}
+}
+
+
+/**
+ * Read _screenActs
+ */
+void Scheduler::loadScreenAct(Common::SeekableReadStream &in) {
+	for (int varnt = 0; varnt < _vm->_numVariant; varnt++) {
+		uint16 numElem = in.readUint16BE();
+
+		if (varnt == _vm->_gameVariant) {
+			_screenActsSize = numElem;
+			_screenActs = (uint16 **)malloc(sizeof(uint16 *) * numElem);
+			for (int i = 0; i < numElem; i++) {
+				uint16 numSubElem = in.readUint16BE();
+				if (numSubElem == 0) {
+					_screenActs[i] = 0;
+				} else {
+					_screenActs[i] = (uint16 *)malloc(sizeof(uint16) * numSubElem);
+					for (int j = 0; j < numSubElem; j++)
+						_screenActs[i][j] = in.readUint16BE();
+				}
 			}
 		} else {
 			for (int i = 0; i < numElem; i++) {
-				numSubElem = in.readUint16BE();
-				for (int j = 0; j < numSubElem; j++) {
-					numSubAct = in.readByte();
-					switch (numSubAct) {
-					case ANULL:              // -1
-						break;
-					case ASCHEDULE:          // 0
-						in.readSint16BE();
-						in.readUint16BE();
-						break;
-					case START_OBJ:          // 1
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readByte();
-						break;
-					case INIT_OBJXY:         // 2
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case PROMPT:             // 3
-						in.readSint16BE();
-						in.readSint16BE();
-						numSubAct = in.readUint16BE();
-						for (int k = 0; k < numSubAct; k++)
-							in.readSint16BE();
-						in.readUint16BE();
-						in.readUint16BE();
-						in.readByte();
-						break;
-					case BKGD_COLOR:         // 4
-						in.readSint16BE();
-						in.readUint32BE();
-						break;
-					case INIT_OBJVXY:        // 5
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case INIT_CARRY:         // 6
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readByte();
-						break;
-					case INIT_HF_COORD:      // 7
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case NEW_SCREEN:         // 8
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case INIT_OBJSTATE:      // 9
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readByte();
-						break;
-					case INIT_PATH:          // 10
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readByte();
-						in.readByte();
-						break;
-					case COND_R:             // 11
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readByte();
-						in.readUint16BE();
-						in.readUint16BE();
-						break;
-					case TEXT:               // 12
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case SWAP_IMAGES:        // 13
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case COND_SCR:           // 14
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readUint16BE();
-						in.readUint16BE();
-						break;
-					case AUTOPILOT:          // 15
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readByte();
-						in.readByte();
-						break;
-					case INIT_OBJ_SEQ:       // 16
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case SET_STATE_BITS:     // 17
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case CLEAR_STATE_BITS:   // 18
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case TEST_STATE_BITS:    // 19
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readUint16BE();
-						in.readUint16BE();
-						break;
-					case DEL_EVENTS:         // 20
-						in.readSint16BE();
-						in.readByte();
-						break;
-					case GAMEOVER:           // 21
-						in.readSint16BE();
-						break;
-					case INIT_HH_COORD:      // 22
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case EXIT:               // 23
-						in.readSint16BE();
-						break;
-					case BONUS:              // 24
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case COND_BOX:           // 25
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readUint16BE();
-						in.readUint16BE();
-						break;
-					case SOUND:              // 26
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case ADD_SCORE:          // 27
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case SUB_SCORE:          // 28
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case COND_CARRY:         // 29
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readUint16BE();
-						in.readUint16BE();
-						break;
-					case INIT_MAZE:          // 30
-						in.readSint16BE();
-						in.readByte();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readByte();
-						break;
-					case EXIT_MAZE:          // 31
-						in.readSint16BE();
-						break;
-					case INIT_PRIORITY:      // 32
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readByte();
-						break;
-					case INIT_SCREEN:        // 33
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case AGSCHEDULE:         // 34
-						in.readSint16BE();
-						in.readUint16BE();
-						break;
-					case REMAPPAL:           // 35
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case COND_NOUN:          // 36
-						in.readSint16BE();
-						in.readUint16BE();
-						in.readUint16BE();
-						in.readUint16BE();
-						break;
-					case SCREEN_STATE:       // 37
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readByte();
-						break;
-					case INIT_LIPS:          // 38
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readByte();
-						in.readByte();
-						break;
-					case INIT_STORY_MODE:    // 39
-						in.readSint16BE();
-						in.readByte();
-						break;
-					case WARN:               // 40
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case COND_BONUS:         // 41
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readUint16BE();
-						in.readUint16BE();
-						break;
-					case TEXT_TAKE:          // 42
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case YESNO:              // 43
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readUint16BE();
-						in.readUint16BE();
-						break;
-					case STOP_ROUTE:         // 44
-						in.readSint16BE();
-						break;
-					case COND_ROUTE:         // 45
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readUint16BE();
-						in.readUint16BE();
-						break;
-					case INIT_JUMPEXIT:      // 46
-						in.readSint16BE();
-						in.readByte();
-						break;
-					case INIT_VIEW:          // 47
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case INIT_OBJ_FRAME:     // 48
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						in.readSint16BE();
-						break;
-					case OLD_SONG:           //49
-						in.readSint16BE();
-						in.readUint16BE();
-						break;
-					default:
-						error("Engine - Unknown action type encountered %d - variante %d pos %d.%d", numSubAct, varnt, i, j);
-					}
-				}
+				uint16 numSubElem = in.readUint16BE();
+				in.skip(numSubElem * sizeof(uint16));
 			}
 		}
 	}
 }
 
-void Scheduler::freeActListArr() {
+void Scheduler::freeScheduler() {
 	debugC(6, kDebugSchedule, "freeActListArr()");
+
+	free(_points);
+
+	if (_screenActs) {
+		for (int i = 0; i < _screenActsSize; i++)
+			free(_screenActs[i]);
+		free(_screenActs);
+	}
 
 	if (_actListArr) {
 		for (int i = 0; i < _actListArrSize; i++) {
@@ -832,38 +640,51 @@ void Scheduler::freeActListArr() {
 }
 
 /**
+ * Add action lists for this screen to event queue
+ */
+void Scheduler::screenActions(const int screenNum) {
+	debugC(1, kDebugEngine, "screenActions(%d)", screenNum);
+
+	uint16 *screenAct = _screenActs[screenNum];
+	if (screenAct) {
+		for (int i = 0; screenAct[i]; i++)
+			insertActionList(screenAct[i]);
+	}
+}
+
+/**
  * Maze mode is enabled.  Check to see whether hero has crossed the maze
  * bounding box, if so, go to the next room
  */
 void Scheduler::processMaze(const int x1, const int x2, const int y1, const int y2) {
 	debugC(1, kDebugSchedule, "processMaze");
 
-	if (x1 < _maze.x1) {
+	if (x1 < _vm->_maze.x1) {
 		// Exit west
 		_actListArr[_alNewscrIndex][3].a8.screenIndex = *_vm->_screen_p - 1;
-		_actListArr[_alNewscrIndex][0].a2.x = _maze.x2 - kShiftSize - (x2 - x1);
+		_actListArr[_alNewscrIndex][0].a2.x = _vm->_maze.x2 - kShiftSize - (x2 - x1);
 		_actListArr[_alNewscrIndex][0].a2.y = _vm->_hero->y;
 		_vm->_route->resetRoute();
 		insertActionList(_alNewscrIndex);
-	} else if (x2 > _maze.x2) {
+	} else if (x2 > _vm->_maze.x2) {
 		// Exit east
 		_actListArr[_alNewscrIndex][3].a8.screenIndex = *_vm->_screen_p + 1;
-		_actListArr[_alNewscrIndex][0].a2.x = _maze.x1 + kShiftSize;
+		_actListArr[_alNewscrIndex][0].a2.x = _vm->_maze.x1 + kShiftSize;
 		_actListArr[_alNewscrIndex][0].a2.y = _vm->_hero->y;
 		_vm->_route->resetRoute();
 		insertActionList(_alNewscrIndex);
-	} else if (y1 < _maze.y1 - kShiftSize) {
+	} else if (y1 < _vm->_maze.y1 - kShiftSize) {
 		// Exit north
-		_actListArr[_alNewscrIndex][3].a8.screenIndex = *_vm->_screen_p - _maze.size;
-		_actListArr[_alNewscrIndex][0].a2.x = _maze.x3;
-		_actListArr[_alNewscrIndex][0].a2.y = _maze.y2 - kShiftSize - (y2 - y1);
+		_actListArr[_alNewscrIndex][3].a8.screenIndex = *_vm->_screen_p - _vm->_maze.size;
+		_actListArr[_alNewscrIndex][0].a2.x = _vm->_maze.x3;
+		_actListArr[_alNewscrIndex][0].a2.y = _vm->_maze.y2 - kShiftSize - (y2 - y1);
 		_vm->_route->resetRoute();
 		insertActionList(_alNewscrIndex);
-	} else if (y2 > _maze.y2 - kShiftSize / 2) {
+	} else if (y2 > _vm->_maze.y2 - kShiftSize / 2) {
 		// Exit south
-		_actListArr[_alNewscrIndex][3].a8.screenIndex = *_vm->_screen_p + _maze.size;
-		_actListArr[_alNewscrIndex][0].a2.x = _maze.x4;
-		_actListArr[_alNewscrIndex][0].a2.y = _maze.y1 + kShiftSize;
+		_actListArr[_alNewscrIndex][3].a8.screenIndex = *_vm->_screen_p + _vm->_maze.size;
+		_actListArr[_alNewscrIndex][0].a2.x = _vm->_maze.x4;
+		_actListArr[_alNewscrIndex][0].a2.y = _vm->_maze.y1 + kShiftSize;
 		_vm->_route->resetRoute();
 		insertActionList(_alNewscrIndex);
 	}
@@ -889,73 +710,339 @@ void Scheduler::saveEvents(Common::WriteStream *f) {
 	f->writeSint16BE(tailIndex);
 
 	// Convert event ptrs to indexes
-	event_t  saveEventArr[kMaxEvents];              // Convert event ptrs to indexes
 	for (int16 i = 0; i < kMaxEvents; i++) {
 		event_t *wrkEvent = &_events[i];
-		saveEventArr[i] = *wrkEvent;
 
- 		// fix up action pointer (to do better)
+		// fix up action pointer (to do better)
 		int16 index, subElem;
-		findAction(saveEventArr[i].action, &index, &subElem);
-		saveEventArr[i].action = (act*)((index << 16)| subElem);
-
-		saveEventArr[i].prevEvent = (wrkEvent->prevEvent == 0) ? (event_t *) - 1 : (event_t *)(wrkEvent->prevEvent - _events);
-		saveEventArr[i].nextEvent = (wrkEvent->nextEvent == 0) ? (event_t *) - 1 : (event_t *)(wrkEvent->nextEvent - _events);
+		findAction(wrkEvent->action, &index, &subElem);
+		f->writeSint16BE(index);
+		f->writeSint16BE(subElem);
+		f->writeByte((wrkEvent->localActionFl) ? 1 : 0);
+		f->writeUint32BE(wrkEvent->time);
+		f->writeSint16BE((wrkEvent->prevEvent == 0) ? -1 : (wrkEvent->prevEvent - _events));
+		f->writeSint16BE((wrkEvent->nextEvent == 0) ? -1 : (wrkEvent->nextEvent - _events));
 	}
-
-	f->write(saveEventArr, sizeof(saveEventArr));
 }
 
-/** 
+/**
  * Restore the action data from file with handle f
  */
 
 void Scheduler::restoreActions(Common::ReadStream *f) {
-
 	for (int i = 0; i < _actListArrSize; i++) {
-	
-		// read all the sub elems
-		int j = 0;
-		do {
-
-			// handle special case for a3, keep list pointer
-			int* responsePtr = 0;
-			if (_actListArr[i][j].a3.actType == PROMPT) {
-				responsePtr = _actListArr[i][j].a3.responsePtr;
-			}
-
-			f->read(&_actListArr[i][j], sizeof(act));
-
-			// handle special case for a3, reset list pointer
-			if (_actListArr[i][j].a3.actType == PROMPT) {
-				_actListArr[i][j].a3.responsePtr = responsePtr;
-			}
-			j++;
-		} while (_actListArr[i][j-1].a0.actType != ANULL);
+		uint16 numSubElem = f->readUint16BE();
+		for (int j = 0; j < numSubElem; j++) {
+			readAct(*f, _actListArr[i][j]);
+		}
 	}
+}
+
+int16 Scheduler::calcMaxPoints() const {
+	int16 tmpScore = 0;
+	for (int i = 0; i < _numBonuses; i++)
+		tmpScore += _points[i].score;
+	return tmpScore;
 }
 
 /*
 * Save the action data in the file with handle f
 */
+void Scheduler::saveActions(Common::WriteStream *f) const {
+	byte  subElemType;
+	int16 nbrCpt;
+	uint16 nbrSubElem;
 
-void Scheduler::saveActions(Common::WriteStream* f) const {
 	for (int i = 0; i < _actListArrSize; i++) {
 		// write all the sub elems data
+		for (nbrSubElem = 1; _actListArr[i][nbrSubElem - 1].a0.actType != ANULL; nbrSubElem++)
+			;
 
-		int j = 0;
-		do {
-			f->write(&_actListArr[i][j], sizeof(act));
-			j++;
-		} while (_actListArr[i][j-1].a0.actType != ANULL);
+		f->writeUint16BE(nbrSubElem);
+		for (int j = 0; j < nbrSubElem; j++) {
+			subElemType = _actListArr[i][j].a0.actType;
+			f->writeByte(subElemType);
+			switch (subElemType) {
+			case ANULL:              // -1
+				break;
+			case ASCHEDULE:          // 0
+				f->writeSint16BE(_actListArr[i][j].a0.timer);
+				f->writeUint16BE(_actListArr[i][j].a0.actIndex);
+				break;
+			case START_OBJ:          // 1
+				f->writeSint16BE(_actListArr[i][j].a1.timer);
+				f->writeSint16BE(_actListArr[i][j].a1.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a1.cycleNumb);
+				f->writeByte(_actListArr[i][j].a1.cycle);
+				break;
+			case INIT_OBJXY:         // 2
+				f->writeSint16BE(_actListArr[i][j].a2.timer);
+				f->writeSint16BE(_actListArr[i][j].a2.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a2.x);
+				f->writeSint16BE(_actListArr[i][j].a2.y);
+				break;
+			case PROMPT:             // 3
+				f->writeSint16BE(_actListArr[i][j].a3.timer);
+				f->writeSint16BE(_actListArr[i][j].a3.promptIndex);
+				for (nbrCpt = 0; _actListArr[i][j].a3.responsePtr[nbrCpt] != -1; nbrCpt++)
+					;
+				nbrCpt++;
+				f->writeUint16BE(nbrCpt);
+				for (int k = 0; k < nbrCpt; k++)
+					f->writeSint16BE(_actListArr[i][j].a3.responsePtr[k]);
+				f->writeUint16BE(_actListArr[i][j].a3.actPassIndex);
+				f->writeUint16BE(_actListArr[i][j].a3.actFailIndex);
+				f->writeByte((_actListArr[i][j].a3.encodedFl) ? 1 : 0);
+				break;
+			case BKGD_COLOR:         // 4
+				f->writeSint16BE(_actListArr[i][j].a4.timer);
+				f->writeUint32BE(_actListArr[i][j].a4.newBackgroundColor);
+				break;
+			case INIT_OBJVXY:        // 5
+				f->writeSint16BE(_actListArr[i][j].a5.timer);
+				f->writeSint16BE(_actListArr[i][j].a5.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a5.vx);
+				f->writeSint16BE(_actListArr[i][j].a5.vy);
+				break;
+			case INIT_CARRY:         // 6
+				f->writeSint16BE(_actListArr[i][j].a6.timer);
+				f->writeSint16BE(_actListArr[i][j].a6.objIndex);
+				f->writeByte((_actListArr[i][j].a6.carriedFl) ? 1 : 0);
+				break;
+			case INIT_HF_COORD:      // 7
+				f->writeSint16BE(_actListArr[i][j].a7.timer);
+				f->writeSint16BE(_actListArr[i][j].a7.objIndex);
+				break;
+			case NEW_SCREEN:         // 8
+				f->writeSint16BE(_actListArr[i][j].a8.timer);
+				f->writeSint16BE(_actListArr[i][j].a8.screenIndex);
+				break;
+			case INIT_OBJSTATE:      // 9
+				f->writeSint16BE(_actListArr[i][j].a9.timer);
+				f->writeSint16BE(_actListArr[i][j].a9.objIndex);
+				f->writeByte(_actListArr[i][j].a9.newState);
+				break;
+			case INIT_PATH:          // 10
+				f->writeSint16BE(_actListArr[i][j].a10.timer);
+				f->writeSint16BE(_actListArr[i][j].a10.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a10.newPathType);
+				f->writeByte(_actListArr[i][j].a10.vxPath);
+				f->writeByte(_actListArr[i][j].a10.vyPath);
+				break;
+			case COND_R:             // 11
+				f->writeSint16BE(_actListArr[i][j].a11.timer);
+				f->writeSint16BE(_actListArr[i][j].a11.objIndex);
+				f->writeByte(_actListArr[i][j].a11.stateReq);
+				f->writeUint16BE(_actListArr[i][j].a11.actPassIndex);
+				f->writeUint16BE(_actListArr[i][j].a11.actFailIndex);
+				break;
+			case TEXT:               // 12
+				f->writeSint16BE(_actListArr[i][j].a12.timer);
+				f->writeSint16BE(_actListArr[i][j].a12.stringIndex);
+				break;
+			case SWAP_IMAGES:        // 13
+				f->writeSint16BE(_actListArr[i][j].a13.timer);
+				f->writeSint16BE(_actListArr[i][j].a13.objIndex1);
+				f->writeSint16BE(_actListArr[i][j].a13.objIndex2);
+				break;
+			case COND_SCR:           // 14
+				f->writeSint16BE(_actListArr[i][j].a14.timer);
+				f->writeSint16BE(_actListArr[i][j].a14.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a14.screenReq);
+				f->writeUint16BE(_actListArr[i][j].a14.actPassIndex);
+				f->writeUint16BE(_actListArr[i][j].a14.actFailIndex);
+				break;
+			case AUTOPILOT:          // 15
+				f->writeSint16BE(_actListArr[i][j].a15.timer);
+				f->writeSint16BE(_actListArr[i][j].a15.objIndex1);
+				f->writeSint16BE(_actListArr[i][j].a15.objIndex2);
+				f->writeByte(_actListArr[i][j].a15.dx);
+				f->writeByte(_actListArr[i][j].a15.dy);
+				break;
+			case INIT_OBJ_SEQ:       // 16
+				f->writeSint16BE(_actListArr[i][j].a16.timer);
+				f->writeSint16BE(_actListArr[i][j].a16.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a16.seqIndex);
+				break;
+			case SET_STATE_BITS:     // 17
+				f->writeSint16BE(_actListArr[i][j].a17.timer);
+				f->writeSint16BE(_actListArr[i][j].a17.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a17.stateMask);
+				break;
+			case CLEAR_STATE_BITS:   // 18
+				f->writeSint16BE(_actListArr[i][j].a18.timer);
+				f->writeSint16BE(_actListArr[i][j].a18.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a18.stateMask);
+				break;
+			case TEST_STATE_BITS:    // 19
+				f->writeSint16BE(_actListArr[i][j].a19.timer);
+				f->writeSint16BE(_actListArr[i][j].a19.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a19.stateMask);
+				f->writeUint16BE(_actListArr[i][j].a19.actPassIndex);
+				f->writeUint16BE(_actListArr[i][j].a19.actFailIndex);
+				break;
+			case DEL_EVENTS:         // 20
+				f->writeSint16BE(_actListArr[i][j].a20.timer);
+				f->writeByte(_actListArr[i][j].a20.actTypeDel);
+				break;
+			case GAMEOVER:           // 21
+				f->writeSint16BE(_actListArr[i][j].a21.timer);
+				break;
+			case INIT_HH_COORD:      // 22
+				f->writeSint16BE(_actListArr[i][j].a22.timer);
+				f->writeSint16BE(_actListArr[i][j].a22.objIndex);
+				break;
+			case EXIT:               // 23
+				f->writeSint16BE(_actListArr[i][j].a23.timer);
+				break;
+			case BONUS:              // 24
+				f->writeSint16BE(_actListArr[i][j].a24.timer);
+				f->writeSint16BE(_actListArr[i][j].a24.pointIndex);
+				break;
+			case COND_BOX:           // 25
+				f->writeSint16BE(_actListArr[i][j].a25.timer);
+				f->writeSint16BE(_actListArr[i][j].a25.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a25.x1);
+				f->writeSint16BE(_actListArr[i][j].a25.y1);
+				f->writeSint16BE(_actListArr[i][j].a25.x2);
+				f->writeSint16BE(_actListArr[i][j].a25.y2);
+				f->writeUint16BE(_actListArr[i][j].a25.actPassIndex);
+				f->writeUint16BE(_actListArr[i][j].a25.actFailIndex);
+				break;
+			case SOUND:              // 26
+				f->writeSint16BE(_actListArr[i][j].a26.timer);
+				f->writeSint16BE(_actListArr[i][j].a26.soundIndex);
+				break;
+			case ADD_SCORE:          // 27
+				f->writeSint16BE(_actListArr[i][j].a27.timer);
+				f->writeSint16BE(_actListArr[i][j].a27.objIndex);
+				break;
+			case SUB_SCORE:          // 28
+				f->writeSint16BE(_actListArr[i][j].a28.timer);
+				f->writeSint16BE(_actListArr[i][j].a28.objIndex);
+				break;
+			case COND_CARRY:         // 29
+				f->writeSint16BE(_actListArr[i][j].a29.timer);
+				f->writeSint16BE(_actListArr[i][j].a29.objIndex);
+				f->writeUint16BE(_actListArr[i][j].a29.actPassIndex);
+				f->writeUint16BE(_actListArr[i][j].a29.actFailIndex);
+				break;
+			case INIT_MAZE:          // 30
+				f->writeSint16BE(_actListArr[i][j].a30.timer);
+				f->writeByte(_actListArr[i][j].a30.mazeSize);
+				f->writeSint16BE(_actListArr[i][j].a30.x1);
+				f->writeSint16BE(_actListArr[i][j].a30.y1);
+				f->writeSint16BE(_actListArr[i][j].a30.x2);
+				f->writeSint16BE(_actListArr[i][j].a30.y2);
+				f->writeSint16BE(_actListArr[i][j].a30.x3);
+				f->writeSint16BE(_actListArr[i][j].a30.x4);
+				f->writeByte(_actListArr[i][j].a30.firstScreenIndex);
+				break;
+			case EXIT_MAZE:          // 31
+				f->writeSint16BE(_actListArr[i][j].a31.timer);
+				break;
+			case INIT_PRIORITY:      // 32
+				f->writeSint16BE(_actListArr[i][j].a32.timer);
+				f->writeSint16BE(_actListArr[i][j].a32.objIndex);
+				f->writeByte(_actListArr[i][j].a32.priority);
+				break;
+			case INIT_SCREEN:        // 33
+				f->writeSint16BE(_actListArr[i][j].a33.timer);
+				f->writeSint16BE(_actListArr[i][j].a33.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a33.screenIndex);
+				break;
+			case AGSCHEDULE:         // 34
+				f->writeSint16BE(_actListArr[i][j].a34.timer);
+				f->writeUint16BE(_actListArr[i][j].a34.actIndex);
+				break;
+			case REMAPPAL:           // 35
+				f->writeSint16BE(_actListArr[i][j].a35.timer);
+				f->writeSint16BE(_actListArr[i][j].a35.oldColorIndex);
+				f->writeSint16BE(_actListArr[i][j].a35.newColorIndex);
+				break;
+			case COND_NOUN:          // 36
+				f->writeSint16BE(_actListArr[i][j].a36.timer);
+				f->writeUint16BE(_actListArr[i][j].a36.nounIndex);
+				f->writeUint16BE(_actListArr[i][j].a36.actPassIndex);
+				f->writeUint16BE(_actListArr[i][j].a36.actFailIndex);
+				break;
+			case SCREEN_STATE:       // 37
+				f->writeSint16BE(_actListArr[i][j].a37.timer);
+				f->writeSint16BE(_actListArr[i][j].a37.screenIndex);
+				f->writeByte(_actListArr[i][j].a37.newState);
+				break;
+			case INIT_LIPS:          // 38
+				f->writeSint16BE(_actListArr[i][j].a38.timer);
+				f->writeSint16BE(_actListArr[i][j].a38.lipsObjIndex);
+				f->writeSint16BE(_actListArr[i][j].a38.objIndex);
+				f->writeByte(_actListArr[i][j].a38.dxLips);
+				f->writeByte(_actListArr[i][j].a38.dyLips);
+				break;
+			case INIT_STORY_MODE:    // 39
+				f->writeSint16BE(_actListArr[i][j].a39.timer);
+				f->writeByte((_actListArr[i][j].a39.storyModeFl) ? 1 : 0);
+				break;
+			case WARN:               // 40
+				f->writeSint16BE(_actListArr[i][j].a40.timer);
+				f->writeSint16BE(_actListArr[i][j].a40.stringIndex);
+				break;
+			case COND_BONUS:         // 41
+				f->writeSint16BE(_actListArr[i][j].a41.timer);
+				f->writeSint16BE(_actListArr[i][j].a41.BonusIndex);
+				f->writeUint16BE(_actListArr[i][j].a41.actPassIndex);
+				f->writeUint16BE(_actListArr[i][j].a41.actFailIndex);
+				break;
+			case TEXT_TAKE:          // 42
+				f->writeSint16BE(_actListArr[i][j].a42.timer);
+				f->writeSint16BE(_actListArr[i][j].a42.objIndex);
+				break;
+			case YESNO:              // 43
+				f->writeSint16BE(_actListArr[i][j].a43.timer);
+				f->writeSint16BE(_actListArr[i][j].a43.promptIndex);
+				f->writeUint16BE(_actListArr[i][j].a43.actYesIndex);
+				f->writeUint16BE(_actListArr[i][j].a43.actNoIndex);
+				break;
+			case STOP_ROUTE:         // 44
+				f->writeSint16BE(_actListArr[i][j].a44.timer);
+				break;
+			case COND_ROUTE:         // 45
+				f->writeSint16BE(_actListArr[i][j].a45.timer);
+				f->writeSint16BE(_actListArr[i][j].a45.routeIndex);
+				f->writeUint16BE(_actListArr[i][j].a45.actPassIndex);
+				f->writeUint16BE(_actListArr[i][j].a45.actFailIndex);
+				break;
+			case INIT_JUMPEXIT:      // 46
+				f->writeSint16BE(_actListArr[i][j].a46.timer);
+				f->writeByte((_actListArr[i][j].a46.jumpExitFl) ? 1 : 0);
+				break;
+			case INIT_VIEW:          // 47
+				f->writeSint16BE(_actListArr[i][j].a47.timer);
+				f->writeSint16BE(_actListArr[i][j].a47.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a47.viewx);
+				f->writeSint16BE(_actListArr[i][j].a47.viewy);
+				f->writeSint16BE(_actListArr[i][j].a47.direction);
+				break;
+			case INIT_OBJ_FRAME:     // 48
+				f->writeSint16BE(_actListArr[i][j].a48.timer);
+				f->writeSint16BE(_actListArr[i][j].a48.objIndex);
+				f->writeSint16BE(_actListArr[i][j].a48.seqIndex);
+				f->writeSint16BE(_actListArr[i][j].a48.frameIndex);
+				break;
+			case OLD_SONG:           // 49, Added by Strangerke for DOS versions
+				f->writeSint16BE(_actListArr[i][j].a49.timer);
+				f->writeUint16BE(_actListArr[i][j].a49.songIndex);
+				break;
+			default:
+				error("Unknown action %d", subElemType);
+			}
+		}
 	}
 }
 
 /*
 * Find the index in the action list to be able to serialize the action to save game
 */
-
-void Scheduler::findAction(act* action, int16* index, int16* subElem) {
+void Scheduler::findAction(const act* action, int16* index, int16* subElem) {
 	
 	assert(index && subElem);
 	if (!action) {
@@ -979,34 +1066,57 @@ void Scheduler::findAction(act* action, int16* index, int16* subElem) {
 	assert(0);
 }
 
+void Scheduler::saveSchedulerData(Common::WriteStream *out) {
+	savePoints(out);
+
+	// Now save current time and all current events in event queue
+	saveEvents(out);
+
+	// Now save current actions
+	saveActions(out);
+}
+
+void Scheduler::restoreSchedulerData(Common::ReadStream *in) {
+	restorePoints(in);
+	_vm->_object->restoreAllSeq();
+
+	// Now restore time of the save and the event queue
+	restoreEvents(in);
+
+	// Now restore actions
+	restoreActions(in);
+}
+
 /**
  * Restore the event list from file with handle f
  */
 void Scheduler::restoreEvents(Common::ReadStream *f) {
 	debugC(1, kDebugSchedule, "restoreEvents");
 
-	event_t  savedEvents[kMaxEvents];               // Convert event ptrs to indexes
-
 	uint32 saveTime = f->readUint32BE();            // time of save
 	int16 freeIndex = f->readSint16BE();            // Free list index
 	int16 headIndex = f->readSint16BE();            // Head of list index
 	int16 tailIndex = f->readSint16BE();            // Tail of list index
-	f->read(savedEvents, sizeof(savedEvents));
 
-	event_t *wrkEvent;
 	// Restore events indexes to pointers
 	for (int i = 0; i < kMaxEvents; i++) {
-		wrkEvent = &savedEvents[i];
-		_events[i] = *wrkEvent;
+		int16 index = f->readSint16BE();
+		int16 subElem = f->readSint16BE();
+
 		// fix up action pointer (to do better)
-		int32 val = (size_t)_events[i].action;
-		if ((val & 0xffff) == 0xffff) {
+		if ((index == -1) && (subElem == -1))
 			_events[i].action = 0;
-		} else {
-			_events[i].action = (act*)&_actListArr[val >> 16][val & 0xffff];
-		}
-		_events[i].prevEvent = (wrkEvent->prevEvent == (event_t *) - 1) ? (event_t *)0 : &_events[(size_t)wrkEvent->prevEvent ];
-		_events[i].nextEvent = (wrkEvent->nextEvent == (event_t *) - 1) ? (event_t *)0 : &_events[(size_t)wrkEvent->nextEvent ];
+		else
+			_events[i].action = (act*)&_actListArr[index][subElem];
+
+		_events[i].localActionFl = (f->readByte() == 1) ? true : false; 
+		_events[i].time = f->readUint32BE();
+
+		int16 prevIndex = f->readSint16BE();
+		int16 nextIndex = f->readSint16BE();
+
+		_events[i].prevEvent = (prevIndex == -1) ? (event_t *)0 : &_events[prevIndex];
+		_events[i].nextEvent = (nextIndex == -1) ? (event_t *)0 : &_events[nextIndex];
 	}
 	_freeEvent = (freeIndex == -1) ? 0 : &_events[freeIndex];
 	_headEvent = (headIndex == -1) ? 0 : &_events[headIndex];
@@ -1014,7 +1124,7 @@ void Scheduler::restoreEvents(Common::ReadStream *f) {
 
 	// Adjust times to fit our time
 	uint32 curTime = getTicks();
-	wrkEvent = _headEvent;                              // The earliest event
+	event_t *wrkEvent = _headEvent;                 // The earliest event
 	while (wrkEvent) {                              // While mature events found
 		wrkEvent->time = wrkEvent->time - saveTime + curTime;
 		wrkEvent = wrkEvent->nextEvent;
@@ -1035,6 +1145,10 @@ void Scheduler::insertAction(act *action) {
 	case AGSCHEDULE:
 		curEvent->localActionFl = false;            // Lasts over a new screen
 		break;
+	// Workaround: When dying, switch to storyMode in order to block the keyboard.
+	case GAMEOVER:
+		_vm->getGameStatus().storyModeFl = true;
+	// No break on purpose
 	default:
 		curEvent->localActionFl = true;             // Rest are for current screen only
 		break;
@@ -1134,7 +1248,7 @@ event_t *Scheduler::doAction(event_t *curEvent) {
 			insertActionList(action->a11.actFailIndex);
 		break;
 	case TEXT:                                      // act12: Text box (CF WARN)
-		Utils::Box(kBoxAny, "%s", _vm->_file->fetchString(action->a12.stringIndex));   // Fetch string from file
+		Utils::notifyBox(_vm->_file->fetchString(action->a12.stringIndex));   // Fetch string from file
 		break;
 	case SWAP_IMAGES:                               // act13: Swap 2 object images
 		_vm->_object->swapImages(action->a13.objIndex1, action->a13.objIndex2);
@@ -1213,18 +1327,18 @@ event_t *Scheduler::doAction(event_t *curEvent) {
 			insertActionList(action->a29.actFailIndex);
 		break;
 	case INIT_MAZE:                                 // act30: Enable and init maze structure
-		_maze.enabledFl = true;
-		_maze.size = action->a30.mazeSize;
-		_maze.x1 = action->a30.x1;
-		_maze.y1 = action->a30.y1;
-		_maze.x2 = action->a30.x2;
-		_maze.y2 = action->a30.y2;
-		_maze.x3 = action->a30.x3;
-		_maze.x4 = action->a30.x4;
-		_maze.firstScreenIndex = action->a30.firstScreenIndex;
+		_vm->_maze.enabledFl = true;
+		_vm->_maze.size = action->a30.mazeSize;
+		_vm->_maze.x1 = action->a30.x1;
+		_vm->_maze.y1 = action->a30.y1;
+		_vm->_maze.x2 = action->a30.x2;
+		_vm->_maze.y2 = action->a30.y2;
+		_vm->_maze.x3 = action->a30.x3;
+		_vm->_maze.x4 = action->a30.x4;
+		_vm->_maze.firstScreenIndex = action->a30.firstScreenIndex;
 		break;
 	case EXIT_MAZE:                                 // act31: Disable maze mode
-		_maze.enabledFl = false;
+		_vm->_maze.enabledFl = false;
 		break;
 	case INIT_PRIORITY:
 		_vm->_object->_objects[action->a32.objIndex].priority = action->a32.priority;
@@ -1259,19 +1373,19 @@ event_t *Scheduler::doAction(event_t *curEvent) {
 		gameStatus.storyModeFl = action->a39.storyModeFl;
 		break;
 	case WARN:                                      // act40: Text box (CF TEXT)
-		Utils::Box(kBoxOk, "%s", _vm->_file->fetchString(action->a40.stringIndex));
+		Utils::notifyBox(_vm->_file->fetchString(action->a40.stringIndex));
 		break;
 	case COND_BONUS:                                // act41: Perform action if got bonus
-		if (_vm->_points[action->a41.BonusIndex].scoredFl)
+		if (_points[action->a41.BonusIndex].scoredFl)
 			insertActionList(action->a41.actPassIndex);
 		else
 			insertActionList(action->a41.actFailIndex);
 		break;
 	case TEXT_TAKE:                                 // act42: Text box with "take" message
-		Utils::Box(kBoxAny, TAKE_TEXT, _vm->_text->getNoun(_vm->_object->_objects[action->a42.objIndex].nounIndex, TAKE_NAME));
+		Utils::notifyBox(Common::String::format(TAKE_TEXT, _vm->_text->getNoun(_vm->_object->_objects[action->a42.objIndex].nounIndex, TAKE_NAME)));
 		break;
 	case YESNO:                                     // act43: Prompt user for Yes or No
-		if (Utils::Box(kBoxYesNo, "%s", _vm->_file->fetchString(action->a43.promptIndex)) != 0)
+		if (Utils::yesNoBox(_vm->_file->fetchString(action->a43.promptIndex)))
 			insertActionList(action->a43.actYesIndex);
 		else
 			insertActionList(action->a43.actNoIndex);
@@ -1354,6 +1468,9 @@ void Scheduler::delQueue(event_t *curEvent) {
 	_freeEvent = curEvent;
 }
 
+/**
+ * Delete all the active events of a given type
+ */
 void Scheduler::delEventType(const action_t actTypeDel) {
 	// Note: actions are not deleted here, simply turned into NOPs!
 	event_t *wrkEvent = _headEvent;                 // The earliest event
@@ -1364,6 +1481,27 @@ void Scheduler::delEventType(const action_t actTypeDel) {
 		if (wrkEvent->action->a20.actType == actTypeDel)
 			delQueue(wrkEvent);
 		wrkEvent = saveEvent;
+	}
+}
+
+/**
+ * Save the points table
+ */
+void Scheduler::savePoints(Common::WriteStream *out) const {
+	for (int i = 0; i < _numBonuses; i++) {
+		out->writeByte(_points[i].score);
+		out->writeByte((_points[i].scoredFl) ? 1 : 0);
+	}
+}
+
+/**
+ * Restore the points table
+ */
+void Scheduler::restorePoints(Common::ReadStream *in) {
+	// Restore points table
+	for (int i = 0; i < _numBonuses; i++) {
+		_points[i].score = in->readByte();
+		_points[i].scoredFl = (in->readByte() == 1);
 	}
 }
 
@@ -1397,28 +1535,22 @@ void Scheduler_v1d::runScheduler() {
 }
 
 void Scheduler_v1d::promptAction(act *action) {
-	Utils::Box(kBoxPrompt, "%s", _vm->_file->fetchString(action->a3.promptIndex));
+	Common::String response;
 
-	warning("STUB: doAction(act3)");
-	// TODO: The answer of the player is not handled currently! Once it'll be read in the messageBox, uncomment this block
-#if 0
-	char response[256];
-	// TODO: Put user input in response
+	response = Utils::promptBox(_vm->_file->fetchString(action->a3.promptIndex));
 
-	Utils::strlwr(response);
-	if (action->a3.encodedFl) {
-		warning("Encrypted flag set");
-		decodeString(response);
-	}
+	response.toLowercase();
 
-	if (strstr(response, _vm->_file->fetchString(action->a3.responsePtr[0]))
+	char resp[256];
+	strncpy(resp, response.c_str(), 256);
+
+	if (action->a3.encodedFl)
+		decodeString(resp);
+
+	if (strstr(resp, _vm->_file->fetchString(action->a3.responsePtr[0])))
 		insertActionList(action->a3.actPassIndex);
 	else
 		insertActionList(action->a3.actFailIndex);
-#endif
-
-	// HACK: As the answer is not read, currently it's always considered correct
-	insertActionList(action->a3.actPassIndex);
 }
 
 /**
@@ -1427,11 +1559,9 @@ void Scheduler_v1d::promptAction(act *action) {
 void Scheduler_v1d::decodeString(char *line) {
 	debugC(1, kDebugSchedule, "decodeString(%s)", line);
 
-	static const Common::String cypher = getCypher();
-
 	uint16 linelength = strlen(line);
 	for(uint16 i = 0; i < linelength; i++) {
-		line[i] = (line[i] + cypher.c_str()[i % cypher.size()]) % '~';
+		line[i] = (line[i] + _cypher.c_str()[i % _cypher.size()]) % '~';
 		if (line[i] < ' ')
 			line[i] += ' ';
 	}
@@ -1448,19 +1578,22 @@ const char *Scheduler_v2d::getCypher() const {
 }
 
 void Scheduler_v2d::promptAction(act *action) {
-	Utils::Box(kBoxPrompt, "%s", _vm->_file->fetchString(action->a3.promptIndex));
-	warning("STUB: doAction(act3), expecting answer %s", _vm->_file->fetchString(action->a3.responsePtr[0]));
+	Common::String response;
 
-	// TODO: The answer of the player is not handled currently! Once it'll be read in the messageBox, uncomment this block
-#if 0
-	char *response = Utils::Box(BOX_PROMPT, "%s", _vm->_file->fetchString(action->a3.promptIndex));
+	response = Utils::promptBox(_vm->_file->fetchString(action->a3.promptIndex));
+	response.toLowercase();
+
+	debug(1, "doAction(act3), expecting answer %s", _vm->_file->fetchString(action->a3.responsePtr[0]));
 
 	bool  found = false;
-	char *tmpStr;                                   // General purpose string ptr
+	const char *tmpStr;                                   // General purpose string ptr
 
-	for (dx = 0; !found && (action->a3.responsePtr[dx] != -1); dx++) {
+	char resp[256];
+	strncpy(resp, response.c_str(), 256);
+
+	for (int dx = 0; !found && (action->a3.responsePtr[dx] != -1); dx++) {
 		tmpStr = _vm->_file->fetchString(action->a3.responsePtr[dx]);
-		if (strstr(Utils::strlwr(response) , tmpStr))
+		if (strstr(Utils::strlwr(resp), tmpStr))
 			found = true;
 	}
 
@@ -1468,10 +1601,6 @@ void Scheduler_v2d::promptAction(act *action) {
 		insertActionList(action->a3.actPassIndex);
 	else
 		insertActionList(action->a3.actFailIndex);
-#endif
-
-	// HACK: As the answer is not read, currently it's always considered correct
-	insertActionList(action->a3.actPassIndex);
 }
 
 /**
@@ -1480,11 +1609,10 @@ void Scheduler_v2d::promptAction(act *action) {
 void Scheduler_v2d::decodeString(char *line) {
 	debugC(1, kDebugSchedule, "decodeString(%s)", line);
 
-	static const Common::String cypher = getCypher();
-
 	int16 lineLength = strlen(line);
 	for (uint16 i = 0; i < lineLength; i++)
-		line[i] -= cypher.c_str()[i % cypher.size()];
+		line[i] -= _cypher.c_str()[i % _cypher.size()];
+
 	debugC(1, kDebugSchedule, "result : %s", line);
 }
 

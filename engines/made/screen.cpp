@@ -28,19 +28,20 @@
 #include "made/resource.h"
 #include "made/database.h"
 
+#include "graphics/palette.h"
+
 namespace Made {
 
 Screen::Screen(MadeEngine *vm) : _vm(vm) {
 
-	_screenPalette = new byte[256 * 4];
 	_palette = new byte[768];
 	_newPalette = new byte[768];
 
 	_backgroundScreen = new Graphics::Surface();
-	_backgroundScreen->create(320, 200, 1);
+	_backgroundScreen->create(320, 200, Graphics::PixelFormat::createFormatCLUT8());
 
 	_workScreen = new Graphics::Surface();
-	_workScreen->create(320, 200, 1);
+	_workScreen->create(320, 200, Graphics::PixelFormat::createFormatCLUT8());
 
 	_backgroundScreenDrawCtx.clipRect = Common::Rect(320, 200);
 	_workScreenDrawCtx.clipRect = Common::Rect(320, 200);
@@ -52,7 +53,7 @@ Screen::Screen(MadeEngine *vm) : _vm(vm) {
 	// Screen mask is only needed in v2 games
 	if (_vm->getGameID() != GID_RTZ) {
 		_screenMask = new Graphics::Surface();
-		_screenMask->create(320, 200, 1);
+		_screenMask->create(320, 200, Graphics::PixelFormat::createFormatCLUT8());
 		_maskDrawCtx.clipRect = Common::Rect(320, 200);
 		_maskDrawCtx.destSurface = _screenMask;
 	}
@@ -95,7 +96,6 @@ Screen::Screen(MadeEngine *vm) : _vm(vm) {
 
 Screen::~Screen() {
 
-	delete[] _screenPalette;
 	delete[] _palette;
 	delete[] _newPalette;
 
@@ -220,14 +220,7 @@ void Screen::drawSurface(Graphics::Surface *sourceSurface, int x, int y, int16 f
 }
 
 void Screen::setRGBPalette(byte *palRGB, int start, int count) {
-	for (int i = 0; i < count; i++) {
-		_screenPalette[i * 4 + 0] = palRGB[i * 3 + 0];
-		_screenPalette[i * 4 + 1] = palRGB[i * 3 + 1];
-		_screenPalette[i * 4 + 2] = palRGB[i * 3 + 2];
-		_screenPalette[i * 4 + 3] = 0;
-	}
-
-	_vm->_system->getPaletteManager()->setPalette(_screenPalette, start, count);
+	_vm->_system->getPaletteManager()->setPalette(palRGB, start, count);
 }
 
 uint16 Screen::updateChannel(uint16 channelIndex) {

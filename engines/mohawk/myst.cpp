@@ -25,7 +25,9 @@
 
 #include "common/config-manager.h"
 #include "common/debug-channels.h"
+#include "common/system.h"
 #include "common/translation.h"
+#include "common/textconsole.h"
 
 #include "mohawk/cursors.h"
 #include "mohawk/graphics.h"
@@ -417,45 +419,45 @@ void MohawkEngine_Myst::changeToStack(uint16 stack, uint16 card, uint16 linkSrcS
 	switch (_curStack) {
 	case kChannelwoodStack:
 		_gameState->_globals.currentAge = 4;
-		_scriptParser = new MystScriptParser_Channelwood(this);
+		_scriptParser = new MystStacks::Channelwood(this);
 		break;
 	case kCreditsStack:
-		_scriptParser = new MystScriptParser_Credits(this);
+		_scriptParser = new MystStacks::Credits(this);
 		break;
 	case kDemoStack:
-		_scriptParser = new MystScriptParser_Demo(this);
+		_scriptParser = new MystStacks::Demo(this);
 		break;
 	case kDniStack:
 		_gameState->_globals.currentAge = 6;
-		_scriptParser = new MystScriptParser_Dni(this);
+		_scriptParser = new MystStacks::Dni(this);
 		break;
 	case kIntroStack:
-		_scriptParser = new MystScriptParser_Intro(this);
+		_scriptParser = new MystStacks::Intro(this);
 		break;
 	case kMakingOfStack:
-		_scriptParser = new MystScriptParser_MakingOf(this);
+		_scriptParser = new MystStacks::MakingOf(this);
 		break;
 	case kMechanicalStack:
 		_gameState->_globals.currentAge = 3;
-		_scriptParser = new MystScriptParser_Mechanical(this);
+		_scriptParser = new MystStacks::Mechanical(this);
 		break;
 	case kMystStack:
 		_gameState->_globals.currentAge = 2;
-		_scriptParser = new MystScriptParser_Myst(this);
+		_scriptParser = new MystStacks::Myst(this);
 		break;
 	case kDemoPreviewStack:
-		_scriptParser = new MystScriptParser_Preview(this);
+		_scriptParser = new MystStacks::Preview(this);
 		break;
 	case kSeleniticStack:
 		_gameState->_globals.currentAge = 0;
-		_scriptParser = new MystScriptParser_Selenitic(this);
+		_scriptParser = new MystStacks::Selenitic(this);
 		break;
 	case kDemoSlidesStack:
-		_scriptParser = new MystScriptParser_Slides(this);
+		_scriptParser = new MystStacks::Slides(this);
 		break;
 	case kStoneshipStack:
 		_gameState->_globals.currentAge = 1;
-		_scriptParser = new MystScriptParser_Stoneship(this);
+		_scriptParser = new MystStacks::Stoneship(this);
 		break;
 	default:
 		error("Unknown Myst stack");
@@ -1141,20 +1143,6 @@ void MohawkEngine_Myst::loadResources() {
 	}
 
 	delete rlstStream;
-}
-
-void MohawkEngine_Myst::runLoadDialog() {
-	const Common::String gameId = ConfMan.get("gameid");
-
-	const EnginePlugin *plugin = 0;
-	EngineMan.findGame(gameId, &plugin);
-
-	pauseEngine(true);
-	int slot = _loadDialog->runModalWithPluginAndTarget(plugin, ConfMan.getActiveDomainName());
-	if (slot >= 0) {
-		// TODO
-	}
-	pauseEngine(false);
 }
 
 Common::Error MohawkEngine_Myst::loadGameState(int slot) {

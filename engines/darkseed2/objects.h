@@ -28,6 +28,7 @@
 
 #include "common/array.h"
 #include "common/list.h"
+#include "common/rect.h"
 
 #include "engines/darkseed2/darkseed2.h"
 

@@ -34,59 +34,26 @@
 #define HUGO_SOUND_H
 
 #include "audio/mixer.h"
-#include "audio/mididrv.h"
-#include "audio/midiparser.h"
+#include "audio/midiplayer.h"
 #include "audio/softsynth/pcspk.h"
 
 namespace Hugo {
 
-class MidiPlayer : public MidiDriver {
+class MidiPlayer : public Audio::MidiPlayer {
 public:
-	MidiPlayer(MidiDriver *driver);
-	~MidiPlayer();
+	MidiPlayer();
 
-	bool isPlaying() { return _isPlaying; }
-
-	int getVolume() { return _masterVolume; }
-
-	void adjustVolume(int diff);
 	void pause(bool p);
 	void play(uint8 *stream, uint16 size);
-	void setChannelVolume(int channel);
-	void setLooping(bool loop) { _isLooping = loop; }
-	void setVolume(int volume);
-	void stop();
-	void syncVolume();
-	void updateTimer();
 
-	// MidiDriver interface
-	int open();
+	uint32 getBaseTempo();
 
-	MidiChannel *allocateChannel() { return 0; }
-	MidiChannel *getPercussionChannel() { return 0; }
-
-	void close();
-	void metaEvent(byte type, byte *data, uint16 length);
-	void send(uint32 b);
-	void setTimerCallback(void *timerParam, void (*timerProc)(void *)) { }
-
-	uint32 getBaseTempo() { return _driver ? _driver->getBaseTempo() : 0; }
+	// Overload Audio::MidiPlayer method
+	virtual void sendToChannel(byte channel, uint32 b);
+	virtual void onTimer();
 
 private:
-	static void timerCallback(void *p);
-
-	static const int kNumbChannels = 16;
-
-	MidiDriver *_driver;
-	MidiParser *_parser;
-	uint8 *_midiData;
-	bool _isLooping;
-	bool _isPlaying;
 	bool _paused;
-	int _masterVolume;
-	MidiChannel *_channelsTable[kNumbChannels];
-	uint8 _channelsVolume[kNumbChannels];
-	Common::Mutex _mutex;
 };
 
 class SoundHandler {

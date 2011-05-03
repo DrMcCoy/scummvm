@@ -23,6 +23,8 @@
 *
 */
 
+#include "common/debug.h"
+
 #include "toon/state.h"
 #include "toon/toon.h"
 
@@ -54,7 +56,7 @@ void Location::load(Common::ReadStream *stream) {
 }
 
 State::State(void) {
-	for (int32 i = 0; i < 64; i++) {
+	for (int32 i = 0; i < 256; i++) {
 		_locations[i]._visited = false;
 		_locations[i]._numSceneAnimations = 0;
 		_locations[i]._numRifBoxes = 0;
@@ -80,6 +82,7 @@ State::State(void) {
 
 	_showConversationIcons = false;
 
+	_inMenu = false;
 	_inCloseUp = false;
 	_inConversation = false;
 
@@ -118,7 +121,6 @@ State::State(void) {
 }
 
 State::~State(void) {
-
 }
 
 int32 State::getGameFlag(int32 flagId) {

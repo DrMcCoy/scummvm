@@ -24,6 +24,7 @@
  */
 
 #include "common/str.h"
+#include "common/textconsole.h"
 
 #include "graphics/fontman.h"
 #include "graphics/font.h"

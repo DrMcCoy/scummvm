@@ -29,9 +29,13 @@ IP.BIN : ip.txt
 
 ip.txt : $(srcdir)/backends/platform/dc/ip.txt.in
 	if [ x"$(VER_EXTRA)" = xgit ]; then \
-	  if [ -z "$(VER_REV)" ]; then ver="GIT"; else ver="r$(VER_REV)"; fi; \
+	  ver="GIT"; \
 	else ver="V$(VERSION)"; fi; \
 	if expr "$$ver" : V...... >/dev/null; then \
 	  ver="V$(VER_MAJOR).$(VER_MINOR).$(VER_PATCH)"; fi; \
 	sed -e 's/[@]VERSION[@]/'"$$ver"/ -e 's/[@]DATE[@]/$(shell date '+%Y%m%d')/' < $< > $@
 
+
+dcdist : dist
+	mkdir -p dcdist/scummvm
+	cp scummvm.elf SCUMMVM.BIN IP.BIN *.PLG dcdist/scummvm/

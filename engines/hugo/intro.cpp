@@ -31,6 +31,7 @@
  */
 
 #include "common/system.h"
+#include "common/textconsole.h"
 
 #include "hugo/hugo.h"
 #include "hugo/intro.h"
@@ -41,10 +42,40 @@
 
 namespace Hugo {
 
-IntroHandler::IntroHandler(HugoEngine *vm) : _vm(vm) {
+IntroHandler::IntroHandler(HugoEngine *vm) : _vm(vm), _introX(0), _introY(0) {
+	_introXSize = 0;
 }
 
 IntroHandler::~IntroHandler() {
+}
+
+byte IntroHandler::getIntroSize() const {
+	return _introXSize;
+}
+
+/**
+ * Read _introX and _introY from hugo.dat
+ */
+void IntroHandler::loadIntroData(Common::SeekableReadStream &in) {
+	for (int varnt = 0; varnt < _vm->_numVariant; varnt++) {
+		int numRows = in.readUint16BE();
+		if (varnt == _vm->_gameVariant) {
+			_introXSize = numRows;
+			_introX = (byte *)malloc(sizeof(byte) * _introXSize);
+			_introY = (byte *)malloc(sizeof(byte) * _introXSize);
+			for (int i = 0; i < _introXSize; i++) {
+				_introX[i] = in.readByte();
+				_introY[i] = in.readByte();
+			}
+		} else {
+			in.skip(numRows * 2);
+		}
+	}
+}
+
+void IntroHandler::freeIntroData() {
+	free(_introX);
+	free(_introY);
 }
 
 intro_v1d::intro_v1d(HugoEngine *vm) : IntroHandler(vm) {
@@ -63,12 +94,12 @@ void intro_v1d::introInit() {
 	surf.h = 200;
 	surf.pixels = _vm->_screen->getFrontBuffer();
 	surf.pitch = 320;
-	surf.bytesPerPixel = 1;
+	surf.format = Graphics::PixelFormat::createFormatCLUT8();
 	_vm->_screen->displayList(kDisplayInit);
 }
 
 bool intro_v1d::introPlay() {
-	byte introSize = _vm->getIntroSize();
+	byte introSize = getIntroSize();
 
 	if (_vm->getGameStatus().skipIntroFl)
 		return true;
@@ -89,16 +120,20 @@ bool intro_v1d::introPlay() {
 				error("Unable to load font TMSRB.FON, face 'Tms Rmn', size 8");
 
 			char buffer[80];
-			if (_boot.registered)
+			if (_vm->_boot.registered == kRegRegistered)
 				strcpy(buffer, "Registered Version");
-			else
+			else if (_vm->_boot.registered == kRegShareware)
 				strcpy(buffer, "Shareware Version");
+			else if (_vm->_boot.registered == kRegFreeware)
+				strcpy(buffer, "Freeware Version");
+			else
+				error("Unknown registration flag in hugo.bsf: %d", _vm->_boot.registered);
 
 			font.drawString(&surf, buffer, 0, 163, 320, _TLIGHTMAGENTA, Graphics::kTextAlignCenter);
 			font.drawString(&surf, _vm->getCopyrightString(), 0, 176, 320, _TLIGHTMAGENTA, Graphics::kTextAlignCenter);
 
-			if (scumm_stricmp(_boot.distrib, "David P. Gray")) {
-				sprintf(buffer, "Distributed by %s.", _boot.distrib);
+			if ((*_vm->_boot.distrib != '\0') && (scumm_stricmp(_vm->_boot.distrib, "David P. Gray"))) {
+				sprintf(buffer, "Distributed by %s.", _vm->_boot.distrib);
 				font.drawString(&surf, buffer, 0, 75, 320, _TMAGENTA, Graphics::kTextAlignCenter);
 			}
 
@@ -213,7 +248,7 @@ void intro_v2d::introInit() {
 	surf.h = 200;
 	surf.pixels = _vm->_screen->getFrontBuffer();
 	surf.pitch = 320;
-	surf.bytesPerPixel = 1;
+	surf.format = Graphics::PixelFormat::createFormatCLUT8();
 
 	char buffer[128];
 
@@ -221,16 +256,16 @@ void intro_v2d::introInit() {
 	if (!font.loadFromFON("TMSRB.FON", Graphics::WinFontDirEntry("Tms Rmn", 8)))
 		error("Unable to load font TMSRB.FON, face 'Tms Rmn', size 8");
 
-	if (_boot.registered)
+	if (_vm->_boot.registered)
 		sprintf(buffer, "%s  Registered Version", _vm->getCopyrightString());
 	else
 		sprintf(buffer, "%s  Shareware Version", _vm->getCopyrightString());
 
 	font.drawString(&surf, buffer, 0, 186, 320, _TLIGHTRED, Graphics::kTextAlignCenter);
 
-	if (scumm_stricmp(_boot.distrib, "David P. Gray")) {
+	if ((*_vm->_boot.distrib != '\0') && (scumm_stricmp(_vm->_boot.distrib, "David P. Gray"))) {
 		// TROMAN, size 10-5
-		sprintf(buffer, "Distributed by %s.", _boot.distrib);
+		sprintf(buffer, "Distributed by %s.", _vm->_boot.distrib);
 		font.drawString(&surf, buffer, 0, 1, 320, _TLIGHTRED, Graphics::kTextAlignCenter);
 	}
 
@@ -259,10 +294,10 @@ void intro_v3d::introInit() {
 	surf.h = 200;
 	surf.pixels = _vm->_screen->getFrontBuffer();
 	surf.pitch = 320;
-	surf.bytesPerPixel = 1;
+	surf.format = Graphics::PixelFormat::createFormatCLUT8();
 
 	char buffer[128];
-	if (_boot.registered)
+	if (_vm->_boot.registered)
 		sprintf(buffer, "%s  Registered Version", _vm->getCopyrightString());
 	else
 		sprintf(buffer,"%s  Shareware Version", _vm->getCopyrightString());
@@ -273,8 +308,8 @@ void intro_v3d::introInit() {
 
 	font.drawString(&surf, buffer, 0, 190, 320, _TBROWN, Graphics::kTextAlignCenter);
 
-	if (scumm_stricmp(_boot.distrib, "David P. Gray")) {
-		sprintf(buffer, "Distributed by %s.", _boot.distrib);
+	if ((*_vm->_boot.distrib != '\0') && (scumm_stricmp(_vm->_boot.distrib, "David P. Gray"))) {
+		sprintf(buffer, "Distributed by %s.", _vm->_boot.distrib);
 		font.drawString(&surf, buffer, 0, 0, 320, _TBROWN, Graphics::kTextAlignCenter);
 	}
 
@@ -296,25 +331,25 @@ bool intro_v3d::introPlay() {
 	if (_vm->getGameStatus().skipIntroFl)
 		return true;
 
-	if (introTicks < _vm->getIntroSize()) {
-		font.drawString(&surf, ".", _vm->_introX[introTicks], _vm->_introY[introTicks] - kDibOffY, 320, _TBRIGHTWHITE);
+	if (introTicks < getIntroSize()) {
+		font.drawString(&surf, ".", _introX[introTicks], _introY[introTicks] - kDibOffY, 320, _TBRIGHTWHITE);
 		_vm->_screen->displayBackground();
 
 		// Text boxes at various times
 		switch (introTicks) {
 		case 4:
-			Utils::Box(kBoxOk, "%s", _vm->_text->getTextIntro(kIntro1));
+			Utils::notifyBox(_vm->_text->getTextIntro(kIntro1));
 			break;
 		case 9:
-			Utils::Box(kBoxOk, "%s", _vm->_text->getTextIntro(kIntro2));
+			Utils::notifyBox(_vm->_text->getTextIntro(kIntro2));
 			break;
 		case 35:
-			Utils::Box(kBoxOk, "%s", _vm->_text->getTextIntro(kIntro3));
+			Utils::notifyBox(_vm->_text->getTextIntro(kIntro3));
 			break;
 		}
 	}
 
-	return (++introTicks >= _vm->getIntroSize());
+	return (++introTicks >= getIntroSize());
 }
 
 intro_v1w::intro_v1w(HugoEngine *vm) : IntroHandler(vm) {
@@ -387,25 +422,25 @@ bool intro_v3w::introPlay() {
 	if (_vm->getGameStatus().skipIntroFl)
 		return true;
 
-	if (introTicks < _vm->getIntroSize()) {
+	if (introTicks < getIntroSize()) {
 		// Scale viewport x_intro,y_intro to screen (offsetting y)
-		_vm->_screen->writeStr(_vm->_introX[introTicks], _vm->_introY[introTicks] - kDibOffY, "x", _TBRIGHTWHITE);
+		_vm->_screen->writeStr(_introX[introTicks], _introY[introTicks] - kDibOffY, "x", _TBRIGHTWHITE);
 		_vm->_screen->displayBackground();
 
 		// Text boxes at various times
 		switch (introTicks) {
 		case 4:
-			Utils::Box(kBoxOk, "%s", _vm->_text->getTextIntro(kIntro1));
+			Utils::notifyBox(_vm->_text->getTextIntro(kIntro1));
 			break;
 		case 9:
-			Utils::Box(kBoxOk, "%s", _vm->_text->getTextIntro(kIntro2));
+			Utils::notifyBox(_vm->_text->getTextIntro(kIntro2));
 			break;
 		case 35:
-			Utils::Box(kBoxOk, "%s", _vm->_text->getTextIntro(kIntro3));
+			Utils::notifyBox(_vm->_text->getTextIntro(kIntro3));
 			break;
 		}
 	}
 
-	return (++introTicks >= _vm->getIntroSize());
+	return (++introTicks >= getIntroSize());
 }
 } // End of namespace Hugo

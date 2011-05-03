@@ -31,8 +31,9 @@
 #include "sky/skydefs.h"
 
 class OSystem;
+
 namespace Common {
-	struct Rect;
+struct Rect;
 }
 
 namespace Sky {
@@ -44,9 +45,8 @@ struct Compact;
 struct DataFileHeader;
 
 #define SCROLL_JUMP		16
-#define VGA_COLOURS		256
-#define GAME_COLOURS		240
-#define SEQ_DELAY 3
+#define VGA_COLORS		256
+#define GAME_COLORS		240
 
 #define FORE 1
 #define BACK 0
@@ -75,6 +75,7 @@ public:
 	void startSequenceItem(uint16 itemNum);
 	void stopSequence();
 	bool sequenceRunning() { return _seqInfo.running; }
+	void processSequence();
 	void waitForSequence();
 	uint32 seqFramesLeft() { return _seqInfo.framesLeft; }
 	uint8 *giveCurrent() { return _currentScreen; }
@@ -100,21 +101,19 @@ private:
 	OSystem *_system;
 	Disk *_skyDisk;
 	SkyCompact *_skyCompact;
-	static uint8 _top16Colours[16*3];
-	uint8 _palette[1024];
+	static uint8 _top16Colors[16 * 3];
+	uint8 _palette[VGA_COLORS * 3];
 	uint32 _currentPalette;
 	uint8 _seqGrid[20 * 12];
 
-	bool volatile _gotTick;
-	void waitForTimer();
-	void processSequence();
+	void waitForTick();
 
 	uint8 *_gameGrid;
 	uint8 *_currentScreen;
 	uint8 *_scrollScreen;
 	struct {
+		uint32 nextFrame;
 		uint32 framesLeft;
-		uint32 delay;
 		uint8 *seqData;
 		uint8 *seqDataPos;
 		volatile bool running;
@@ -123,7 +122,7 @@ private:
 
 	//- more regular screen.asm + layer.asm routines
 	void convertPalette(uint8 *inPal, uint8* outPal);
-	void palette_fadedown_helper(uint32 *pal, uint num);
+	void palette_fadedown_helper(uint8 *pal, uint num);
 
 	//- sprite.asm routines
 	// fixme: get rid of these globals

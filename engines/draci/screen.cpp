@@ -26,6 +26,8 @@
 #include "common/memstream.h"
 #include "common/system.h"
 
+#include "graphics/palette.h"
+
 #include "draci/draci.h"
 #include "draci/screen.h"
 #include "draci/surface.h"
@@ -36,12 +38,12 @@ namespace Draci {
 
 Screen::Screen(DraciEngine *vm) : _vm(vm) {
 	_surface = new Surface(kScreenWidth, kScreenHeight);
-	_palette = new byte[4 * kNumColours];
-	_blackPalette = new byte[3 * kNumColours];
-	for (int i = 0; i < 3 * kNumColours; ++i) {
+	_palette = new byte[3 * kNumColors];
+	_blackPalette = new byte[3 * kNumColors];
+	for (int i = 0; i < 3 * kNumColors; ++i) {
 		_blackPalette[i] = 0;
 	}
-	setPalette(NULL, 0, kNumColours);
+	setPalette(NULL, 0, kNumColors);
 	this->clearScreen();
 }
 
@@ -54,24 +56,23 @@ Screen::~Screen() {
 /**
  * @brief Sets a part of the palette
  * @param data Pointer to a buffer containing new palette data
- *        start Index of the colour where replacement should start
- *        num Number of colours to replace
+ *        start Index of the color where replacement should start
+ *        num Number of colors to replace
  */
 void Screen::setPalette(const byte *data, uint16 start, uint16 num) {
-	Common::MemoryReadStream pal(data ? data : _blackPalette, 3 * kNumColours);
+	Common::MemoryReadStream pal(data ? data : _blackPalette, 3 * kNumColors);
 	pal.seek(start * 3);
 
 	// Copy the palette
 	for (uint16 i = start; i < start + num; ++i) {
-		_palette[i * 4] = pal.readByte();
-		_palette[i * 4 + 1] = pal.readByte();
-		_palette[i * 4 + 2] = pal.readByte();
-		_palette[i * 4 + 3] = 0;
+		_palette[i * 3] = pal.readByte();
+		_palette[i * 3 + 1] = pal.readByte();
+		_palette[i * 3 + 2] = pal.readByte();
 	}
 
 	// Shift the palette two bits to the left to make it brighter.  The
 	// original game only uses 6-bit colors 0..63.
-	for (int i = start * 4; i < (start + num) * 4; ++i) {
+	for (int i = start * 3; i < (start + num) * 3; ++i) {
 		_palette[i] <<= 2;
 	}
 
@@ -79,21 +80,20 @@ void Screen::setPalette(const byte *data, uint16 start, uint16 num) {
 }
 
 void Screen::interpolatePalettes(const byte *first, const byte *second, uint16 start, uint16 num, int index, int number) {
-	Common::MemoryReadStream firstPal(first ? first : _blackPalette, 3 * kNumColours);
-	Common::MemoryReadStream secondPal(second ? second : _blackPalette, 3 * kNumColours);
+	Common::MemoryReadStream firstPal(first ? first : _blackPalette, 3 * kNumColors);
+	Common::MemoryReadStream secondPal(second ? second : _blackPalette, 3 * kNumColors);
 	firstPal.seek(start * 3);
 	secondPal.seek(start * 3);
 
 	// Interpolate the palettes
 	for (uint16 i = start; i < start + num; ++i) {
-		_palette[i * 4] = interpolate(firstPal.readByte(), secondPal.readByte(), index, number);
-		_palette[i * 4 + 1] = interpolate(firstPal.readByte(), secondPal.readByte(), index, number);
-		_palette[i * 4 + 2] = interpolate(firstPal.readByte(), secondPal.readByte(), index, number);
-		_palette[i * 4 + 3] = 0;
+		_palette[i * 3] = interpolate(firstPal.readByte(), secondPal.readByte(), index, number);
+		_palette[i * 3 + 1] = interpolate(firstPal.readByte(), secondPal.readByte(), index, number);
+		_palette[i * 3 + 2] = interpolate(firstPal.readByte(), secondPal.readByte(), index, number);
 	}
 
 	// Shift the palette two bits to the left to make it brighter
-	for (int i = start * 4; i < (start + num) * 4; ++i) {
+	for (int i = start * 3; i < (start + num) * 3; ++i) {
 		_palette[i] <<= 2;
 	}
 

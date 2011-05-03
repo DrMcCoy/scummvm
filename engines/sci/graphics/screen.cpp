@@ -32,6 +32,7 @@
 #include "sci/sci.h"
 #include "sci/engine/state.h"
 #include "sci/graphics/screen.h"
+#include "sci/graphics/view.h"
 
 namespace Sci {
 
@@ -64,7 +65,7 @@ GfxScreen::GfxScreen(ResourceManager *resMan) : _resMan(resMan) {
 		_height = 480;
 	} else {
 		_width = 320;
-		_height = 200;
+		_height = getLowResScreenHeight();
 	}
 
 	// Japanese versions of games use hi-res font on upscaled version of the game.
@@ -113,7 +114,7 @@ GfxScreen::GfxScreen(ResourceManager *resMan) : _resMan(resMan) {
 	_unditherState = true;
 	_fontIsUpscaled = false;
 
-	if (_resMan->isVGA() || (_resMan->isAmiga32color())) {
+	if (_resMan->getViewType() != kViewEga) {
 		// It is not 100% accurate to set white to be 255 for Amiga 32-color
 		// games. But 255 is defined as white in our SCI at all times, so it
 		// doesn't matter.
@@ -132,10 +133,12 @@ GfxScreen::GfxScreen(ResourceManager *resMan) : _resMan(resMan) {
 	if (g_sci->hasMacIconBar()) {
 		// For SCI1.1 Mac games with the custom icon bar, we need to expand the screen
 		// to accommodate for the icon bar. Of course, both KQ6 and QFG1 VGA differ in size.
+		// We add 2 to the height of the icon bar to add a buffer between the screen and the
+		// icon bar (as did the original interpreter).
 		if (g_sci->getGameId() == GID_KQ6)
-			initGraphics(_displayWidth, _displayHeight + 26, _displayWidth > 320);
+			initGraphics(_displayWidth, _displayHeight + 26 + 2, _displayWidth > 320);
 		else if (g_sci->getGameId() == GID_FREDDYPHARKAS)
-			initGraphics(_displayWidth, _displayHeight + 28, _displayWidth > 320);
+			initGraphics(_displayWidth, _displayHeight + 28 + 2, _displayWidth > 320);
 		else
 			error("Unknown SCI1.1 Mac game");
 	} else
@@ -154,12 +157,14 @@ void GfxScreen::copyToScreen() {
 }
 
 void GfxScreen::copyFromScreen(byte *buffer) {
+	// TODO this ignores the pitch
 	Graphics::Surface *screen = g_system->lockScreen();
 	memcpy(buffer, screen->pixels, _displayPixels);
 	g_system->unlockScreen();
 }
 
 void GfxScreen::kernelSyncWithFramebuffer() {
+	// TODO this ignores the pitch
 	Graphics::Surface *screen = g_system->lockScreen();
 	memcpy(_displayScreen, screen->pixels, _displayPixels);
 	g_system->unlockScreen();
@@ -351,12 +356,29 @@ byte GfxScreen::getControl(int x, int y) {
 	return _controlScreen[y * _width + x];
 }
 
-byte GfxScreen::isFillMatch(int16 x, int16 y, byte screenMask, byte t_color, byte t_pri, byte t_con) {
+byte GfxScreen::isFillMatch(int16 x, int16 y, byte screenMask, byte t_color, byte t_pri, byte t_con, bool isEGA) {
 	int offset = y * _width + x;
 	byte match = 0;
 
-	if ((screenMask & GFX_SCREEN_MASK_VISUAL) && *(_visualScreen + offset) == t_color)
-		match |= GFX_SCREEN_MASK_VISUAL;
+	if (screenMask & GFX_SCREEN_MASK_VISUAL) {
+		if (!isEGA) {
+			if (*(_visualScreen + offset) == t_color)
+				match |= GFX_SCREEN_MASK_VISUAL;
+		} else {
+			// In EGA games a pixel in the framebuffer is only 4 bits. We store
+			// a full byte per pixel to allow undithering, but when comparing
+			// pixels for flood-fill purposes, we should only compare the
+			// visible color of a pixel.
+
+			byte c = *(_visualScreen + offset);
+			if ((x ^ y) & 1)
+				c = (c ^ (c >> 4)) & 0x0F;
+			else
+				c = c & 0x0F;
+			if (c == t_color)
+				match |= GFX_SCREEN_MASK_VISUAL;
+		}
+	}
 	if ((screenMask & GFX_SCREEN_MASK_PRIORITY) && *(_priorityScreen + offset) == t_pri)
 		match |= GFX_SCREEN_MASK_PRIORITY;
 	if ((screenMask & GFX_SCREEN_MASK_CONTROL) && *(_controlScreen + offset) == t_con)
@@ -509,34 +531,6 @@ void GfxScreen::bitsRestoreDisplayScreen(Common::Rect rect, byte *&memoryPtr) {
 	}
 }
 
-void GfxScreen::getPalette(Palette *pal) {
-	// just copy palette to system
-	byte bpal[4 * 256];
-	// Get current palette, update it and put back
-	g_system->getPaletteManager()->grabPalette(bpal, 0, 256);
-	for (int16 i = 1; i < 255; i++) {
-		pal->colors[i].r = bpal[i * 4];
-		pal->colors[i].g = bpal[i * 4 + 1];
-		pal->colors[i].b = bpal[i * 4 + 2];
-	}
-}
-
-void GfxScreen::setPalette(Palette *pal) {
-	// just copy palette to system
-	byte bpal[4 * 256];
-	// Get current palette, update it and put back
-	g_system->getPaletteManager()->grabPalette(bpal, 0, 256);
-	for (int16 i = 0; i < 256; i++) {
-		if (!pal->colors[i].used)
-			continue;
-		bpal[i * 4] = CLIP(pal->colors[i].r * pal->intensity[i] / 100, 0, 255);
-		bpal[i * 4 + 1] = CLIP(pal->colors[i].g * pal->intensity[i] / 100, 0, 255);
-		bpal[i * 4 + 2] = CLIP(pal->colors[i].b * pal->intensity[i] / 100, 0, 255);
-		bpal[i * 4 + 3] = 100;
-	}
-	g_system->getPaletteManager()->setPalette(bpal, 0, 256);
-}
-
 void GfxScreen::setVerticalShakePos(uint16 shakePos) {
 	if (!_upscaledHires)
 		g_system->setShakePos(shakePos);
@@ -591,7 +585,7 @@ void GfxScreen::dither(bool addToFlag) {
 		}
 	} else {
 		if (!addToFlag)
-			memset(&_unditherMemorial, 0, sizeof(_unditherMemorial));
+			memset(&_ditheredPicColors, 0, sizeof(_ditheredPicColors));
 		// Do dithering on visual screen and put decoded but undithered byte onto display-screen
 		for (y = 0; y < _height; y++) {
 			for (x = 0; x < _width; x++) {
@@ -599,7 +593,7 @@ void GfxScreen::dither(bool addToFlag) {
 				if (color & 0xF0) {
 					color ^= color << 4;
 					// remember dither combination for cel-undithering
-					_unditherMemorial[color]++;
+					_ditheredPicColors[color]++;
 					// if decoded color wants do dither with black on left side, we turn it around
 					//  otherwise the normal ega color would get used for display
 					if (color & 0xF0) {
@@ -626,18 +620,17 @@ void GfxScreen::dither(bool addToFlag) {
 	}
 }
 
-// Force a color combination into memorial
-void GfxScreen::ditherForceMemorial(byte color) {
-	_unditherMemorial[color] = 256;
+void GfxScreen::ditherForceDitheredColor(byte color) {
+	_ditheredPicColors[color] = 256;
 }
 
 void GfxScreen::debugUnditherSetState(bool flag) {
 	_unditherState = flag;
 }
 
-int16 *GfxScreen::unditherGetMemorial() {
+int16 *GfxScreen::unditherGetDitheredBgColors() {
 	if (_unditherState)
-		return (int16 *)&_unditherMemorial;
+		return (int16 *)&_ditheredPicColors;
 	else
 		return NULL;
 }
@@ -702,12 +695,39 @@ void GfxScreen::scale2x(const byte *src, byte *dst, int16 srcWidth, int16 srcHei
 	}
 }
 
-void GfxScreen::adjustToUpscaledCoordinates(int16 &y, int16 &x) {
+struct UpScaledAdjust {
+	GfxScreenUpscaledMode gameHiresMode;
+	Sci32ViewNativeResolution viewNativeRes;
+	int numerator;
+	int denominator;
+};
+
+static const UpScaledAdjust s_upscaledAdjustTable[] = {
+	{ GFX_SCREEN_UPSCALED_640x480, SCI_VIEW_NATIVERES_640x400, 5, 6 }
+};
+
+void GfxScreen::adjustToUpscaledCoordinates(int16 &y, int16 &x, Sci32ViewNativeResolution viewNativeRes) {
 	x *= 2;
 	y = _upscaledMapping[y];
+
+	for (int i = 0; i < ARRAYSIZE(s_upscaledAdjustTable); i++) {
+		if (s_upscaledAdjustTable[i].gameHiresMode == _upscaledHires &&
+				s_upscaledAdjustTable[i].viewNativeRes == viewNativeRes) {
+			y = (y * s_upscaledAdjustTable[i].numerator) / s_upscaledAdjustTable[i].denominator;
+			break;
+		}
+	}
 }
 
-void GfxScreen::adjustBackUpscaledCoordinates(int16 &y, int16 &x) {
+void GfxScreen::adjustBackUpscaledCoordinates(int16 &y, int16 &x, Sci32ViewNativeResolution viewNativeRes) {
+	for (int i = 0; i < ARRAYSIZE(s_upscaledAdjustTable); i++) {
+		if (s_upscaledAdjustTable[i].gameHiresMode == _upscaledHires &&
+				s_upscaledAdjustTable[i].viewNativeRes == viewNativeRes) {
+			y = (y * s_upscaledAdjustTable[i].denominator) / s_upscaledAdjustTable[i].numerator;
+			break;
+		}
+	}
+
 	switch (_upscaledHires) {
 	case GFX_SCREEN_UPSCALED_640x400:
 		x /= 2;
@@ -741,6 +761,25 @@ int16 GfxScreen::kernelPicNotValid(int16 newPicNotValid) {
 	}
 
 	return oldPicNotValid;
+}
+
+uint16 GfxScreen::getLowResScreenHeight() {
+	// Some Mac SCI1/1.1 games only take up 190 rows and do not
+	// have the menu bar.
+	if (g_sci->getPlatform() == Common::kPlatformMacintosh) {
+		switch (g_sci->getGameId()) {
+		case GID_FREDDYPHARKAS:
+		case GID_KQ5:
+		case GID_KQ6:
+		case GID_SQ1:
+			return 190;
+		default:
+			break;
+		}
+	}
+
+	// Everything else is 200
+	return 200;
 }
 
 } // End of namespace Sci

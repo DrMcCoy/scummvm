@@ -24,8 +24,8 @@
  */
 
 #include "common/events.h"
-
 #include "common/serializer.h"
+#include "common/textconsole.h"
 
 #include "video/avi_decoder.h"
 #include "engines/darkseed2/cpk_decoder.h"
@@ -158,7 +158,7 @@ void Movie::updateStatus() {
 	const ::Graphics::Surface *frame = _decoder->decodeNextFrame();
 
 	if (frame)
-		_screen.copyFrom((byte *)frame->pixels, frame->bytesPerPixel, false);
+		_screen.copyFrom((byte *)frame->pixels, frame->format.bytesPerPixel, false);
 
 	if (_decoder->hasDirtyPalette()) {
 		Palette newPalette;

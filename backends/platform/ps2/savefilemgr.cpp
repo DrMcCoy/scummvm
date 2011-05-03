@@ -23,6 +23,9 @@
  *
  */
 
+#define FORBIDDEN_SYMBOL_EXCEPTION_printf
+#define FORBIDDEN_SYMBOL_EXCEPTION_unistd_h
+
 #include "common/config-manager.h"
 #include "common/zlib.h"
 

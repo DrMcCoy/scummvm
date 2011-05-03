@@ -143,8 +143,8 @@ static const DS2GameDescription gameDescriptions[] = {
 			"darkseed2",
 			"",
 			{
-				{"talk", 0, "ce38a357045b3e84b1a3af62c573a551", 968351},
-				{"action", 0, "2def454ca83cc0b73d08aca30af9a074", 1920561}
+				{"talk", 0, "1b0b8c0b264aeff60394b416afcb1e18", 963703},
+				{"action", 0, "bc7a9c5900609093e37c8a5c01340ddc", 1915496}
 			},
 			EN_ANY,
 			kPlatformMacintosh,

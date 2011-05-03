@@ -272,7 +272,7 @@ void AGOSEngine_Feeble::setupOpcodes() {
 		OPCODE(os1_unloadZone),
 		OPCODE(o_invalid),
 		OPCODE(os1_unfreezeZones),
-		OPCODE(off_centreScroll),
+		OPCODE(off_centerScroll),
 		/* 188 */
 		OPCODE(os2_isShortText),
 		OPCODE(os2_clearMarks),
@@ -430,8 +430,7 @@ void AGOSEngine_Feeble::off_loadUserGame() {
 }
 
 void AGOSEngine_Feeble::off_listSaveGames() {
-	// 134: dummy opcode?
-	listSaveGames(1);
+	listSaveGamesFeeble();
 }
 
 void AGOSEngine_Feeble::off_checkCD() {
@@ -591,9 +590,9 @@ void AGOSEngine_Feeble::off_playVideo() {
 	}
 }
 
-void AGOSEngine_Feeble::off_centreScroll() {
+void AGOSEngine_Feeble::off_centerScroll() {
 	// 187
-	centreScroll();
+	centerScroll();
 }
 
 void AGOSEngine_Feeble::off_resetPVCount() {
@@ -640,7 +639,7 @@ void AGOSEngine_Feeble::off_restartClock() {
 
 void AGOSEngine_Feeble::off_setColor() {
 	// 195: set palette color
-	uint16 c = getVarOrByte() * 4;
+	uint16 c = getVarOrByte() * 3;
 	uint8 r = getVarOrByte();
 	uint8 g = getVarOrByte();
 	uint8 b = getVarOrByte();

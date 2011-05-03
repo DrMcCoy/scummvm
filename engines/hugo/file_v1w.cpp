@@ -30,7 +30,9 @@
  *
  */
 
+#include "common/debug.h"
 #include "common/system.h"
+#include "common/textconsole.h"
 
 #include "hugo/hugo.h"
 #include "hugo/file.h"
@@ -81,8 +83,7 @@ void FileManager_v1w::readOverlay(const int screenNum, image_pt image, ovl_t ove
 		break;
 	}
 	if (i == 0) {
-		for (int idx = 0; idx < kOvlSize; idx++)
-			image[idx] = 0;
+		memset(image, 0, sizeof(image));
 		return;
 	}
 	_sceneryArchive1.read(tmpImage, kOvlSize);

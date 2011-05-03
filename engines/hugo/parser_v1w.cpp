@@ -32,8 +32,7 @@
 
 // parser.c - handles all keyboard/command input
 
-#include "common/system.h"
-#include "common/events.h"
+#include "common/debug.h"
 
 #include "hugo/hugo.h"
 #include "hugo/parser.h"
@@ -119,7 +118,7 @@ void Parser_v1w::lineHandler() {
 	// Special meta commands
 	// EXIT/QUIT
 	if (!strcmp("exit", _vm->_line) || strstr(_vm->_line, "quit")) {
-		if (Utils::Box(kBoxYesNo, "%s", _vm->_text->getTextParser(kTBExit_1d)) != 0)
+		if (Utils::yesNoBox(_vm->_text->getTextParser(kTBExit_1d)))
 			_vm->endGame();
 		return;
 	}
@@ -132,8 +131,6 @@ void Parser_v1w::lineHandler() {
 
 	if (!strcmp("restore", _vm->_line) && (gameStatus.viewState == kViewPlay || gameStatus.viewState == kViewIdle)) {
 		_vm->_file->restoreGame(-1);
-		_vm->_scheduler->restoreScreen(*_vm->_screen_p);
-		gameStatus.viewState = kViewPlay;
 		return;
 	}
 
@@ -145,7 +142,7 @@ void Parser_v1w::lineHandler() {
 
 	if (gameStatus.gameOverFl) {
 		// No commands allowed!
-		Utils::gameOverMsg();
+		_vm->gameOverMsg();
 		return;
 	}
 
@@ -172,36 +169,36 @@ void Parser_v1w::lineHandler() {
 	}
 
 	// No objects match command line, try background and catchall commands
-	if (isBackgroundWord_v3(_vm->_backgroundObjects[*_vm->_screen_p]))
+	if (isBackgroundWord_v3(_backgroundObjects[*_vm->_screen_p]))
 		return;
-	if (isCatchallVerb_v3(_vm->_backgroundObjects[*_vm->_screen_p]))
+	if (isCatchallVerb_v3(_backgroundObjects[*_vm->_screen_p]))
 		return;
 
-	if (isBackgroundWord_v3(_vm->_catchallList))
+	if (isBackgroundWord_v3(_catchallList))
 		return;
-	if (isCatchallVerb_v3(_vm->_catchallList))
+	if (isCatchallVerb_v3(_catchallList))
 		return;
 
 	// If a not-near comment was generated, print it
 	if (*farComment != '\0') {
-		Utils::Box(kBoxAny, "%s", farComment);
+		Utils::notifyBox(farComment);
 		return;
 	}
 
 	// Nothing matches.  Report recognition success to user.
 	const char *verb = findVerb();
 	const char *noun = findNoun();
-	if (verb == _vm->_text->getVerb(_vm->_look, 0) && _maze.enabledFl) {
-		Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBMaze));
+	if (verb == _vm->_text->getVerb(_vm->_look, 0) && _vm->_maze.enabledFl) {
+		Utils::notifyBox(_vm->_text->getTextParser(kTBMaze));
 		_vm->_object->showTakeables();
 	} else if (verb && noun) {                      // A combination I didn't think of
-		Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBNoPoint));
+		Utils::notifyBox(_vm->_text->getTextParser(kTBNoPoint));
 	} else if (noun) {
-		Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBNoun));
+		Utils::notifyBox(_vm->_text->getTextParser(kTBNoun));
 	} else if (verb) {
-		Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBVerb));
+		Utils::notifyBox(_vm->_text->getTextParser(kTBVerb));
 	} else {
-		Utils::Box(kBoxAny, "%s", _vm->_text->getTextParser(kTBEh));
+		Utils::notifyBox(_vm->_text->getTextParser(kTBEh));
 	}
 }
 
@@ -209,7 +206,7 @@ void Parser_v1w::showInventory() const {
 	status_t &gameStatus = _vm->getGameStatus();
 	istate_t inventState = _vm->_inventory->getInventoryState();
 	if (gameStatus.gameOverFl) {
-		Utils::gameOverMsg();
+		_vm->gameOverMsg();
 	} else if ((inventState == kInventoryOff) && (gameStatus.viewState == kViewPlay)) {
 		_vm->_inventory->setInventoryState(kInventoryDown);
 		gameStatus.viewState = kViewInvent;

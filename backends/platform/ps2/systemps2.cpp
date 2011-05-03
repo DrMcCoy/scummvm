@@ -544,11 +544,11 @@ void OSystem_PS2::initSize(uint width, uint height, const Graphics::PixelFormat 
 }
 
 void OSystem_PS2::setPalette(const byte *colors, uint start, uint num) {
-	_screen->setPalette((const uint32*)colors, (uint8)start, (uint16)num);
+	_screen->setPalette(colors, (uint8)start, (uint16)num);
 }
 
 void OSystem_PS2::grabPalette(byte *colors, uint start, uint num) {
-	_screen->grabPalette((uint32*)colors, (uint8)start, (uint16)num);
+	_screen->grabPalette(colors, (uint8)start, (uint16)num);
 }
 
 void OSystem_PS2::copyRectToScreen(const byte *buf, int pitch, int x, int y, int w, int h) {
@@ -566,6 +566,11 @@ void OSystem_PS2::updateScreen(void) {
 		_msgClearTime = 0;
 	}
 	_screen->updateScreen();
+}
+
+void OSystem_PS2::displayMessageOnOSD(const char *msg) {
+	/* TODO : check */
+	printf("displayMessageOnOSD: %s\n", msg);
 }
 
 uint32 OSystem_PS2::getMillis(void) {
@@ -727,7 +732,7 @@ void OSystem_PS2::msgPrintf(int millis, const char *format, ...) {
 	int maxWidth = 0;
 
 	Graphics::Surface surf;
-	surf.create(300, 200, 1);
+	surf.create(300, 200, Graphics::PixelFormat::createFormatCLUT8());
 
 	char *lnSta = resStr;
 	while (*lnSta && (posY < 180)) {

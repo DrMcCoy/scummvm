@@ -124,6 +124,7 @@ enum ResVersion {
 	kResVersionUnknown,
 	kResVersionSci0Sci1Early,
 	kResVersionSci1Middle,
+	kResVersionKQ5FMT,
 	kResVersionSci1Late,
 	kResVersionSci11,
 	kResVersionSci11Mac,
@@ -330,8 +331,6 @@ public:
 	int getAudioLanguage() const;
 	void changeAudioDirectory(Common::String path);
 	bool isGMTrackIncluded();
-	bool isVGA() const { return (_viewType == kViewVga) || (_viewType == kViewVga11); }
-	bool isAmiga32color() const { return _viewType == kViewAmiga; }
 	bool isSci11Mac() const { return _volVersion == kResVersionSci11Mac; }
 	ViewType getViewType() const { return _viewType; }
 	const char *getMapVersionDesc() const { return versionDescription(_mapVersion); }

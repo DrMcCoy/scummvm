@@ -25,6 +25,7 @@
 
 #include "common/config-manager.h"
 #include "common/system.h"
+#include "common/textconsole.h"
 
 #include "sky/control.h"
 #include "sky/debug.h"
@@ -84,8 +85,6 @@ SkyEngine::SkyEngine(OSystem *syst)
 }
 
 SkyEngine::~SkyEngine() {
-	_timer->removeTimerProc(&timerHandler);
-
 	delete _skyLogic;
 	delete _skySound;
 	delete _skyMusic;
@@ -100,6 +99,22 @@ SkyEngine::~SkyEngine() {
 	for (int i = 0; i < 300; i++)
 		if (_itemList[i])
 			free(_itemList[i]);
+}
+
+void SkyEngine::syncSoundSettings() {
+	Engine::syncSoundSettings();
+
+	bool mute = false;
+	if (ConfMan.hasKey("mute"))
+		mute = ConfMan.getBool("mute");
+
+	if (ConfMan.getBool("sfx_mute"))
+		SkyEngine::_systemVars.systemFlags |= SF_FX_OFF;
+
+	if (ConfMan.getBool("music_mute"))
+		SkyEngine::_systemVars.systemFlags |= SF_MUS_OFF;
+
+	_skyMusic->setVolume(mute ? 0: ConfMan.getInt("music_volume") >> 1);
 }
 
 GUI::Debugger *SkyEngine::getDebugger() {
@@ -207,6 +222,7 @@ Common::Error SkyEngine::go() {
 		}
 
 		_skyLogic->engine();
+		_skyScreen->processSequence();
 		_skyScreen->recreate();
 		_skyScreen->spriteEngine();
 		if (_debugger->showGrid()) {
@@ -242,16 +258,6 @@ Common::Error SkyEngine::go() {
 
 Common::Error SkyEngine::init() {
 	initGraphics(320, 200, false);
-
-	if (ConfMan.getBool("sfx_mute")) {
-		SkyEngine::_systemVars.systemFlags |= SF_FX_OFF;
-	}
-	if (ConfMan.getBool("music_mute")) {
-		SkyEngine::_systemVars.systemFlags |= SF_MUS_OFF;
-	}
-	 _mixer->setVolumeForSoundType(Audio::Mixer::kSFXSoundType, ConfMan.getInt("sfx_volume"));
-	 _mixer->setVolumeForSoundType(Audio::Mixer::kSpeechSoundType, ConfMan.getInt("speech_volume"));
-	 _mixer->setVolumeForSoundType(Audio::Mixer::kMusicSoundType, ConfMan.getInt("music_volume"));
 
 	_skyDisk = new Disk();
 	_skySound = new Sound(_mixer, _skyDisk, Audio::Mixer::kMaxChannelVolume);
@@ -300,9 +306,6 @@ Common::Error SkyEngine::init() {
 	_skyLogic = new Logic(_skyCompact, _skyScreen, _skyDisk, _skyText, _skyMusic, _skyMouse, _skySound);
 	_skyMouse->useLogicInstance(_skyLogic);
 
-	// initialize timer *after* _skyScreen has been initialized.
-	_timer->installTimerProc(&timerHandler, 1000000 / 50, this); //call 50 times per second
-
 	_skyControl = new Control(_saveFileMan, _skyScreen, _skyDisk, _skyMouse, _skyText, _skyMusic, _skyLogic, _skySound, _skyCompact, _system);
 	_skyLogic->useControlInstance(_skyControl);
 
@@ -350,7 +353,8 @@ Common::Error SkyEngine::init() {
 				}
 	}
 
-	_skyMusic->setVolume(ConfMan.getInt("music_volume") >> 1);
+	// Setup mixer
+	syncSoundSettings();
 
 	_debugger = new Debugger(_skyLogic, _skyMouse, _skyScreen, _skyCompact);
 	return Common::kNoError;
@@ -384,14 +388,6 @@ void SkyEngine::loadFixedItems() {
 
 void *SkyEngine::fetchItem(uint32 num) {
 	return _itemList[num];
-}
-
-void SkyEngine::timerHandler(void *refCon) {
-	((SkyEngine *)refCon)->gotTimerTick();
-}
-
-void SkyEngine::gotTimerTick() {
-	_skyScreen->handleTimer();
 }
 
 void SkyEngine::delay(int32 amount) {

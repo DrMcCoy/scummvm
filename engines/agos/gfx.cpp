@@ -26,6 +26,7 @@
 
 
 #include "common/system.h"
+#include "common/textconsole.h"
 
 #include "graphics/surface.h"
 
@@ -1041,7 +1042,7 @@ void AGOSEngine::paletteFadeOut(byte *palPtr, uint num, uint size) {
 			p[2] -= size;
 		else
 			p[2] = 0;
-		p += 4;
+		p += 3;
 	} while (--num);
 }
 

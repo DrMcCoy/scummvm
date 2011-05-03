@@ -32,6 +32,7 @@
 
 #include "common/system.h"
 #include "common/events.h"
+#include "common/textconsole.h"
 
 #include "sword2/sword2.h"
 #include "sword2/defs.h"
@@ -253,7 +254,7 @@ void Screen::updateDisplay(bool redrawScene) {
 }
 
 /**
- * Fill the screen buffer with palette colour zero. Note that it does not
+ * Fill the screen buffer with palette color zero. Note that it does not
  * touch the menu areas of the screen.
  */
 
@@ -355,8 +356,8 @@ void Screen::buildDisplay() {
  */
 
 void Screen::displayMsg(byte *text, int time) {
-	byte pal[256 * 4];
-	byte oldPal[256 * 4];
+	byte pal[256 * 3];
+	byte oldPal[256 * 3];
 
 	debug(2, "DisplayMsg: %s", text);
 
@@ -392,7 +393,7 @@ void Screen::displayMsg(byte *text, int time) {
 	spriteInfo.type = RDSPR_DISPLAYALIGN | RDSPR_NOCOMPRESSION | RDSPR_TRANS;
 	spriteInfo.blend = 0;
 	spriteInfo.data = text_spr + FrameHeader::size();
-	spriteInfo.colourTable = 0;
+	spriteInfo.colorTable = 0;
 	spriteInfo.isText = true;
 
 	uint32 rv = drawSprite(&spriteInfo);
@@ -402,9 +403,9 @@ void Screen::displayMsg(byte *text, int time) {
 	memcpy(oldPal, _palette, sizeof(oldPal));
 	memset(pal, 0, sizeof(pal));
 
-	pal[187 * 4 + 0] = 255;
-	pal[187 * 4 + 1] = 255;
-	pal[187 * 4 + 2] = 255;
+	pal[187 * 3 + 0] = 255;
+	pal[187 * 3 + 1] = 255;
+	pal[187 * 3 + 2] = 255;
 
 	setPalette(0, 256, pal, RDPAL_FADE);
 	fadeUp();
@@ -530,7 +531,7 @@ void Screen::processLayer(byte *file, uint32 layer_number) {
 	}
 
 	spriteInfo.blend = 0;
-	spriteInfo.colourTable = 0;
+	spriteInfo.colorTable = 0;
 
 	// check for largest layer for debug info
 
@@ -572,7 +573,7 @@ void Screen::processImage(BuildUnit *build_unit) {
 	cdt_entry.read(_vm->fetchCdtEntry(file, build_unit->anim_pc));
 	frame_head.read(frame);
 
-	// so that 0-colour is transparent
+	// so that 0-color is transparent
 	uint32 spriteType = RDSPR_TRANS;
 
 	if (anim_head.blend)
@@ -606,7 +607,7 @@ void Screen::processImage(BuildUnit *build_unit) {
 		case RLE16:
 			spriteType |= RDSPR_RLE16;
 			// points to just after last cdt_entry, ie.
-			// start of colour table
+			// start of color table
 			colTablePtr = _vm->fetchAnimHeader(file) + AnimHeader::size() + anim_head.noAnimFrames * CdtEntry::size();
 			if (Sword2Engine::isPsx())
 				colTablePtr++; // There is one additional byte to skip before the table in psx version
@@ -632,7 +633,7 @@ void Screen::processImage(BuildUnit *build_unit) {
 	spriteInfo.blend = anim_head.blend;
 	// points to just after frame header, ie. start of sprite data
 	spriteInfo.data = frame + FrameHeader::size();
-	spriteInfo.colourTable = colTablePtr;
+	spriteInfo.colorTable = colTablePtr;
 	spriteInfo.isText = false;
 
 	// check for largest layer for debug info
@@ -895,7 +896,7 @@ void Screen::rollCredits() {
 	//     palette   3 * 256 bytes
 	//     data      width * height bytes
 	//
-	//     Note that the maximum colour component in the palette is 0x3F.
+	//     Note that the maximum color component in the palette is 0x3F.
 	//     This is the same resolution as the _paletteMatch table. I doubt
 	//     that this is a coincidence, but let's use the image palette
 	//     directly anyway, just to be safe.
@@ -926,17 +927,16 @@ void Screen::rollCredits() {
 	uint16 logoWidth = 0;
 	uint16 logoHeight = 0;
 	byte *logoData = NULL;
-	byte palette[256 * 4];
+	byte palette[256 * 3];
 
 	if (f.open("credits.bmp")) {
 		logoWidth = f.readUint16LE();
 		logoHeight = f.readUint16LE();
 
 		for (i = 0; i < 256; i++) {
-			palette[i * 4 + 0] = f.readByte() << 2;
-			palette[i * 4 + 1] = f.readByte() << 2;
-			palette[i * 4 + 2] = f.readByte() << 2;
-			palette[i * 4 + 3] = 0;
+			palette[i * 3 + 0] = f.readByte() << 2;
+			palette[i * 3 + 1] = f.readByte() << 2;
+			palette[i * 3 + 2] = f.readByte() << 2;
 		}
 
 		logoData = (byte *)malloc(logoWidth * logoHeight);
@@ -946,10 +946,9 @@ void Screen::rollCredits() {
 	} else {
 		warning("Can't find credits.bmp");
 		memset(palette, 0, sizeof(palette));
-		palette[14 * 4 + 0] = 252;
-		palette[14 * 4 + 1] = 252;
-		palette[14 * 4 + 2] = 252;
-		palette[14 * 4 + 3] = 0;
+		palette[14 * 3 + 0] = 252;
+		palette[14 * 3 + 1] = 252;
+		palette[14 * 3 + 2] = 252;
 	}
 
 	setPalette(0, 256, palette, RDPAL_INSTANT);
@@ -1235,7 +1234,8 @@ void Screen::splashScreen() {
 	initialiseBackgroundLayer(NULL);
 	initialiseBackgroundLayer(NULL);
 
-	setPalette(0, 256, _vm->fetchPalette(bgfile), RDPAL_FADE);
+	_vm->fetchPalette(bgfile, _palette);
+	setPalette(0, 256, _palette, RDPAL_FADE);
 	renderParallax(_vm->fetchBackgroundLayer(bgfile), 2);
 
 	closeBackgroundLayer();
@@ -1262,7 +1262,7 @@ void Screen::splashScreen() {
 	barSprite.scaledHeight = 0;
 	barSprite.type = RDSPR_RLE256FAST | RDSPR_TRANS;
 	barSprite.blend = 0;
-	barSprite.colourTable = 0;
+	barSprite.colorTable = 0;
 	barSprite.data = frame + FrameHeader::size();
 	barSprite.isText = false;
 

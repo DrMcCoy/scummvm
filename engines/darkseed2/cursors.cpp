@@ -24,9 +24,10 @@
  */
 
 #include "common/macresman.h"
-#include "common/ne_exe.h"
+#include "common/winexe_ne.h"
 
 #include "graphics/cursorman.h"
+#include "graphics/wincursor.h"
 
 #include "engines/darkseed2/cursors.h"
 #include "engines/darkseed2/imageconverter.h"
@@ -172,20 +173,20 @@ bool CursorsWindows::load() {
 	if (!resources.loadFromEXE(_exeName))
 		return false;
 
-	// Convert cursor resources to usable cursors
-	const Common::Array<Common::NECursorGroup> &cursorGroups = resources.getCursors();
-	Common::Array<Common::NECursorGroup>::const_iterator cursorGroup;
-	for (cursorGroup = cursorGroups.begin(); cursorGroup != cursorGroups.end(); ++cursorGroup) {
-		if (cursorGroup->cursors.empty())
+	// Convert cursor resources to our cursors
+	Common::Array<Common::WinResourceID> cursorGroups = resources.getIDList(Common::kNEGroupCursor);
+
+	for (uint i = 0; i < cursorGroups.size(); i++) {
+		::Graphics::WinCursorGroup *cursorGroup = ::Graphics::WinCursorGroup::createCursorGroup(resources, cursorGroups[i]);
+
+		if (!cursorGroup)
 			continue;
 
-		const Common::NECursor *neCursor = cursorGroup->cursors[0];
 		Cursor cursor;
-
-		if (!loadFromResource(cursor, *neCursor))
+		if (!loadFromResource(cursor, *cursorGroup->cursors[0].cursor))
 			return false;
 
-		cursor.name = cursorGroup->id.toString();
+		cursor.name = cursorGroups[i].toString();
 
 		_cursors.setVal(cursor.name, cursor);
 	}
@@ -193,7 +194,7 @@ bool CursorsWindows::load() {
 	return true;
 }
 
-bool CursorsWindows::loadFromResource(Cursor &cursor, const Common::NECursor &resource) {
+bool CursorsWindows::loadFromResource(Cursor &cursor, const ::Graphics::WinCursor &resource) {
 	// Copy properties
 	cursor.width    = resource.getWidth();
 	cursor.height   = resource.getHeight();
@@ -206,15 +207,15 @@ bool CursorsWindows::loadFromResource(Cursor &cursor, const Common::NECursor &re
 	const byte *srcPalette = resource.getPalette();
 
 	for (int j = 0; j < 256; j++) {
-		palette.get()[j * 3 + 0] = srcPalette[j * 4 + 0];
-		palette.get()[j * 3 + 1] = srcPalette[j * 4 + 1];
-		palette.get()[j * 3 + 2] = srcPalette[j * 4 + 2];
+		palette.get()[j * 3 + 0] = srcPalette[j * 3 + 0];
+		palette.get()[j * 3 + 1] = srcPalette[j * 3 + 1];
+		palette.get()[j * 3 + 2] = srcPalette[j * 3 + 2];
 	}
 
 	// Ensure the key color is transparent
-	palette.get()[0] = 0;
-	palette.get()[1] = 0;
-	palette.get()[2] = 255;
+	palette.get()[resource.getKeyColor() * 3 + 0] = 0;
+	palette.get()[resource.getKeyColor() * 3 + 1] = 0;
+	palette.get()[resource.getKeyColor() * 3 + 2] = 255;
 
 	cursor.sprite = new Sprite;
 	cursor.sprite->create(cursor.width, cursor.height);
@@ -264,35 +265,31 @@ CursorsMac::CursorsMac(Common::MacResManager &exeResFork) : _exeResFork(&exeResF
 }
 
 bool CursorsMac::load() {
-	Common::MacResIDArray idArray = _exeResFork->getResIDArray(MKID_BE('crsr'));
+	Common::MacResIDArray idArray = _exeResFork->getResIDArray(MKTAG('c', 'r', 's', 'r'));
 
 	for (uint32 i = 0; i < idArray.size(); i++) {
 		Cursor cursor;
 
-		cursor.name = _exeResFork->getResName(MKID_BE('crsr'), idArray[i]);
+		cursor.name = _exeResFork->getResName(MKTAG('c', 'r', 's', 'r'), idArray[i]);
 
 		if (cursor.name.empty())
 			continue;
 
-		Common::SeekableReadStream *stream = _exeResFork->getResource(MKID_BE('crsr'), idArray[i]);
-		uint32 streamSize = stream->size();
-		byte *data = new byte[streamSize];
-		stream->read(data, streamSize);
-		delete stream;
-
 		byte *cursorData, *rawPalette;
 		int keyColor, palSize;
 
-		Common::MacResManager::convertCrsrCursor(data, streamSize, &cursorData, &cursor.width, &cursor.height, &cursor.hotspotX, &cursor.hotspotY, &keyColor, true, &rawPalette, &palSize);
+		Common::SeekableReadStream *stream = _exeResFork->getResource(MKTAG('c', 'r', 's', 'r'), idArray[i]);
+		Common::MacResManager::convertCrsrCursor(stream, &cursorData, cursor.width, cursor.height, cursor.hotspotX, cursor.hotspotY, keyColor, true, &rawPalette, palSize);
+		delete stream;
 
 		Palette palette;
 
 		palette.resize(MAX<int>(palSize, keyColor + 1));
 
 		for (int j = 0; j < palSize; j++) {
-			palette.get()[j * 3 + 0] = rawPalette[j * 4 + 0];
-			palette.get()[j * 3 + 1] = rawPalette[j * 4 + 1];
-			palette.get()[j * 3 + 2] = rawPalette[j * 4 + 2];
+			palette.get()[j * 3 + 0] = rawPalette[j * 3 + 0];
+			palette.get()[j * 3 + 1] = rawPalette[j * 3 + 1];
+			palette.get()[j * 3 + 2] = rawPalette[j * 3 + 2];
 		}
 
 		// Ensure the keyColor is transparent

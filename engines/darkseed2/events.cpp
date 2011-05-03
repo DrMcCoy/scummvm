@@ -25,6 +25,7 @@
 
 #include "common/events.h"
 #include "common/serializer.h"
+#include "common/textconsole.h"
 
 #include "engines/darkseed2/events.h"
 #include "engines/darkseed2/resources.h"
