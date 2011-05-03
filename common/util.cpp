@@ -214,6 +214,7 @@ const PlatformDescription g_platforms[] = {
 	{ "windows", "win", "win", "Windows", kPlatformWindows },
 	{ "playstation", "psx", "psx", "Sony PlayStation", kPlatformPSX },
 	{ "cdi", "cdi", "cdi", "Phillips CD-i", kPlatformCDi },
+	{ "saturn", "saturn", "saturn", "Sega Saturn", kPlatformSaturn },
 
 	{ 0, 0, 0, "Default", kPlatformUnknown }
 };
