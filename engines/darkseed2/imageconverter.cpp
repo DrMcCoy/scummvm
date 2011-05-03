@@ -25,8 +25,8 @@
 
 #include "graphics/palette.h"
 
-#include "engines/darkseed2/imageconverter.h"
-#include "engines/darkseed2/palette.h"
+#include "darkseed2/imageconverter.h"
+#include "darkseed2/palette.h"
 
 DECLARE_SINGLETON(DarkSeed2::ImageConverter);
 

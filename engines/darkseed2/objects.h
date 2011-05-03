@@ -30,7 +30,7 @@
 #include "common/list.h"
 #include "common/rect.h"
 
-#include "engines/darkseed2/darkseed2.h"
+#include "darkseed2/darkseed2.h"
 
 namespace DarkSeed2 {
 

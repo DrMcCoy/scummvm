@@ -29,11 +29,11 @@
 #include "graphics/cursorman.h"
 #include "graphics/wincursor.h"
 
-#include "engines/darkseed2/cursors.h"
-#include "engines/darkseed2/imageconverter.h"
-#include "engines/darkseed2/resources.h"
-#include "engines/darkseed2/palette.h"
-#include "engines/darkseed2/saveload.h"
+#include "darkseed2/cursors.h"
+#include "darkseed2/imageconverter.h"
+#include "darkseed2/resources.h"
+#include "darkseed2/palette.h"
+#include "darkseed2/saveload.h"
 
 namespace DarkSeed2 {
 

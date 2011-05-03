@@ -25,13 +25,13 @@
 
 #include "common/textconsole.h"
 
-#include "engines/darkseed2/inventory.h"
-#include "engines/darkseed2/resources.h"
-#include "engines/darkseed2/variables.h"
-#include "engines/darkseed2/graphics.h"
-#include "engines/darkseed2/datfile.h"
-#include "engines/darkseed2/sprite.h"
-#include "engines/darkseed2/script.h"
+#include "darkseed2/inventory.h"
+#include "darkseed2/resources.h"
+#include "darkseed2/variables.h"
+#include "darkseed2/graphics.h"
+#include "darkseed2/datfile.h"
+#include "darkseed2/sprite.h"
+#include "darkseed2/script.h"
 
 namespace DarkSeed2 {
 

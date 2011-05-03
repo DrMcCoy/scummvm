@@ -30,7 +30,7 @@
 #include "common/file.h"
 #include "common/textconsole.h"
 
-#include "engines/darkseed2/resources.h"
+#include "darkseed2/resources.h"
 
 namespace DarkSeed2 {
 

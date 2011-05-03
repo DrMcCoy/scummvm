@@ -26,10 +26,10 @@
 #include "common/debug.h"
 #include "common/textconsole.h"
 
-#include "engines/darkseed2/script.h"
-#include "engines/darkseed2/variables.h"
-#include "engines/darkseed2/datfile.h"
-#include "engines/darkseed2/saveload.h"
+#include "darkseed2/script.h"
+#include "darkseed2/variables.h"
+#include "darkseed2/datfile.h"
+#include "darkseed2/saveload.h"
 
 namespace DarkSeed2 {
 

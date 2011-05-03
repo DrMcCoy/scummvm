@@ -30,7 +30,7 @@
 
 #include "audio/decoders/raw.h"
 
-#include "engines/darkseed2/cpk_decoder.h"
+#include "darkseed2/cpk_decoder.h"
 
 namespace DarkSeed2 {
 
