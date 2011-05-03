@@ -7,6 +7,7 @@ MODULE_OBJS := \
 	flic_decoder.o \
 	mpeg_player.o \
 	qt_decoder.o \
+	segafilm_decoder.o \
 	smk_decoder.o \
 	video_decoder.o \
 	codecs/cdtoons.o \
