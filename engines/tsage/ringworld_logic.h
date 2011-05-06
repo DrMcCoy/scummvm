@@ -97,7 +97,7 @@ public:
 	void display();
 	void restore();
 
-	virtual void synchronise(Serialiser &s);
+	virtual void synchronize(Serializer &s);
 	virtual void draw(bool flag);
 	virtual void wait();
 };
@@ -192,6 +192,7 @@ public:
 	SpeakerGR();
 
 	virtual Common::String getClassName() { return "SpeakerGR"; }
+	virtual void setText(const Common::String &msg);
 };
 
 class SpeakerHText : public ScreenSpeaker {

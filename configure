@@ -174,7 +174,7 @@ _strip=strip
 _ar="ar cru"
 _as="as"
 _windres=windres
-_win32path="C:/scummvm"
+_win32path="build/x86"
 _aos4path="Games:ScummVM"
 _staticlibpath=/sw
 _sdlconfig=sdl-config
@@ -654,7 +654,7 @@ Configuration:
   -h, --help              display this help and exit
   --backend=BACKEND       backend to build (android, dc, dingux, ds, gp2x, gph,
                           iphone, linuxmoto, maemo, n64, null, openpandora, ps2,
-                          psp, samsungtv, sdl, symbian, webos, wii, wince) [sdl]
+                          psp, samsungtv, sdl, webos, wii, wince) [sdl]
 
 Installation directories:
   --prefix=PREFIX         install architecture-independent files in PREFIX
@@ -1591,9 +1591,9 @@ case $_host_os in
 		if test "$_dynamic_modules" = no ; then
 			LDFLAGS="$LDFLAGS -Wl,--gc-sections"
 		else
-				LDFLAGS="$LDFLAGS -Wl,--no-gc-sections"
-				# TODO automate this required 2 step linking phase
-				# LDFLAGS="$LDFLAGS -Wl,--retain-symbols-file,ds.syms"
+			LDFLAGS="$LDFLAGS -Wl,--no-gc-sections"
+			# TODO automate this required 2 step linking phase
+			# LDFLAGS="$LDFLAGS -Wl,--retain-symbols-file,ds.syms"
 		fi
 		LDFLAGS="$LDFLAGS -L$DEVKITPRO/libnds/lib"
 		LIBS="$LIBS -lnds9"
@@ -3084,6 +3084,7 @@ case $_backend in
 		INCLUDES="$INCLUDES `$_sdlconfig --prefix="$_sdlpath" --cflags`"
 		LIBS="$LIBS `$_sdlconfig --prefix="$_sdlpath" --libs`"
 		LDFLAGS="$LDFLAGS"
+		DEFINES="$DEFINES -DSDL_BACKEND"
 		;;
 	ps2)
 		# TODO ps2

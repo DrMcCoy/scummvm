@@ -49,7 +49,7 @@ public:
 	SceneItemList _sceneItems;
 	SceneObjectList _sceneObjectsInstance;
 	SceneObjectList *_sceneObjects;
-	SynchronisedList<SceneObjectList *> _sceneObjects_queue;
+	SynchronizedList<SceneObjectList *> _sceneObjects_queue;
 	SceneText _sceneText;
 	int _gfxFontNumber;
 	GfxColors _gfxColors;
@@ -57,7 +57,7 @@ public:
 	SoundManager _soundManager;
 	Common::Point _dialogCenter;
 	WalkRegions _walkRegions;
-	SynchronisedList<EventHandler *> _sceneListeners;
+	SynchronizedList<EventHandler *> _sceneListeners;
 	bool _flags[256];
 	Player _player;
 	SoundHandler _soundHandler;
@@ -90,7 +90,7 @@ public:
 
 	GfxManager &gfxManager() { return **_gfxManagers.begin(); }
 	virtual Common::String getClassName() { return "Globals"; }
-	virtual void synchronise(Serialiser &s);
+	virtual void synchronize(Serializer &s);
 };
 
 extern Globals *_globals;

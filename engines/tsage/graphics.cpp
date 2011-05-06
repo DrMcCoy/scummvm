@@ -212,7 +212,7 @@ void Rect::expandPanes() {
 /**
  * Serialises the given rect
  */
-void Rect::synchronise(Serialiser &s) {
+void Rect::synchronize(Serializer &s) {
 	s.syncAsSint16LE(left);
 	s.syncAsSint16LE(top);
 	s.syncAsSint16LE(right);
@@ -227,6 +227,7 @@ GfxSurface::GfxSurface() : _bounds(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT) {
 	_lockSurfaceCtr = 0;
 	_customSurface = NULL;
 	_screenSurfaceP = NULL;
+	_transColor = -1;
 }
 
 GfxSurface::GfxSurface(const GfxSurface &s) {
@@ -259,6 +260,7 @@ void GfxSurface::create(int width, int height) {
 	_screenSurface = false;
 	_customSurface = new Graphics::Surface();
 	_customSurface->create(width, height, Graphics::PixelFormat::createFormatCLUT8());
+	Common::set_to((byte *)_customSurface->pixels, (byte *)_customSurface->pixels + (width * height), 0);
 	_bounds = Rect(0, 0, width, height);
 }
 
@@ -484,6 +486,8 @@ static GfxSurface ResizeSurface(GfxSurface &src, int xSize, int ySize, int trans
  */
 void GfxSurface::copyFrom(GfxSurface &src, Rect srcBounds, Rect destBounds, Region *priorityRegion) {
 	GfxSurface srcImage;
+	if (srcBounds.isEmpty())
+		return;
 
 	if (srcBounds == src.getBounds())
 		srcImage = src;

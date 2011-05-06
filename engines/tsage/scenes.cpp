@@ -71,7 +71,7 @@ void SceneManager::sceneChange() {
 	}
 
 	// Clear the scene objects
-	SynchronisedList<SceneObject *>::iterator io = _globals->_sceneObjects->begin();
+	SynchronizedList<SceneObject *>::iterator io = _globals->_sceneObjects->begin();
 	while (io != _globals->_sceneObjects->end()) {
 		SceneObject *sceneObj = *io;
 		++io;
@@ -87,7 +87,7 @@ void SceneManager::sceneChange() {
 	}
 
 	// Clear the hotspot list
-	SynchronisedList<SceneItem *>::iterator ii = _globals->_sceneItems.begin();
+	SynchronizedList<SceneItem *>::iterator ii = _globals->_sceneItems.begin();
 	while (ii != _globals->_sceneItems.end()) {
 		SceneItem *sceneItem = *ii;
 		++ii;
@@ -164,7 +164,7 @@ void SceneManager::changeScene(int newSceneNumber) {
 	}
 
 	// Stop any objects that were animating
-	SynchronisedList<SceneObject *>::iterator i;
+	SynchronizedList<SceneObject *>::iterator i;
 	for (i = _globals->_sceneObjects->begin(); i != _globals->_sceneObjects->end(); ++i) {
 		SceneObject *sceneObj = *i;
 		Common::Point pt(0, 0);
@@ -227,10 +227,10 @@ void SceneManager::setBgOffset(const Common::Point &pt, int loadCount) {
 	_sceneLoadCount = loadCount;
 }
 
-void SceneManager::listenerSynchronise(Serialiser &s) {
+void SceneManager::listenerSynchronize(Serializer &s) {
 	s.validate("SceneManager");
 
-	_altSceneObjects.synchronise(s);
+	_altSceneObjects.synchronize(s);
 	s.syncAsSint32LE(_sceneNumber);
 	s.syncAsUint16LE(_globals->_sceneManager._scene->_activeScreenNumber);
 
@@ -239,7 +239,7 @@ void SceneManager::listenerSynchronise(Serialiser &s) {
 		checkScene();
 	}
 
-	_globals->_sceneManager._scrollerRect.synchronise(s);
+	_globals->_sceneManager._scrollerRect.synchronize(s);
 	SYNC_POINTER(_globals->_scrollFollower);
 	s.syncAsSint16LE(_loadMode);
 }
@@ -256,16 +256,17 @@ Scene::Scene() : _sceneBounds(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT),
 Scene::~Scene() {
 }
 
-void Scene::synchronise(Serialiser &s) {
-	StripCallback::synchronise(s);
+void Scene::synchronize(Serializer &s) {
+	if (s.getVersion() >= 2)
+		StripCallback::synchronize(s);
 
 	s.syncAsSint32LE(_field12);
 	s.syncAsSint32LE(_screenNumber);
 	s.syncAsSint32LE(_activeScreenNumber);
 	s.syncAsSint32LE(_sceneMode);
-	_backgroundBounds.synchronise(s);
-	_sceneBounds.synchronise(s);
-	_oldSceneBounds.synchronise(s);
+	_backgroundBounds.synchronize(s);
+	_sceneBounds.synchronize(s);
+	_oldSceneBounds.synchronize(s);
 	s.syncAsSint16LE(_fieldA);
 	s.syncAsSint16LE(_fieldE);
 
@@ -435,7 +436,7 @@ void Scene::drawAltObjects() {
 	Common::Array<SceneObject *> objList;
 
 	// Initial loop to set the priority for entries in the list
-	for (SynchronisedList<SceneObject *>::iterator i = _globals->_sceneManager._altSceneObjects.begin();
+	for (SynchronizedList<SceneObject *>::iterator i = _globals->_sceneManager._altSceneObjects.begin();
 		i != _globals->_sceneManager._altSceneObjects.end(); ++i) {
 		SceneObject *obj = *i;
 		objList.push_back(obj);

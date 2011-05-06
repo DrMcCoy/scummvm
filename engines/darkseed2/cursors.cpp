@@ -24,9 +24,11 @@
  */
 
 #include "common/macresman.h"
+#include "common/textconsole.h"
 #include "common/winexe_ne.h"
 
 #include "graphics/cursorman.h"
+#include "graphics/maccursor.h"
 #include "graphics/wincursor.h"
 
 #include "darkseed2/cursors.h"
@@ -275,38 +277,47 @@ bool CursorsMac::load() {
 		if (cursor.name.empty())
 			continue;
 
-		byte *cursorData, *rawPalette;
-		int keyColor, palSize;
-
 		Common::SeekableReadStream *stream = _exeResFork->getResource(MKTAG('c', 'r', 's', 'r'), idArray[i]);
-		Common::MacResManager::convertCrsrCursor(stream, &cursorData, cursor.width, cursor.height, cursor.hotspotX, cursor.hotspotY, keyColor, true, &rawPalette, palSize);
-		delete stream;
+		::Graphics::MacCursor *macCursor = new ::Graphics::MacCursor();
 
-		Palette palette;
-
-		palette.resize(MAX<int>(palSize, keyColor + 1));
-
-		for (int j = 0; j < palSize; j++) {
-			palette.get()[j * 3 + 0] = rawPalette[j * 3 + 0];
-			palette.get()[j * 3 + 1] = rawPalette[j * 3 + 1];
-			palette.get()[j * 3 + 2] = rawPalette[j * 3 + 2];
+		if (!macCursor->readFromStream(*stream)) {
+			warning("Failed to load Mac cursor '%s'", cursor.name.c_str());
+			delete macCursor;
+			delete stream;
+			continue;
 		}
 
-		// Ensure the keyColor is transparent
-		palette.get()[keyColor * 3 + 0] = 0;
-		palette.get()[keyColor * 3 + 1] = 0;
-		palette.get()[keyColor * 3 + 2] = 255;
+		// Copy properties
+		cursor.width    = macCursor->getWidth();
+		cursor.height   = macCursor->getHeight();
+		cursor.hotspotX = macCursor->getHotspotX();
+		cursor.hotspotY = macCursor->getHotspotY();
 
-		delete[] rawPalette;
+		Palette palette;
+		palette.resize(256);
 
-		cursor.sprite = new Sprite();
+		const byte *srcPalette = macCursor->getPalette();
+
+		for (int j = 0; j < 256; j++) {
+			palette.get()[j * 3 + 0] = srcPalette[j * 3 + 0];
+			palette.get()[j * 3 + 1] = srcPalette[j * 3 + 1];
+			palette.get()[j * 3 + 2] = srcPalette[j * 3 + 2];
+		}
+
+		// Ensure the key color is transparent
+		palette.get()[macCursor->getKeyColor() * 3 + 0] = 0;
+		palette.get()[macCursor->getKeyColor() * 3 + 1] = 0;
+		palette.get()[macCursor->getKeyColor() * 3 + 2] = 255;
+
+		cursor.sprite = new Sprite;
 		cursor.sprite->create(cursor.width, cursor.height);
 		cursor.sprite->setPalette(palette);
-		cursor.sprite->copyFrom(cursorData);
-
-		delete[] cursorData;
+		cursor.sprite->copyFrom(macCursor->getSurface());
 
 		_cursors[cursor.name] = cursor;
+
+		delete macCursor;
+		delete stream;
 	}
 
 	return true;

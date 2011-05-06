@@ -36,6 +36,7 @@
 // INCLUDES
 // -----------------------------------------------------------------------------
 
+#include "common/savefile.h"
 #include "sword25/package/packagemanager.h"
 #include "sword25/gfx/image/pngloader.h"
 #include "sword25/gfx/image/renderedimage.h"
@@ -43,6 +44,14 @@
 #include "common/system.h"
 
 namespace Sword25 {
+
+// Duplicated from kernel/persistenceservice.cpp
+static Common::String generateSavegameFilename(uint slotID) {
+	char buffer[100];
+	// NOTE: This is hardcoded to sword25
+	snprintf(buffer, 100, "%s.%.3d", "sword25", slotID);
+	return Common::String(buffer);
+}
 
 // -----------------------------------------------------------------------------
 // CONSTRUCTION / DESTRUCTION
@@ -62,21 +71,36 @@ RenderedImage::RenderedImage(const Common::String &filename, bool &result) :
 	// Load file
 	byte *pFileData;
 	uint fileSize;
-	pFileData = pPackage->getFile(filename, &fileSize);
+
+	if (filename.hasPrefix("/saves")) {
+		// A savegame thumbnail
+		Common::SaveFileManager *sfm = g_system->getSavefileManager();
+		int slotNum = atoi(filename.c_str() + filename.size() - 3);
+		Common::InSaveFile *file = sfm->openForLoading(generateSavegameFilename(slotNum));
+		fileSize = file->size();
+		pFileData = new byte[fileSize];
+		file->read(pFileData, fileSize);
+		delete file;
+	} else {
+		pFileData = pPackage->getFile(filename, &fileSize);
+	}
+
 	if (!pFileData) {
 		error("File \"%s\" could not be loaded.", filename.c_str());
 		return;
 	}
 
+#ifndef USE_INTERNAL_PNG_DECODER
 	// Determine image properties
-	int pitch;
 	if (!PNGLoader::imageProperties(pFileData, fileSize, _width, _height)) {
 		error("Could not read image properties.");
 		delete[] pFileData;
 		return;
 	}
+#endif
 
 	// Uncompress the image
+	int pitch;
 	if (!PNGLoader::decodeImage(pFileData, fileSize, _data, _width, _height, pitch)) {
 		error("Could not decode image.");
 		delete[] pFileData;
