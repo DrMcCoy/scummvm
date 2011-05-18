@@ -18,9 +18,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * $URL$
- * $Id$
- *
  */
 
 #include "tsage/events.h"
@@ -258,6 +255,10 @@ void GfxSurface::setScreenSurface() {
 void GfxSurface::create(int width, int height) {
 	assert((width >= 0) && (height >= 0));
 	_screenSurface = false;
+	if (_customSurface) {
+		_customSurface->free();
+		delete _customSurface;
+	}
 	_customSurface = new Graphics::Surface();
 	_customSurface->create(width, height, Graphics::PixelFormat::createFormatCLUT8());
 	Common::set_to((byte *)_customSurface->pixels, (byte *)_customSurface->pixels + (width * height), 0);
@@ -419,11 +420,11 @@ static int *scaleLine(int size, int srcSize) {
 	int *v = new int[size];
 	Common::set_to(v, &v[size], -1);
 
-	int distCtr = 0;
+	int distCtr = PRECISION_FACTOR / 2;
 	int *destP = v;
 	for (int distIndex = 0; distIndex < srcSize; ++distIndex) {
 		distCtr += scale;
-		while (distCtr >= PRECISION_FACTOR) {
+		while (distCtr > PRECISION_FACTOR) {
 			assert(destP < &v[size]);
 			*destP++ = distIndex;
 			distCtr -= PRECISION_FACTOR;
@@ -669,12 +670,18 @@ void GfxElement::drawFrame() {
  * @event Event to process
  */
 bool GfxElement::focusedEvent(Event &event) {
+	Common::Point mousePos = event.mousePos;
 	bool highlightFlag = false;
 
-	while (!_vm->getEventManager()->shouldQuit()) {
+	// HACK: It should use the GfxManager object to figure out the relative
+	// position, but for now this seems like the easiest way.
+	int xOffset = mousePos.x - _globals->_events._mousePos.x;
+	int yOffset = mousePos.y - _globals->_events._mousePos.y;
+
+	while (event.eventType != EVENT_BUTTON_UP && !_vm->getEventManager()->shouldQuit()) {
 		g_system->delayMillis(10);
 
-		if (_bounds.contains(event.mousePos)) {
+		if (_bounds.contains(mousePos)) {
 			if (!highlightFlag) {
 				// First highlight call to show the highlight
 				highlightFlag = true;
@@ -686,8 +693,12 @@ bool GfxElement::focusedEvent(Event &event) {
 			highlight();
 		}
 
-		if (_globals->_events.getEvent(event, EVENT_BUTTON_UP))
-			break;
+		if (_globals->_events.getEvent(event, EVENT_MOUSE_MOVE | EVENT_BUTTON_UP)) {
+			if (event.eventType == EVENT_MOUSE_MOVE) {
+				mousePos.x = event.mousePos.x + xOffset;
+				mousePos.y = event.mousePos.y + yOffset;
+			}
+		}
 	}
 
 	if (highlightFlag) {
@@ -966,9 +977,10 @@ GfxButton *GfxDialog::execute(GfxButton *defaultButton) {
 	// Event loop
 	GfxButton *selectedButton = NULL;
 
-	while (!_vm->getEventManager()->shouldQuit()) {
+	bool breakFlag = false;
+	while (!_vm->getEventManager()->shouldQuit() && !breakFlag) {
 		Event event;
-		while (_globals->_events.getEvent(event)) {
+		while (_globals->_events.getEvent(event) && !breakFlag) {
 			// Adjust mouse positions to be relative within the dialog
 			event.mousePos.x -= _gfxManager._bounds.left;
 			event.mousePos.y -= _gfxManager._bounds.top;
@@ -977,19 +989,25 @@ GfxButton *GfxDialog::execute(GfxButton *defaultButton) {
 				if ((*i)->process(event))
 					selectedButton = static_cast<GfxButton *>(*i);
 			}
-		}
 
-		if (selectedButton)
-			break;
-		else if (!event.handled) {
-			if ((event.eventType == EVENT_KEYPRESS) && (event.kbd.keycode == Common::KEYCODE_ESCAPE)) {
-				selectedButton = NULL;
+			if (selectedButton) {
+				breakFlag = true;
 				break;
-			} else if ((event.eventType == EVENT_KEYPRESS) && (event.kbd.keycode == Common::KEYCODE_RETURN)) {
-				selectedButton = defaultButton;
-				break;
+			} else if (!event.handled) {
+				if ((event.eventType == EVENT_KEYPRESS) && (event.kbd.keycode == Common::KEYCODE_ESCAPE)) {
+					selectedButton = NULL;
+					breakFlag = true;
+					break;
+				} else if ((event.eventType == EVENT_KEYPRESS) && (event.kbd.keycode == Common::KEYCODE_RETURN)) {
+					selectedButton = defaultButton;
+					breakFlag = true;
+					break;
+				}
 			}
 		}
+
+		g_system->delayMillis(10);
+		g_system->updateScreen();
 	}
 
 	_gfxManager.deactivate();

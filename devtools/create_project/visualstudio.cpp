@@ -18,9 +18,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * $URL$
- * $Id$
- *
  */
 
 #include "config.h"
@@ -240,7 +237,6 @@ void VisualStudioProvider::outputGlobalPropFile(std::ofstream &properties, int b
 	              "\t/>\n"
 	              "\t<Tool\n"
 	              "\t\tName=\"VCResourceCompilerTool\"\n"
-	              "\t\tPreprocessorDefinitions=\"HAS_INCLUDE_SET\"\n"
 	              "\t\tAdditionalIncludeDirectories=\"" << prefix << "\"\n"
 	              "\t/>\n"
 	              "</VisualStudioPropertySheet>\n";

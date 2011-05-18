@@ -18,9 +18,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * $URL$
- * $Id$
- *
  */
 
 #include "common/savefile.h"
@@ -211,6 +208,7 @@ Common::Error Saver::restore(int slot) {
 	// Final post-restore notifications
 	_macroRestoreFlag = false;
 	_loadNotifiers.notify(false);
+	_globals->_events.setCursor(_globals->_player._uiEnabled ? CURSOR_WALK : CURSOR_NONE);
 
 	return Common::kNoError;
 }

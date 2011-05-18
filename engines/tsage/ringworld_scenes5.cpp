@@ -18,9 +18,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * $URL$
- * $Id$
- *
  */
 
 #include "common/config-manager.h"
@@ -47,7 +44,6 @@ void Scene4000::Action1::signal() {
 		scene->_hotspot5.animate(ANIM_MODE_1, NULL);
 		scene->_hotspot5.setPosition(Common::Point(116, 160));
 
-//		ADD_PLAYER_MOVER_NULL(scene->_hotspot5, 208, 169);
 		Common::Point pt(208, 169);
 		NpcMover *mover = new NpcMover();
 		scene->_hotspot5.addMover(mover, &pt, this);
@@ -102,7 +98,7 @@ void Scene4000::Action1::signal() {
 	}
 	case 4:
 		ADD_MOVER(scene->_miranda, -30, 86);
-		ADD_MOVER(scene->_hotspot5, -40, 86);
+		ADD_MOVER_NULL(scene->_hotspot5, -40, 86);
 		break;
 	case 5:
 		_globals->_soundHandler.startSound(155);
@@ -989,7 +985,6 @@ void Scene4000::postInit(SceneObjectList *OwnerList) {
 		_globals->_player.enableControl();
 
 		if (RING_INVENTORY._ladder._sceneNumber != 4000) {
-			_hotspot8.postInit();
 			_hotspot8.setVisage(4017);
 			_hotspot8.animate(ANIM_MODE_1, NULL);
 			_hotspot8.setPosition(Common::Point(199, 188));
@@ -1009,8 +1004,9 @@ void Scene4000::postInit(SceneObjectList *OwnerList) {
 			_olo.setObjectWrapper(new SceneObjectWrapper());
 			_olo.setPosition(Common::Point(219, 150));
 
+			_sceneMode = 4010;
 			_globals->_player.disableControl();
-			setAction(&_sequenceManager1, this, 4010, &_globals->_player, NULL);
+			setAction(&_sequenceManager1, this, 4010, &_globals->_player, &_olo, NULL);
 		}
 
 		if (_globals->_stripNum == 4000) {
@@ -1137,6 +1133,10 @@ void Scene4000::postInit(SceneObjectList *OwnerList) {
 
 void Scene4000::signal() {
 	switch (_sceneMode) {
+	case 4010:
+		_globals->setFlag(38);
+		_olo.remove();
+		// Deliberate fall-through
 	case 4001:
 		_globals->_player.enableControl();
 		break;
@@ -1168,10 +1168,6 @@ void Scene4000::signal() {
 		break;
 	case 4009:
 		_globals->_sceneManager.changeScene(2200);
-		break;
-	case 4010:
-		_globals->setFlag(38);
-		_olo.remove();
 		break;
 	case 4012:
 		_globals->_player.checkAngle(&_theTech);
@@ -1831,10 +1827,10 @@ Scene4045::Scene4045() :
 	_hotspot7(9, CURSOR_LOOK, 4045, 0, CURSOR_USE, 4045, 15, LIST_END),
 	_hotspot8(10, CURSOR_LOOK, 4045, 2, LIST_END),
 	_hotspot9(11, CURSOR_LOOK, 4045, 3, CURSOR_USE, 4045, 15, LIST_END),
-	_hotspot10(12, CURSOR_LOOK, 4045, 4, CURSOR_USE, 4045, 19, LIST_END),
+	_hotspot10(12, CURSOR_LOOK, 4045, 4, CURSOR_USE, 4100, 19, LIST_END),
 	_hotspot11(13, CURSOR_LOOK, 4045, 6, CURSOR_USE, 4045, 15, LIST_END),
-	_hotspot12(14, CURSOR_LOOK, 4045, 7, CURSOR_USE, 4045, 29, LIST_END),
-	_hotspot13(15, CURSOR_LOOK, 4045, 8, CURSOR_USE, 4045, 19, LIST_END),
+	_hotspot12(14, CURSOR_LOOK, 4045, 7, CURSOR_USE, 4150, 29, LIST_END),
+	_hotspot13(15, CURSOR_LOOK, 4045, 8, CURSOR_USE, 4100, 19, LIST_END),
 	_hotspot14(0, CURSOR_LOOK, 4045, 10, LIST_END) {
 
 	_hotspot14.setBounds(Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT));
@@ -2002,7 +1998,7 @@ void Scene4045::dispatch() {
 }
 
 /*--------------------------------------------------------------------------
- * Scene 4000 - Village - Temple
+ * Scene 4050 - Village - Outside
  *
  *--------------------------------------------------------------------------*/
 

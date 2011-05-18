@@ -18,13 +18,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * $URL$
- * $Id$
- *
  */
 
 #include "tsage/globals.h"
 #include "tsage/tsage.h"
+#include "tsage/blueforce_logic.h"
+#include "tsage/ringworld_demo.h"
 #include "tsage/ringworld_logic.h"
 
 namespace tSage {
@@ -44,15 +43,17 @@ static SavedObject *classFactoryProc(const Common::String &className) {
 	if (className == "ObjectMover3") return new ObjectMover3();
 	if (className == "PlayerMover") return new PlayerMover();
 	if (className == "SceneObjectWrapper") return new SceneObjectWrapper();
-
+	if (className == "PaletteRotation") return new PaletteRotation();
+	if (className == "PaletteFader") return new PaletteFader();
 	return NULL;
 }
 
 /*--------------------------------------------------------------------------*/
 
 Globals::Globals() :
-		_dialogCenter(160, 140),
-		_gfxManagerInstance(_screenSurface) {
+	_dialogCenter(160, 140),
+	_gfxManagerInstance(_screenSurface),
+	_randomSource("tsage") {
 	reset();
 	_stripNum = 0;
 
@@ -83,11 +84,19 @@ Globals::Globals() :
 	_scrollFollower = NULL;
 	_inventory = NULL;
 
-	if (!(_vm->getFeatures() & GF_DEMO)) {
-		_inventory = new RingworldInvObjectList();
-		_game = new RingworldGame();
-	} else {
-		_game = new RingworldDemoGame();
+	switch (_vm->getGameID()) {
+	case GType_Ringworld:
+		if (!(_vm->getFeatures() & GF_DEMO)) {
+			_inventory = new RingworldInvObjectList();
+			_game = new RingworldGame();
+		} else {
+			_game = new RingworldDemoGame();
+		}
+		break;
+
+	case GType_BlueForce:
+		_game = new BlueForceGame();
+		break;
 	}
 }
 

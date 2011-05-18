@@ -18,9 +18,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * $URL$
- * $Id$
- *
  */
 
 #include "graphics/cursorman.h"
@@ -35,6 +32,14 @@ void NamedHotspotMult::synchronize(Serializer &s) {
 	SceneHotspot::synchronize(s);
 	s.syncAsSint16LE(_useLineNum);
 	s.syncAsSint16LE(_lookLineNum);
+}
+
+void SceneObject7700::synchronize(Serializer &s) {
+	SceneObject::synchronize(s);
+	if (s.getVersion() >= 3) {
+		s.syncAsSint16LE(_lookLineNum);
+		s.syncAsSint16LE(_defltLineNum);
+	}
 }
 
 /*--------------------------------------------------------------------------
@@ -114,7 +119,7 @@ void Scene7000::Action3::dispatch() {
 
 	Action::dispatch();
 	if (_actionIndex == 4)
-		scene->_object4.setPosition(scene->_object3._position);
+		scene->_object4.setPosition(Common::Point(scene->_object3._position.x, scene->_object3._position.y + 15));
 }
 
 /*--------------------------------------------------------------------------*/
@@ -346,11 +351,11 @@ void Scene7000::Action7::signal() {
 
 /*--------------------------------------------------------------------------*/
 
-void Scene7000::SceneItem1::doAction(int action) {
+void Scene7000::Hotspot1::doAction(int action) {
 	if (action == CURSOR_LOOK)
 		SceneItem::display2(7000, 2);
-
-	SceneItem::doAction(action);
+	else
+		SceneHotspot::doAction(action);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -608,8 +613,8 @@ void Scene7000::postInit(SceneObjectList *OwnerList) {
 		setAction(&_action3);
 	}
 
-	_sceneItem1.setBounds(Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT));
-	_globals->_sceneItems.push_back(&_sceneItem1);
+	_hotspot1.setBounds(Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT));
+	_globals->_sceneItems.push_back(&_hotspot1);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1602,7 +1607,7 @@ void Scene7600::postInit(SceneObjectList *OwnerList) {
  *--------------------------------------------------------------------------*/
 
 void Scene7700::Action1::signal() {
-	SceneObject *fmtObj = (SceneObject *) _endHandler;
+	SceneObjectExt *fmtObj = (SceneObjectExt *) _endHandler;
 	switch (_actionIndex++) {
 	case 0: {
 		PlayerMover *mover1 = new PlayerMover();
@@ -1612,7 +1617,7 @@ void Scene7700::Action1::signal() {
 	}
 	case 1:
 		_globals->_player.checkAngle(fmtObj);
-		if (_globals->_player._field8C == 0)
+		if (fmtObj->_state == 0)
 			fmtObj->animate(ANIM_MODE_5, this);
 		else
 			fmtObj->animate(ANIM_MODE_6, this);
@@ -2521,6 +2526,15 @@ Scene7700::Scene7700() {
 	_object5._state = 0;
 	_object6._state = 0;
 	_prof._state = 0;
+}
+
+void Scene7700::synchronize(Serializer &s) {
+	Scene::synchronize(s);
+	if (s.getVersion() >= 3) {
+		s.syncAsSint16LE(_field977);
+		s.syncAsSint16LE(_field979);
+		s.syncAsSint16LE(_field97B);
+	}
 }
 
 } // End of namespace tSage

@@ -29,7 +29,6 @@
 #include "common/random.h"
 #include "base/plugins.h"
 #include "common/config-manager.h"
-#include "common/EventRecorder.h"
 #include "common/debug-channels.h"
 #include "common/macresman.h"
 #include "common/textconsole.h"
@@ -109,8 +108,7 @@ DarkSeed2Engine::DarkSeed2Engine(OSystem *syst, const DS2GameDescription *gameDe
 	_events         = 0;
 	_macExeResFork  = 0;
 
-	_rnd = new Common::RandomSource();
-	g_eventRec.registerRandomSource(*_rnd, "ds2");
+	_rnd = new Common::RandomSource("darkseed2");
 
 	_engineStartTime = 0;
 	_playTime        = 0;
