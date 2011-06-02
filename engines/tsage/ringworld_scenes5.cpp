@@ -322,6 +322,7 @@ void Scene4000::Action7::signal() {
 }
 
 void Scene4000::Action8::signal() {
+	// Climb down right Chimney using a rope
 	Scene4000 *scene = (Scene4000 *)_globals->_sceneManager._scene;
 
 	switch (_actionIndex++) {
@@ -335,7 +336,7 @@ void Scene4000::Action8::signal() {
 	case 1:
 		_globals->_player.setVisage(4008);
 		_globals->_player.setStrip(5);
-		_globals->_player.setPriority(16);
+		_globals->_player.fixPriority(16);
 		_globals->_player.setFrame(1);
 		_globals->_player.setPosition(Common::Point(283, 52));
 		_globals->_player.animate(ANIM_MODE_5, this);
@@ -1458,7 +1459,7 @@ void Scene4025::Hole::doAction(int action) {
 void Scene4025::Peg::synchronize(Serializer &s) {
 	SceneObject::synchronize(s);
 	s.syncAsSint16LE(_field88);
-	SYNC_POINTER(_armStrip);
+	s.syncAsSint16LE(_armStrip);
 }
 
 void Scene4025::Peg::doAction(int action) {
@@ -2712,6 +2713,10 @@ void Scene4100::postInit(SceneObjectList *OwnerList) {
 			setAction(&_action4);
 
 			_globals->clearFlag(43);
+		} else {
+			// Workaround: In the original, the mouse is hidden when Quinn
+			// goes back to scene 4150 then to scene 4100. This enables everything.
+			_globals->_player.enableControl();
 		}
 
 		_globals->_player.setPosition(Common::Point(252, 139));
@@ -2978,7 +2983,7 @@ Scene4150::Scene4150() :
 		_hotspot11(0, CURSOR_LOOK, 4150, 6, CURSOR_USE, 4150, 29, LIST_END),
 		_hotspot12(0, CURSOR_LOOK, 4150, 7, CURSOR_USE, 4150, 29, LIST_END),
 		_hotspot17(0, CURSOR_LOOK, 4150, 10, CURSOR_USE, 4150, 27, OBJECT_STUNNER, 4150, 32, LIST_END),
-		_hotspot18(0, CURSOR_LOOK, 4150, 11, CURSOR_USE, 4150, 32, OBJECT_STUNNER, 4150, 27, LIST_END),
+		_hotspot18(0, CURSOR_LOOK, 4150, 11, CURSOR_USE, 4150, 27, OBJECT_STUNNER, 4150, 32, LIST_END),
 		_hotspot19(0, CURSOR_LOOK, 4150, 12, CURSOR_USE, 4150, 29, LIST_END),
 		_hotspot20(0, CURSOR_LOOK, 4150, 13, CURSOR_USE, 4150, 29, LIST_END),
 		_hotspot21(0, CURSOR_LOOK, 4150, 13, CURSOR_USE, 4150, 29, LIST_END),
@@ -3088,6 +3093,7 @@ void Scene4150::dispatch() {
 
 	if (!_action && (_globals->_player._position.x >= 316)) {
 		_globals->_soundHandler.proc1(NULL);
+		_soundHandler.proc1(NULL);
 		_globals->_player.disableControl();
 		_sceneMode = 4152;
 		setAction(&_sequenceManager, this, 4152, &_globals->_player, NULL);

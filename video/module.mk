@@ -5,7 +5,6 @@ MODULE_OBJS := \
 	coktel_decoder.o \
 	dxa_decoder.o \
 	flic_decoder.o \
-	mpeg_player.o \
 	qt_decoder.o \
 	segafilm_decoder.o \
 	smk_decoder.o \
@@ -16,7 +15,6 @@ MODULE_OBJS := \
 	codecs/mjpeg.o \
 	codecs/msrle.o \
 	codecs/msvideo1.o \
-	codecs/qdm2.o \
 	codecs/qtrle.o \
 	codecs/rpza.o \
 	codecs/smc.o \

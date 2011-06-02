@@ -76,7 +76,7 @@ static const GameSettings sword2_settings[] = {
 class Sword2MetaEngine : public MetaEngine {
 public:
 	virtual const char *getName() const {
-		return "Broken Sword II";
+		return "Sword2";
 	}
 	virtual const char *getOriginalCopyright() const {
 		return "Broken Sword Games (C) Revolution";
@@ -425,7 +425,7 @@ Common::Error Sword2Engine::run() {
 	setInputEventFilter(RD_LEFTBUTTONUP | RD_RIGHTBUTTONUP | RD_WHEELUP | RD_WHEELDOWN);
 
 	setupPersistentResources();
-	initialiseFontResourceFlags();
+	initializeFontResourceFlags();
 
 	if (_features & GF_DEMO)
 		_logic->writeVar(DEMO, 1);
@@ -463,7 +463,7 @@ Common::Error Sword2Engine::run() {
 	} else
 		startGame();
 
-	_screen->initialiseRenderCycle();
+	_screen->initializeRenderCycle();
 
 	while (1) {
 		_debugger->onFrame();
