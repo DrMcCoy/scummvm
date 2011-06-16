@@ -185,12 +185,17 @@ bool CursorsWindows::load() {
 			continue;
 
 		Cursor cursor;
-		if (!loadFromResource(cursor, *cursorGroup->cursors[0].cursor))
+		if (!loadFromResource(cursor, *cursorGroup->cursors[0].cursor)) {
+			delete cursorGroup;
 			return false;
+		}
+
+		delete cursorGroup;
 
 		cursor.name = cursorGroups[i].toString();
 
 		_cursors.setVal(cursor.name, cursor);
+
 	}
 
 	return true;
