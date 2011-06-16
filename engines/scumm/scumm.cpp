@@ -162,7 +162,7 @@ ScummEngine::ScummEngine(OSystem *syst, const DetectorResult &dr)
 	_pauseDialog = NULL;
 	_versionDialog = NULL;
 	_fastMode = 0;
-	_actors = NULL;
+	_actors = _sortedActors = NULL;
 	_arraySlot = NULL;
 	_inventory = NULL;
 	_newNames = NULL;
@@ -260,7 +260,7 @@ ScummEngine::ScummEngine(OSystem *syst, const DetectorResult &dr)
 	_switchRoomEffect2 = 0;
 	_switchRoomEffect = 0;
 
-	_bytesPerPixelOutput = _bytesPerPixel = 1;
+	_bytesPerPixel = 1;
 	_doEffect = false;
 	_snapScroll = false;
 	_currentLights = 0;
@@ -545,18 +545,19 @@ ScummEngine::ScummEngine(OSystem *syst, const DetectorResult &dr)
 		_screenHeight = 200;
 	}
 
-	_bytesPerPixelOutput = _bytesPerPixel = (_game.features & GF_16BIT_COLOR) ? 2 : 1;
+	_bytesPerPixel = (_game.features & GF_16BIT_COLOR) ? 2 : 1;
+	uint8 sizeMult = _bytesPerPixel;
 
 #ifdef USE_RGB_COLOR
 #ifndef DISABLE_TOWNS_DUAL_LAYER_MODE
 	if (_game.platform == Common::kPlatformFMTowns)
-		_bytesPerPixelOutput = 2;
+		sizeMult = 2;
 #endif
 #endif
 
 	// Allocate gfx compositing buffer (not needed for V7/V8 games).
 	if (_game.version < 7)
-		_compositeBuf = (byte *)malloc(_screenWidth * _screenHeight * _bytesPerPixelOutput);
+		_compositeBuf = (byte *)malloc(_screenWidth * _screenHeight * sizeMult);
 	else
 		_compositeBuf = 0;
 
@@ -584,9 +585,12 @@ ScummEngine::~ScummEngine() {
 
 	_mixer->stopAll();
 
-	for (int i = 0; i < _numActors; ++i)
-		delete _actors[i];
-	delete[] _actors;
+	if (_actors) {
+		for (int i = 0; i < _numActors; ++i)
+			delete _actors[i];
+		delete[] _actors;
+	}
+	
 	delete[] _sortedActors;
 
 	delete[] _2byteFontPtr;
@@ -1151,9 +1155,23 @@ Common::Error ScummEngine::init() {
 #endif
 			) {
 #ifdef USE_RGB_COLOR
-			Graphics::PixelFormat format = Graphics::PixelFormat(2, 5, 5, 5, 0, 10, 5, 0, 0);
-			initGraphics(screenWidth, screenHeight, screenWidth > 320, &format);
-			if (format != _system->getScreenFormat())
+			_outputPixelFormat = Graphics::PixelFormat(2, 5, 5, 5, 0, 10, 5, 0, 0);
+			Common::List<Graphics::PixelFormat> tryModes = _system->getSupportedFormats();
+			// Try default 555 mode first
+			tryModes.push_front(_outputPixelFormat);
+
+			for (Common::List<Graphics::PixelFormat>::iterator g = tryModes.begin(); g != tryModes.end(); ++g) {
+				if (g->bytesPerPixel != 2 || g->aBits())
+					continue;
+				_outputPixelFormat = *g;
+				initGraphics(screenWidth, screenHeight, screenWidth > 320, &_outputPixelFormat);
+				// Other modes than 555 are only supported for FM-TOWNS games and LOOM PCE.
+				// Especially the HE games require 555.
+				if (*g == _system->getScreenFormat() || (_game.platform != Common::kPlatformFMTowns && _game.platform != Common::kPlatformPCEngine))
+					break;
+			}
+			
+			if (_outputPixelFormat != _system->getScreenFormat())
 				return Common::kUnsupportedColorMode;
 #else
 			if (_game.platform == Common::kPlatformFMTowns && _game.version == 3) {
@@ -1171,6 +1189,8 @@ Common::Error ScummEngine::init() {
 			initGraphics(screenWidth, screenHeight, (screenWidth > 320));
 		}
 	}
+
+	_outputPixelFormat = _system->getScreenFormat();
 
 	setupScumm();
 
@@ -1280,7 +1300,7 @@ void ScummEngine::setupScumm() {
 	_res->setHeapThreshold(400000, maxHeapThreshold);
 
 	free(_compositeBuf);
-	_compositeBuf = (byte *)malloc(_screenWidth * _textSurfaceMultiplier * _screenHeight * _textSurfaceMultiplier * _bytesPerPixelOutput);
+	_compositeBuf = (byte *)malloc(_screenWidth * _textSurfaceMultiplier * _screenHeight * _textSurfaceMultiplier * _outputPixelFormat.bytesPerPixel);
 }
 
 #ifdef ENABLE_SCUMM_7_8
@@ -1361,7 +1381,7 @@ void ScummEngine::resetScumm() {
 #ifdef USE_RGB_COLOR
 	if (_game.features & GF_16BIT_COLOR
 #ifndef DISABLE_TOWNS_DUAL_LAYER_MODE
-		|| _game.platform == Common::kPlatformFMTowns
+		|| (_game.platform == Common::kPlatformFMTowns)
 #endif
 		)
 		_16BitPalette = (uint16 *)calloc(512, sizeof(uint16));
@@ -1370,8 +1390,8 @@ void ScummEngine::resetScumm() {
 #ifndef DISABLE_TOWNS_DUAL_LAYER_MODE
 	if (_game.platform == Common::kPlatformFMTowns) {
 		delete _townsScreen;
-		_townsScreen = new TownsScreen(_system, _screenWidth * _textSurfaceMultiplier, _screenHeight * _textSurfaceMultiplier, _bytesPerPixelOutput);
-		_townsScreen->setupLayer(0, _screenWidth, _screenHeight, (_bytesPerPixelOutput == 2) ? 32767 : 256);
+		_townsScreen = new TownsScreen(_system, _screenWidth * _textSurfaceMultiplier, _screenHeight * _textSurfaceMultiplier, _outputPixelFormat);
+		_townsScreen->setupLayer(0, _screenWidth, _screenHeight, (_outputPixelFormat.bytesPerPixel == 2) ? 32767 : 256);
 		_townsScreen->setupLayer(1, _screenWidth * _textSurfaceMultiplier, _screenHeight * _textSurfaceMultiplier, 16, _textPalette);
 	}
 #endif
@@ -1762,8 +1782,10 @@ void ScummEngine::setupMusic(int midi) {
 
 		if (missingFile) {
 			GUI::MessageDialog dialog(
-				"Native MIDI support requires the Roland Upgrade from LucasArts,\n"
-				"but " + fileName + " is missing. Using AdLib instead.", "Ok");
+				Common::String::format(
+					_("Native MIDI support requires the Roland Upgrade from LucasArts,\n"
+					"but %s is missing. Using AdLib instead."), fileName.c_str()),
+				_("OK"));
 			dialog.runModal();
 			_musicType = MDT_ADLIB;
 		}

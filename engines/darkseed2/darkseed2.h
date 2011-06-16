@@ -29,6 +29,7 @@
 #include "common/system.h"
 
 #include "engines/engine.h"
+#include "engines/advancedDetector.h"
 #include "engines/game.h"
 
 class MidiDriver;
@@ -56,8 +57,6 @@ enum {
 	kDebugRoomConf     = 1 << 11,
 	kDebugGameflow     = 1 << 12
 };
-
-struct DS2GameDescription;
 
 class Options;
 class Cursors;
@@ -99,10 +98,10 @@ public:
 	/** Pause the engine. */
 	void pauseGame();
 
-	DarkSeed2Engine(OSystem *syst, const DS2GameDescription *gameDesc);
+	DarkSeed2Engine(OSystem *syst, const ADGameDescription *gameDesc);
 	virtual ~DarkSeed2Engine();
 
-	void initGame(const DS2GameDescription *gd);
+	void initGame(const ADGameDescription *gd);
 
 	/** Show the load dialog. */
 	bool doLoadDialog();
@@ -120,7 +119,7 @@ private:
 		uint32 playTime;
 	};
 
-	const DS2GameDescription *_gameDescription;
+	const ADGameDescription *_gameDescription;
 
 	MidiDriver *_midiDriver;
 

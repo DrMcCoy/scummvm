@@ -84,6 +84,7 @@ add_engine cruise "Cinematique evo 2" yes
 add_engine darkseed2 "Dark Seed II" no
 add_engine draci "Dragon History" yes
 add_engine drascula "Drascula: The Vampire Strikes Back" yes
+add_engine dreamweb "Dreamweb" no
 add_engine gob "Gobli*ns" yes
 add_engine groovie "Groovie" yes "groovie2"
 add_engine groovie2 "Groovie 2 games" no
@@ -2193,6 +2194,7 @@ if test -n "$_host"; then
 			LDFLAGS="$LDFLAGS -Wl,--stack,65536"
 			_tremolo=yes
 			_backend="wince"
+			_detectlang=yes
 			_mt32emu=no
 			_port_mk="backends/platform/wince/wince.mk"
 			;;
@@ -2207,16 +2209,9 @@ fi
 #
 case $_backend in
 	android)
-		# ssp at this point so the cxxtests link
-		if test "$_debug_build" = yes; then
-			CXXFLAGS="$CXXFLAGS -fstack-protector"
-		else
-			CXXFLAGS="$CXXFLAGS -fno-stack-protector"
-		fi
+		DEFINES="$DEFINES -DREDUCE_MEMORY_USAGE"
 		CXXFLAGS="$CXXFLAGS -Wa,--noexecstack"
 		LDFLAGS="$LDFLAGS -Wl,-z,noexecstack"
-
-		DEFINES="$DEFINES -DREDUCE_MEMORY_USAGE"
 		;;
 	dc)
 		INCLUDES="$INCLUDES "'-I$(srcdir)/backends/platform/dc'
@@ -3084,12 +3079,14 @@ if test "$_translation" = no ; then
 else
 	echo_n "yes ("
 
-	cat > $TMPC << EOF
+	if test "$_detectlang" != yes ; then
+		cat > $TMPC << EOF
 #include <locale.h>
 int main(void) { setlocale(LC_ALL, ""); return 0; }
 EOF
-	_detectlang=no
-	cc_check $LDFLAGS $CXXFLAGS && _detectlang=yes
+		_detectlang=no
+		cc_check $LDFLAGS $CXXFLAGS && _detectlang=yes
+	fi
 
 	define_in_config_h_if_yes $_detectlang 'USE_DETECTLANG'
 	if test "$_detectlang" = yes ; then
@@ -3175,6 +3172,13 @@ fi
 #
 case $_backend in
 	android)
+		# ssp at this point so the cxxtests link
+		if test "$_debug_build" = yes; then
+			CXXFLAGS="$CXXFLAGS -fstack-protector"
+		else
+			CXXFLAGS="$CXXFLAGS -fno-stack-protector"
+		fi
+
 		static_libs=''
 		system_libs=''
 		for lib in $LIBS; do

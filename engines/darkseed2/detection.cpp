@@ -32,24 +32,20 @@
 
 namespace DarkSeed2 {
 
-struct DS2GameDescription {
-	ADGameDescription desc;
-};
-
 const char *DarkSeed2Engine::getGameId() const {
-	return _gameDescription->desc.gameid;
+	return _gameDescription->gameid;
 }
 
 Common::Language DarkSeed2Engine::getLanguage() const {
-	return _gameDescription->desc.language;
+	return _gameDescription->language;
 }
 
 Common::Platform DarkSeed2Engine::getPlatform() const {
-	return _gameDescription->desc.platform;
+	return _gameDescription->platform;
 }
 
 bool DarkSeed2Engine::isDemo() const {
-	return (_gameDescription->desc.flags & ADGF_DEMO) != 0;
+	return (_gameDescription->flags & ADGF_DEMO) != 0;
 }
 
 } // End of namespace DarkSeed2
@@ -67,117 +63,101 @@ using Common::GUIO_NOSPEECH;
 using Common::GUIO_NOSUBTITLES;
 using Common::GUIO_NONE;
 
-static const DS2GameDescription gameDescriptions[] = {
+static const ADGameDescription gameDescriptions[] = {
 	{ // English version
+		"darkseed2",
+		"",
 		{
-			"darkseed2",
-			"",
-			{
-				{"gfile.hdr",    0, "a7092ebd44d4bd70acd6dd14e111576f", 211230},
-				{"gl00_txt.000", 0, "0f1c8f78fa670e015115b9f2dcdcd4ae", 125377},
-			},
-			EN_ANY,
-			kPlatformWindows,
-			ADGF_NO_FLAGS,
-			GUIO_NONE
+			{"gfile.hdr",    0, "a7092ebd44d4bd70acd6dd14e111576f", 211230},
+			{"gl00_txt.000", 0, "0f1c8f78fa670e015115b9f2dcdcd4ae", 125377},
 		},
+		EN_ANY,
+		kPlatformWindows,
+		ADGF_NO_FLAGS,
+		GUIO_NONE
 	},
 	{ // German version from the PC Joker. English speech, German text
+		"darkseed2",
+		"",
 		{
-			"darkseed2",
-			"",
-			{
-				{"gfile.hdr",    0, "454ab83dfb35a7232ee0eb635427f761", 210856},
-				{"gl00_txt.000", 0, "e195b792c29e53717a6364b66721731f", 140771},
-			},
-			DE_DEU,
-			kPlatformWindows,
-			ADGF_NO_FLAGS,
-			GUIO_NONE
+			{"gfile.hdr",    0, "454ab83dfb35a7232ee0eb635427f761", 210856},
+			{"gl00_txt.000", 0, "e195b792c29e53717a6364b66721731f", 140771},
 		},
+		DE_DEU,
+		kPlatformWindows,
+		ADGF_NO_FLAGS,
+		GUIO_NONE
 	},
 	{ // French version. English speech, French text
+		"darkseed2",
+		"",
 		{
-			"darkseed2",
-			"",
-			{
-				{"gfile.hdr",    0, "454ab83dfb35a7232ee0eb635427f761", 210856},
-				{"gl00_txt.000", 0, "edbd13f748c306a4e61eb4ca2f41d3d8", 139687},
-			},
-			FR_FRA,
-			kPlatformWindows,
-			ADGF_NO_FLAGS,
-			GUIO_NONE
+			{"gfile.hdr",    0, "454ab83dfb35a7232ee0eb635427f761", 210856},
+			{"gl00_txt.000", 0, "edbd13f748c306a4e61eb4ca2f41d3d8", 139687},
 		},
+		FR_FRA,
+		kPlatformWindows,
+		ADGF_NO_FLAGS,
+		GUIO_NONE
 	},
 	{ // English Demo version
+		"darkseed2",
+		"Demo",
 		{
-			"darkseed2",
-			"Demo",
-			{
-				{"gl00_txt.000", 0, "3353aaa3cf28be529a2979cc78d89697", 57343},
-			},
-			EN_ANY,
-			kPlatformWindows,
-			ADGF_DEMO,
-			GUIO_NONE
+			{"gl00_txt.000", 0, "3353aaa3cf28be529a2979cc78d89697", 57343},
 		},
+		EN_ANY,
+		kPlatformWindows,
+		ADGF_DEMO,
+		GUIO_NONE
 	},
 	{ // Japanese Sega Saturn version
+		"darkseed2",
+		"",
 		{
-			"darkseed2",
-			"",
-			{
-				{"initial.idx",  0, "92438db5d1b4b8946ec59ecfbd6107c0", 1284},
-				{"initial.glu",  0, "558a62491c612a890a25991016ab3f81", 540300},
-				{"conv0001.pgf", 0, "a2faad74e14ba51dbcf8e9fccfae1606", 10760}
-			},
-			JA_JPN,
-			kPlatformSaturn,
-			ADGF_NO_FLAGS,
-			GUIO_NOSPEECH
+			{"initial.idx",  0, "92438db5d1b4b8946ec59ecfbd6107c0", 1284},
+			{"initial.glu",  0, "558a62491c612a890a25991016ab3f81", 540300},
+			{"conv0001.pgf", 0, "a2faad74e14ba51dbcf8e9fccfae1606", 10760}
 		},
+		JA_JPN,
+		kPlatformSaturn,
+		ADGF_NO_FLAGS,
+		GUIO_NOSPEECH
 	},
 	{ // English Macintosh Version
+		"darkseed2",
+		"",
 		{
-			"darkseed2",
-			"",
-			{
-				{"talk", 0, "1b0b8c0b264aeff60394b416afcb1e18", 963703},
-				{"action", 0, "bc7a9c5900609093e37c8a5c01340ddc", 1915496}
-			},
-			EN_ANY,
-			kPlatformMacintosh,
-			ADGF_MACRESFORK,
-			GUIO_NOSPEECH
+			{"talk", 0, "1b0b8c0b264aeff60394b416afcb1e18", 963703},
+			{"action", 0, "bc7a9c5900609093e37c8a5c01340ddc", 1915496}
 		},
+		EN_ANY,
+		kPlatformMacintosh,
+		ADGF_MACRESFORK,
+		GUIO_NOSPEECH
 	},
-	{ AD_TABLE_END_MARKER }
+	AD_TABLE_END_MARKER
 };
 
-static const DS2GameDescription fallbackDescs[] = {
+static const ADGameDescription fallbackDescs[] = {
 	{ // 0
-		{
-			"darkseed2",
-			"unknown",
-			AD_ENTRY1(0, 0),
-			UNK_LANG,
-			kPlatformPC,
-			ADGF_NO_FLAGS,
-			GUIO_NONE
-		},
+		"darkseed2",
+		"unknown",
+		AD_ENTRY1(0, 0),
+		UNK_LANG,
+		kPlatformPC,
+		ADGF_NO_FLAGS,
+		GUIO_NONE
 	},
 	{ // 1
-		{
-			"darkseed2",
-			"unknown",
-			AD_ENTRY1(0, 0),
-			UNK_LANG,
-			kPlatformSaturn,
-			ADGF_NO_FLAGS,
-			GUIO_NONE
-		},
-	},
+		"darkseed2",
+		"unknown",
+		AD_ENTRY1(0, 0),
+		UNK_LANG,
+		kPlatformSaturn,
+		ADGF_NO_FLAGS,
+		GUIO_NONE
+	}
 };
 
 static const ADFileBasedFallback fileBased[] = {
@@ -190,12 +170,15 @@ static const ADFileBasedFallback fileBased[] = {
 
 class DarkSeed2MetaEngine : public AdvancedMetaEngine {
 public:
-	DarkSeed2MetaEngine() : AdvancedMetaEngine(DarkSeed2::gameDescriptions, sizeof(DarkSeed2::DS2GameDescription), darkseed2Games) {
-		params.md5Bytes = 10000;
-		params.singleid = "darkseed2";
-		params.fileBasedFallback = DarkSeed2::fileBased;
-		params.guioptions = GUIO_NOLAUNCHLOAD;
+	DarkSeed2MetaEngine() : AdvancedMetaEngine(DarkSeed2::gameDescriptions, sizeof(ADGameDescription), darkseed2Games) {
+		_md5Bytes = 10000;
+		_singleid = "darkseed2";
+		_guioptions = GUIO_NOLAUNCHLOAD;
 	}
+
+        virtual const ADGameDescription *fallbackDetect(const FileMap &allFiles, const Common::FSList &fslist) const {
+                return detectGameFilebased(allFiles, DarkSeed2::fileBased);
+        }
 
 	virtual const char *getName() const {
 		return "Dark Seed II Engine";
@@ -258,12 +241,11 @@ SaveStateDescriptor DarkSeed2MetaEngine::querySaveMetaInfos(const char *target, 
 }
 
 bool DarkSeed2MetaEngine::createInstance(OSystem *syst, Engine **engine, const ADGameDescription *desc) const {
-	const DarkSeed2::DS2GameDescription *gd = (const DarkSeed2::DS2GameDescription *)desc;
-	if (gd) {
-		*engine = new DarkSeed2::DarkSeed2Engine(syst, gd);
-		((DarkSeed2::DarkSeed2Engine *)*engine)->initGame(gd);
+	if (desc) {
+		*engine = new DarkSeed2::DarkSeed2Engine(syst, desc);
+		((DarkSeed2::DarkSeed2Engine *)*engine)->initGame(desc);
 	}
-	return gd != 0;
+	return desc != 0;
 }
 
 #if PLUGIN_ENABLED_DYNAMIC(DARKSEED2)
@@ -274,7 +256,7 @@ bool DarkSeed2MetaEngine::createInstance(OSystem *syst, Engine **engine, const A
 
 namespace DarkSeed2 {
 
-void DarkSeed2Engine::initGame(const DS2GameDescription *gd) {
+void DarkSeed2Engine::initGame(const ADGameDescription *gd) {
 }
 
 } // End of namespace DarkSeed2

@@ -71,7 +71,7 @@ namespace DarkSeed2 {
 static const char *kResourceIndex = "gfile.hdr";
 static const char *kVariableIndex = "GAMEVAR";
 
-DarkSeed2Engine::DarkSeed2Engine(OSystem *syst, const DS2GameDescription *gameDesc) :
+DarkSeed2Engine::DarkSeed2Engine(OSystem *syst, const ADGameDescription *gameDesc) :
 	Engine(syst), _gameDescription(gameDesc) {
 
 	DebugMan.addDebugChannel(kDebugResources   , "Resources"   , "Resource handling debug level");
