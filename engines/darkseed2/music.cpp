@@ -54,6 +54,7 @@ Music::Music(Audio::Mixer &mixer, MidiDriver &driver) : _mixer(&mixer), _midiDri
 Music::~Music() {
 	stop();
 
+	_midiDriver->close();
 	delete _midiParser;
 }
 
