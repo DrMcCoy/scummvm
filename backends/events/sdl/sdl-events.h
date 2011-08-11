@@ -20,21 +20,24 @@
  *
  */
 
-#if !defined(BACKEND_EVENTS_SDL_H) && !defined(DISABLE_DEFAULT_EVENTMANAGER)
+#ifndef BACKEND_EVENTS_SDL_H
 #define BACKEND_EVENTS_SDL_H
 
-#include "backends/events/default/default-events.h"
-
 #include "backends/platform/sdl/sdl-sys.h"
+#include "backends/graphics/sdl/sdl-graphics.h"
+
+#include "common/events.h"
 
 
 /**
  * The SDL event source.
  */
 class SdlEventSource : public Common::EventSource {
-public: 
+public:
 	SdlEventSource();
 	virtual ~SdlEventSource();
+
+	void setGraphicsManager(SdlGraphicsManager *gMan) { _graphicsManager = gMan; }
 
 	/**
 	 * Gets and processes SDL events.
@@ -69,12 +72,17 @@ protected:
 
 	/** Scroll lock state - since SDL doesn't track it */
 	bool _scrollLock;
-	
+
 	/** Joystick */
 	SDL_Joystick *_joystick;
 
 	/** Last screen id for checking if it was modified */
 	int _lastScreenID;
+
+	/**
+	 * The associated graphics manager.
+	 */
+	SdlGraphicsManager *_graphicsManager;
 
 	/**
 	 * Pre process an event before it is dispatched.
@@ -108,9 +116,10 @@ protected:
 	//@}
 
 	/**
-	 * Assigns the mouse coords to the mouse event
+	 * Assigns the mouse coords to the mouse event. Furthermore notify the 
+	 * graphics manager about the position change.
 	 */
-	virtual void fillMouseEvent(Common::Event &event, int x, int y);
+	virtual void processMouseEvent(Common::Event &event, int x, int y);
 
 	/**
 	 * Remaps key events. This allows platforms to configure
@@ -127,6 +136,11 @@ protected:
 	 * Configures the key modifiers flags status
 	 */
 	virtual void SDLModToOSystemKeyFlags(SDLMod mod, Common::Event &event);
+
+	/**
+	 * Translates SDL key codes to OSystem key codes
+	 */
+	Common::KeyCode SDLToOSystemKeycode(const SDLKey key);
 };
 
 #endif

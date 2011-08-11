@@ -27,14 +27,35 @@
 #include "common/savefile.h"
 #include "common/textconsole.h"
 
-DECLARE_SINGLETON(Common::EventRecorder);
-
 namespace Common {
+
+DECLARE_SINGLETON(EventRecorder);
 
 #define RECORD_SIGNATURE 0x54455354
 #define RECORD_VERSION 1
 
-void readRecord(SeekableReadStream *inFile, uint32 &diff, Event &event) {
+uint32 readTime(ReadStream *inFile) {
+	uint32 d = inFile->readByte();
+	if (d == 0xff) {
+		d = inFile->readUint32LE();
+	}
+
+	return d;
+}
+
+void writeTime(WriteStream *outFile, uint32 d) {
+		//Simple RLE compression
+	if (d >= 0xff) {
+		outFile->writeByte(0xff);
+		outFile->writeUint32LE(d);
+	} else {
+		outFile->writeByte(d);
+	}
+}
+
+void readRecord(SeekableReadStream *inFile, uint32 &diff, Event &event, uint32 &millis) {
+	millis = readTime(inFile);
+
 	diff = inFile->readUint32LE();
 
 	event.type = (EventType)inFile->readUint32LE();
@@ -53,6 +74,8 @@ void readRecord(SeekableReadStream *inFile, uint32 &diff, Event &event) {
 	case EVENT_RBUTTONUP:
 	case EVENT_WHEELUP:
 	case EVENT_WHEELDOWN:
+	case EVENT_MBUTTONDOWN:
+	case EVENT_MBUTTONUP:
 		event.mouse.x = inFile->readSint16LE();
 		event.mouse.y = inFile->readSint16LE();
 		break;
@@ -61,7 +84,9 @@ void readRecord(SeekableReadStream *inFile, uint32 &diff, Event &event) {
 	}
 }
 
-void writeRecord(WriteStream *outFile, uint32 diff, const Event &event) {
+void writeRecord(WriteStream *outFile, uint32 diff, const Event &event, uint32 millis) {
+	writeTime(outFile, millis);
+
 	outFile->writeUint32LE(diff);
 
 	outFile->writeUint32LE((uint32)event.type);
@@ -80,6 +105,8 @@ void writeRecord(WriteStream *outFile, uint32 diff, const Event &event) {
 	case EVENT_RBUTTONUP:
 	case EVENT_WHEELUP:
 	case EVENT_WHEELDOWN:
+	case EVENT_MBUTTONDOWN:
+	case EVENT_MBUTTONUP:
 		outFile->writeSint16LE(event.mouse.x);
 		outFile->writeSint16LE(event.mouse.y);
 		break;
@@ -99,23 +126,31 @@ EventRecorder::EventRecorder() {
 	_eventCount = 0;
 	_lastEventCount = 0;
 	_lastMillis = 0;
+	_lastEventMillis = 0;
 
 	_recordMode = kPassthrough;
 }
 
 EventRecorder::~EventRecorder() {
 	deinit();
+
+	g_system->deleteMutex(_timeMutex);
+	g_system->deleteMutex(_recorderMutex);
 }
 
 void EventRecorder::init() {
 	String recordModeString = ConfMan.get("record_mode");
 	if (recordModeString.compareToIgnoreCase("record") == 0) {
 		_recordMode = kRecorderRecord;
+
+		debug(3, "EventRecorder: record");
 	} else {
 		if (recordModeString.compareToIgnoreCase("playback") == 0) {
 			_recordMode = kRecorderPlayback;
+			debug(3, "EventRecorder: playback");
 		} else {
 			_recordMode = kPassthrough;
+			debug(3, "EventRecorder: passthrough");
 		}
 	}
 
@@ -173,6 +208,7 @@ void EventRecorder::init() {
 
 		_recordCount = _playbackFile->readUint32LE();
 		_recordTimeCount = _playbackFile->readUint32LE();
+
 		randomSourceCount = _playbackFile->readUint32LE();
 		for (uint i = 0; i < randomSourceCount; ++i) {
 			RandomSourceRecord rec;
@@ -190,10 +226,12 @@ void EventRecorder::init() {
 	}
 
 	g_system->getEventManager()->getEventDispatcher()->registerSource(this, false);
-	g_system->getEventManager()->getEventDispatcher()->registerObserver(this, 1, false);
+	g_system->getEventManager()->getEventDispatcher()->registerObserver(this, EventManager::kEventRecorderPriority, false, true);
 }
 
 void EventRecorder::deinit() {
+	debug(3, "EventRecorder: deinit");
+
 	g_system->getEventManager()->getEventDispatcher()->unregisterSource(this);
 	g_system->getEventManager()->getEventDispatcher()->unregisterObserver(this);
 
@@ -236,8 +274,9 @@ void EventRecorder::deinit() {
 		for (uint i = 0; i < _recordCount; ++i) {
 			uint32 tempDiff;
 			Event tempEvent;
-			readRecord(_playbackFile, tempDiff, tempEvent);
-			writeRecord(_recordFile, tempDiff, tempEvent);
+			uint32 millis;
+			readRecord(_playbackFile, tempDiff, tempEvent, millis);
+			writeRecord(_recordFile, tempDiff, tempEvent, millis);
 		}
 
 		_recordFile->finalize();
@@ -246,9 +285,6 @@ void EventRecorder::deinit() {
 
 		//TODO: remove recordTempFileName'ed file
 	}
-
-	g_system->deleteMutex(_timeMutex);
-	g_system->deleteMutex(_recorderMutex);
 }
 
 void EventRecorder::registerRandomSource(RandomSource &rnd, const String &name) {
@@ -278,23 +314,23 @@ void EventRecorder::processMillis(uint32 &millis) {
 
 	g_system->lockMutex(_timeMutex);
 	if (_recordMode == kRecorderRecord) {
-		//Simple RLE compression
 		d = millis - _lastMillis;
-		if (d >= 0xff) {
-			_recordTimeFile->writeByte(0xff);
-			_recordTimeFile->writeUint32LE(d);
-		} else {
-			_recordTimeFile->writeByte(d);
-		}
+		writeTime(_recordTimeFile, d);
+
 		_recordTimeCount++;
 	}
 
 	if (_recordMode == kRecorderPlayback) {
 		if (_recordTimeCount > _playbackTimeCount) {
-			d = _playbackTimeFile->readByte();
-			if (d == 0xff) {
-				d = _playbackTimeFile->readUint32LE();
+			d = readTime(_playbackTimeFile);
+
+			while ((_lastMillis + d > millis) && (_lastMillis + d - millis > 50)) {
+				_recordMode = kPassthrough;
+				g_system->delayMillis(50);
+				millis = g_system->getMillis();
+				_recordMode = kRecorderPlayback;
 			}
+
 			millis = _lastMillis + d;
 			_playbackTimeCount++;
 		}
@@ -304,6 +340,23 @@ void EventRecorder::processMillis(uint32 &millis) {
 	g_system->unlockMutex(_timeMutex);
 }
 
+bool EventRecorder::processDelayMillis(uint &msecs) {
+	if (_recordMode == kRecorderPlayback) {
+		_recordMode = kPassthrough;
+
+		uint32 millis = g_system->getMillis();
+
+		_recordMode = kRecorderPlayback;
+
+		if (_lastMillis > millis) {
+			// Skip delay if we're getting late
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool EventRecorder::notifyEvent(const Event &ev) {
 	if (_recordMode != kRecorderRecord)
 		return false;
@@ -311,15 +364,27 @@ bool EventRecorder::notifyEvent(const Event &ev) {
 	StackLock lock(_recorderMutex);
 	++_eventCount;
 
-	writeRecord(_recordFile, _eventCount - _lastEventCount, ev);
+	writeRecord(_recordFile, _eventCount - _lastEventCount, ev, _lastMillis - _lastEventMillis);
 
 	_recordCount++;
 	_lastEventCount = _eventCount;
+	_lastEventMillis = _lastMillis;
+
+	return false;
+}
+
+bool EventRecorder::notifyPoll() {
+	if (_recordMode != kRecorderRecord)
+		return false;
+
+	++_eventCount;
 
 	return false;
 }
 
 bool EventRecorder::pollEvent(Event &ev) {
+	uint32 millis;
+
 	if (_recordMode != kRecorderPlayback)
 		return false;
 
@@ -328,7 +393,7 @@ bool EventRecorder::pollEvent(Event &ev) {
 
 	if (!_hasPlaybackEvent) {
 		if (_recordCount > _playbackCount) {
-			readRecord(_playbackFile, const_cast<uint32&>(_playbackDiff), _playbackEvent);
+			readRecord(_playbackFile, const_cast<uint32&>(_playbackDiff), _playbackEvent, millis);
 			_playbackCount++;
 			_hasPlaybackEvent = true;
 		}
@@ -360,4 +425,3 @@ bool EventRecorder::pollEvent(Event &ev) {
 }
 
 } // End of namespace Common
-

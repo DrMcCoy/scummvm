@@ -30,6 +30,7 @@
 #include "tsage/core.h"
 #include "tsage/scenes.h"
 #include "tsage/globals.h"
+#include "tsage/sound.h"
 
 namespace tSage {
 
@@ -65,7 +66,7 @@ class Scene15 : public Scene {
 public:
 	Action1 _action1;
 	SceneObject _object1;
-	SoundHandler _soundHandler;
+	ASound _soundHandler;
 
 	virtual void postInit(SceneObjectList *OwnerList = NULL);
 };
@@ -97,7 +98,7 @@ public:
 	Action3 _action3;
 	Action4 _action4;
 	SceneObject _sceneObject1, _SceneObjectExt, _sceneObject3, _sceneObject4, _sceneObject5;
-	SoundHandler _sound;
+	ASound _sound;
 public:
 	Scene20();
 	virtual ~Scene20() {}
@@ -143,7 +144,7 @@ class Scene30 : public Scene {
 	};
 
 public:
-	SoundHandler _sound;
+	ASound _sound;
 	DisplayHotspot _groundHotspot, _wallsHotspot, _courtyardHotspot, _treeHotspot;
 	BeamObject _beam;
 	DoorObject _door;
@@ -200,6 +201,7 @@ class Scene40 : public Scene {
 	class Action8 : public Action {
 	public:
 		virtual void signal();
+		virtual void dispatch();
 	};
 
 	/* Objects */
@@ -213,15 +215,15 @@ class Scene40 : public Scene {
 	};
 
 	/* Items */
-	class Item2 : public SceneItem {
+	class Item2 : public SceneHotspot {
 	public:
 		virtual void doAction(int action);
 	};
-	class Item6 : public SceneItem {
+	class Item6 : public SceneHotspot {
 	public:
 		virtual void doAction(int action);
 	};
-	class Item8 : public SceneItem {
+	class Item8 : public SceneHotspot {
 	public:
 		virtual void doAction(int action);
 	};
@@ -232,7 +234,7 @@ public:
 	SpeakerQText _speakerQText;
 	SpeakerSText _speakerSText;
 	SpeakerGameText _speakerGameText;
-	SoundHandler _soundHandler;
+	ASound _soundHandler;
 	Action1 _action1;
 	Action2 _action2;
 	Action3 _action3;
@@ -271,7 +273,7 @@ class Scene50 : public Scene {
 	public:
 		virtual void signal();
 	};
-	
+
 	/* Objects */
 	class Object1 : public SceneObject {
 	public:
@@ -311,7 +313,7 @@ public:
 	virtual void dispatch();
 };
 
-class Scene60 : public Scene {	
+class Scene60 : public Scene {
 	class Action1 : public Action {
 	public:
 		virtual void signal();
@@ -387,9 +389,9 @@ public:
 	SceneObject _redLights;
 	Item1 _item1;
 	Item _item2, _item3, _item4, _item5, _item6;
-	SoundHandler _soundHandler1;
-	SoundHandler _soundHandler2;
-	SoundHandler _soundHandler3;
+	ASound _soundHandler1;
+	ASound _soundHandler2;
+	ASound _soundHandler3;
 
 	Scene60();
 	virtual void postInit(SceneObjectList *OwnerList = NULL);
@@ -423,7 +425,7 @@ public:
 	DisplayObject _object3, _object4, _object5;
 	SceneObject _object6;
 	DisplayHotspot _item1, _item2, _item3;
-	SoundHandler _soundHandler1, _soundHandler2;
+	ASound _soundHandler1, _soundHandler2;
 
 	Scene90();
 
@@ -441,7 +443,7 @@ class Scene95 : public Scene {
 public:
 	Action1 _action1;
 	SceneObject _object1, _object2, _object3;
-	SoundHandler _soundHandler;
+	ASound _soundHandler;
 
 	Scene95();
 	virtual void postInit(SceneObjectList *OwnerList);
@@ -505,7 +507,7 @@ public:
 	Action5 _action5;
 	GetBoxAction _getBoxAction;
 	Action7 _action7;
-	SoundHandler _soundHandler;
+	ASound _soundHandler;
 	Speaker _speaker1;
 	SpeakerQR _speakerQR;
 	SpeakerSL _speakerSL;

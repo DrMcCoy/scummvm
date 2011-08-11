@@ -20,6 +20,9 @@
  *
  */
 
+#include "audio/mididrv.h"
+#include "audio/mixer.h"
+
 #include "groovie/music.h"
 #include "groovie/groovie.h"
 #include "groovie/resource.h"
@@ -766,7 +769,7 @@ Common::SeekableReadStream *MusicPlayerMac::decompressMidi(Common::SeekableReadS
 }
 
 MusicPlayerIOS::MusicPlayerIOS(GroovieEngine *vm) : MusicPlayer(vm) {
-	vm->getTimerManager()->installTimerProc(&onTimer, 50 * 1000, this);
+	vm->getTimerManager()->installTimerProc(&onTimer, 50 * 1000, this, "groovieMusic");
 }
 
 MusicPlayerIOS::~MusicPlayerIOS() {
@@ -801,17 +804,17 @@ bool MusicPlayerIOS::load(uint32 fileref, bool loop) {
 	19468 ambient  (but not 69, amb b.  odd)
 	19470 puzzle
 	19471
-	19473 
+	19473
 	19475 coffins or blood pump
 	19476 blood pump or coffins
 	19493
 	19499 chapel
 	19509 downstair ambient
 	19510 bedroom 'skip 3 and 5' puzzle (should loop from partway?)
-	19514 
+	19514
 	19515 bathroom drain teeth
 	*/
-	if ((fileref >= 19462 && fileref <= 19468) || 
+	if ((fileref >= 19462 && fileref <= 19468) ||
 		fileref == 19470 || fileref == 19471 ||
 		fileref == 19473 || fileref == 19475 ||
 		fileref == 19476 || fileref == 19493 ||
@@ -849,7 +852,7 @@ bool MusicPlayerIOS::load(uint32 fileref, bool loop) {
 	updateVolume();
 
 	// Play!
-	_vm->_system->getMixer()->playStream(Audio::Mixer::kMusicSoundType, &_handle, audStream); 
+	_vm->_system->getMixer()->playStream(Audio::Mixer::kMusicSoundType, &_handle, audStream);
 	return true;
 }
 

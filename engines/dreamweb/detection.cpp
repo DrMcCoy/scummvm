@@ -18,9 +18,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * $URL: https://svn.scummvm.org:4444/svn/dreamweb/detection.cpp $
- * $Id: detection.cpp 3 2010-09-16 19:32:18Z megath $
- *
  */
 
 #include "base/plugins.h"
@@ -29,16 +26,6 @@
 #include "common/system.h"
 
 #include "dreamweb/dreamweb.h"
-
-#include "engines/advancedDetector.h"
-
-namespace DreamWeb {
-
-struct DreamWebGameDescription {
-	ADGameDescription desc;
-};
-
-} // End of namespace DreamWeb
 
 static const PlainGameDescriptor dreamWebGames[] = {
 	{ "dreamweb", "DreamWeb" },
@@ -50,10 +37,10 @@ static const PlainGameDescriptor dreamWebGames[] = {
 class DreamWebMetaEngine : public AdvancedMetaEngine {
 public:
 	DreamWebMetaEngine():
-	AdvancedMetaEngine(DreamWeb::gameDescriptions, 
+	AdvancedMetaEngine(DreamWeb::gameDescriptions,
 	sizeof(DreamWeb::DreamWebGameDescription), dreamWebGames) {
 		_singleid = "dreamweb";
-		_guioptions = Common::GUIO_NOMIDI;
+		_guioptions = Common::GUIO_NOMIDI | Common::GUIO_NOLAUNCHLOAD;
 	}
 
 	virtual const char *getName() const {
@@ -74,8 +61,8 @@ public:
 bool DreamWebMetaEngine::hasFeature(MetaEngineFeature f) const {
 	switch(f) {
 	case kSupportsListSaves:
-	case kSupportsLoadingDuringStartup:
-	case kSupportsDeleteSave:
+	//case kSupportsLoadingDuringStartup:
+	//case kSupportsDeleteSave:
 		return true;
 	default:
 		return false;
@@ -83,6 +70,14 @@ bool DreamWebMetaEngine::hasFeature(MetaEngineFeature f) const {
 }
 
 bool DreamWeb::DreamWebEngine::hasFeature(EngineFeature f) const {
+	switch(f) {
+	case kSupportsRTL:
+		return true;
+	case kSupportsSubtitleOptions:
+		return _gameDescription->desc.flags & ADGF_CD;
+	default:
+		return false;
+	}
 	return false;
 }
 
@@ -134,7 +129,7 @@ Common::Error DreamWebEngine::loadGameState(int slot) {
 	return Common::kNoError;
 }
 
-Common::Error DreamWebEngine::saveGameState(int slot, const char *desc) {
+Common::Error DreamWebEngine::saveGameState(int slot, const Common::String &desc) {
 	return Common::kNoError;
 }
 

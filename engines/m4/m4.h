@@ -26,7 +26,6 @@
 #include "common/scummsys.h"
 #include "common/util.h"
 #include "common/random.h"
-#include "audio/mididrv.h"
 
 #include "engines/engine.h"
 
@@ -94,7 +93,7 @@ class Animation;
 enum M4GameType {
 	GType_Riddle = 1,
 	GType_Burger = 2,
-	GType_RexNebular = 3, 
+	GType_RexNebular = 3,
 	GType_DragonSphere = 4,
 	GType_Phantom = 5
 };

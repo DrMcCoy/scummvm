@@ -50,7 +50,7 @@ debuglevel1	equ	0	;memory debug on
 debuglevel2	equ	0	;debug keys on+shouts
 demo	equ	0
 CD	equ	1
-Foreign	equ	0
+Foreign	equ	1
 Spanish	equ	0
 German	equ	0
 
@@ -135,13 +135,24 @@ Dreamweb	proc	near
 dodecisions:	call	cls
 	call	setmode
 	call	decide
+
+	cmp quitrequested, 0
+	jnz exitgame
+
 	cmp	getback,4
 	jz	mainloop
 
 	call	titles
+
+	cmp quitrequested, 0
+	jnz exitgame
+
 	call	credits
 
-playgame:	call	clearchanges
+playgame:
+	cmp quitrequested, 0
+	jnz exitgame
+	call	clearchanges
 	call	setmode
 	call	loadpalfromiff
 	mov	location,255
@@ -194,7 +205,11 @@ alreadyloaded:	mov	newlocation,255
 	call	startup
 	mov	commandtype,255
 
-mainloop:	call	screenupdate
+mainloop:
+	cmp quitrequested, 0
+	jnz exitgame
+
+	call	screenupdate
 	cmp	wongame,0
 	jnz	endofgame
 	cmp	mandead,1
@@ -235,7 +250,9 @@ endofgame:	call	clearbeforeload
 	call	hangon
 	call	endgame
 	jmp	quickquit2
-	
+
+exitgame:
+	ret
 	endp
 
 
@@ -4208,9 +4225,10 @@ Undertextline	proc	near
 
 	mov	di,textaddressx
 	mov	bx,textaddressy
-	if	foreign
+	cmp	foreignrelease, 0
+	jz $1
 	sub	bx,3
-	endif
+$1:
 	mov	ds,buffers
 	mov	si,textunder
 	mov	cl,undertextsizex
@@ -4231,9 +4249,10 @@ Deltextline	proc	near
 
 	mov	di,textaddressx
 	mov	bx,textaddressy
-	if	foreign
+	cmp	foreignrelease, 0
+	jz $1
 	sub	bx,3
-	endif
+$1:
 	mov	ds,buffers
 	mov	si,textunder
 	mov	cl,undertextsizex
@@ -4254,9 +4273,10 @@ Dumptextline	proc	near
 	mov	newtextline,0
 	mov	di,textaddressx
 	mov	bx,textaddressy
-	if	foreign
+	cmp	foreignrelease, 0
+	jz $1
 	sub	bx,3
-	endif
+$1:
 	mov	cl,undertextsizex
 	mov	ch,undertextsizey
 	call	multidump
@@ -6219,6 +6239,10 @@ savefiles	db	"DREAMWEB.D00",0
 
 Recname	db	"DREAMWEB.DEM",0
 
+Quitrequested	db 0
+Subtitles		db 0
+ForeignRelease	db 0
+
 
 ;-------------------------------------------------------End of code segment----
 
@@ -6240,23 +6264,3 @@ STACKSPACE	ends
 ;-----------------------------------------------------------End of all code----
 
 	end	Dreamweb
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

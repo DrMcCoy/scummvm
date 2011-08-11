@@ -1,5 +1,27 @@
-#ifndef ENGINES_DREAMGEN_RUNTIME_H__
-#define ENGINES_DREAMGEN_RUNTIME_H__
+/* ScummVM - Graphic Adventure Engine
+ *
+ * ScummVM is the legal property of its developers, whose names
+ * are too numerous to list here. Please refer to the COPYRIGHT
+ * file distributed with this source distribution.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ */
+
+#ifndef DREAMGEN_RUNTIME_H__
+#define DREAMGEN_RUNTIME_H__
 
 #include <assert.h>
 #include "common/scummsys.h"
@@ -97,21 +119,21 @@ public:
 
 struct Segment {
 	Common::Array<uint8> data;
-	
+
 	inline void assign(const uint8 *b, const uint8 *e) {
 		data.assign(b, e);
 	}
-	
+
 	inline uint8 &byte(unsigned index) {
 		assert(index < data.size());
 		return data[index];
 	}
-	
+
 	inline WordRef word(unsigned index) {
 		return WordRef(data, index);
 	}
 
-	inline uint8* ptr(unsigned index, unsigned size) {
+	inline uint8 *ptr(unsigned index, unsigned size) {
 		assert(index + size <= data.size());
 		return data.begin() + index;
 	}
@@ -163,8 +185,8 @@ public:
 		assert(_segment != 0);
 		_segment->assign(b, e);
 	}
-	
-	inline uint8* ptr(unsigned index, unsigned size) {
+
+	inline uint8 *ptr(unsigned index, unsigned size) {
 		assert(_segment != 0);
 		return _segment->ptr(index, size);
 	}
@@ -180,7 +202,7 @@ struct Flags {
 
 	inline bool l() const	{ return _o != _s; }
 	inline bool le() const	{ return _o != _s|| _z; }
-	
+
 	inline void update_zs(uint8 v) {
 		_s = v & 0x80;
 		_z = v == 0;
@@ -228,7 +250,7 @@ public:
 	//data == fake segment register always pointing to data segment
 	Flags flags;
 
-	inline Context(): engine(0), al(ax), ah(ax), bl(bx), bh(bx), cl(cx), ch(cx), dl(dx), dh(dx), 
+	inline Context(): engine(0), al(ax), ah(ax), bl(bx), bh(bx), cl(cx), ch(cx), dl(dx), dh(dx),
 		cs(this), ds(this), es(this), data(this) {
 		_segments[kDefaultDataSegment] = SegmentPtr(new Segment());
 		cs.reset(kDefaultDataSegment);
@@ -462,12 +484,13 @@ public:
 		es.byte(di++) = ds.byte(si++);
 	}
 
-	inline void _movsb(uint size) {
-		uint8 *dst = es.ptr(di, size);
-		uint8 *src = ds.ptr(si, size);
-		memcpy(dst, src, size);
-		di += size;
-		si += size;
+	inline void _movsb(uint size, bool clear_cx = false) {
+		assert(size != 0xffff);
+		//fixme: add overlap and segment boundary check and rewrite
+		while (size--)
+			_movsb();
+		if (clear_cx)
+			cx = 0;
 	}
 
 	inline void _movsw() {
@@ -475,18 +498,22 @@ public:
 		_movsb();
 	}
 
-	inline void _movsw(uint size) {
-		_movsb(size * 2);
+	inline void _movsw(uint size, bool clear_cx = false) {
+		assert(size != 0xffff);
+		_movsb(size * 2, clear_cx);
 	}
 
 	inline void _stosb() {
 		es.byte(di++) = al;
 	}
 
-	inline void _stosb(uint size) {
+	inline void _stosb(uint size, bool clear_cx = false) {
+		assert(size != 0xffff);
 		uint8 *dst = es.ptr(di, size);
 		memset(dst, al, size);
 		di += size;
+		if (clear_cx)
+			cx = 0;
 	}
 
 	inline void _stosw() {
@@ -494,13 +521,16 @@ public:
 		es.byte(di++) = ah;
 	}
 
-	inline void _stosw(uint size) {
-		uint8 *dst = es.ptr(di, size);
+	inline void _stosw(uint size, bool clear_cx = false) {
+		assert(size != 0xffff);
+		uint8 *dst = es.ptr(di, size * 2);
 		di += 2 * size;
-		while(size--) {
+		while (size--) {
 			*dst++ = al;
 			*dst++ = ah;
 		}
+		if (clear_cx)
+			cx = 0;
 	}
 
 	inline void _xchg(uint16 &a, uint16 &b) {
@@ -542,12 +572,11 @@ public:
 };
 
 #ifndef NDEBUG
-#	define STACK_CHECK(context)  StackChecker checker(context)
+#	define STACK_CHECK  StackChecker checker(*this)
 #else
-#	define STACK_CHECK(context)  do {} while (0)
+#	define STACK_CHECK  do {} while (0)
 #endif
 
 }
 
 #endif
-

@@ -40,6 +40,7 @@ EventsClass::EventsClass() {
 	_priorFrameTime = 0;
 	_prevDelayFrame = 0;
 	_saver->addListener(this);
+	_saver->addLoadNotifier(&EventsClass::loadNotifierProc);
 }
 
 bool EventsClass::pollEvent() {
@@ -48,6 +49,7 @@ bool EventsClass::pollEvent() {
 		_priorFrameTime = milli;
 		++_frameNumber;
 
+		// Update screen
 		g_system->updateScreen();
 	}
 
@@ -77,7 +79,7 @@ bool EventsClass::pollEvent() {
 
 void EventsClass::waitForPress(int eventMask) {
 	Event evt;
-	while (!_vm->getEventManager()->shouldQuit() && !getEvent(evt, eventMask))
+	while (!_vm->shouldQuit() && !getEvent(evt, eventMask))
 		g_system->delayMillis(10);
 }
 
@@ -85,7 +87,7 @@ void EventsClass::waitForPress(int eventMask) {
  * Standard event retrieval, which only returns keyboard and mouse clicks
  */
 bool EventsClass::getEvent(Event &evt, int eventMask) {
-	while (pollEvent() && !_vm->getEventManager()->shouldQuit()) {
+	while (pollEvent() && !_vm->shouldQuit()) {
 		evt.handled = false;
 		evt.eventType = EVENT_NONE;
 		evt.mousePos = _event.mouse;
@@ -153,7 +155,7 @@ void EventsClass::setCursor(CursorType cursorType) {
 		// No cursor
 		_globals->setFlag(122);
 
-		if (_vm->getFeatures() & GF_DEMO) {
+		if ((_vm->getFeatures() & GF_DEMO) || (_vm->getGameID() == GType_BlueForce))  {
 			CursorMan.showMouse(false);
 			return;
 		}
@@ -280,7 +282,7 @@ void EventsClass::hideCursor() {
 	setCursor(CURSOR_NONE);
 }
 
-bool EventsClass::isCursorVisible() const { 
+bool EventsClass::isCursorVisible() const {
 	return !_globals->getFlag(122);
 }
 
@@ -307,10 +309,19 @@ void EventsClass::delay(int numFrames) {
 void EventsClass::listenerSynchronize(Serializer &s) {
 	s.syncAsUint32LE(_frameNumber);
 	s.syncAsUint32LE(_prevDelayFrame);
-	
+
 	if (s.getVersion() >= 5) {
 		s.syncAsSint16LE(_currentCursor);
 		s.syncAsSint16LE(_lastCursor);
+	}
+}
+
+void EventsClass::loadNotifierProc(bool postFlag) {
+	if (postFlag) {
+		if (_globals->_events._lastCursor == CURSOR_NONE)
+			_globals->_events._lastCursor = _globals->_events._currentCursor;
+		else
+			_globals->_events._lastCursor = CURSOR_NONE;
 	}
 }
 

@@ -82,7 +82,7 @@ void hexdump(const byte *data, int len, int bytesPerLine, int startOffset) {
 #pragma mark -
 
 
-bool parseBool(const Common::String &val, bool &valAsBool) {
+bool parseBool(const String &val, bool &valAsBool) {
 	if (val.equalsIgnoreCase("true") ||
 		val.equalsIgnoreCase("yes") ||
 		val.equals("1")) {
@@ -403,4 +403,3 @@ void updateGameGUIOptions(const uint32 options, const String &langOption) {
 }
 
 } // End of namespace Common
-

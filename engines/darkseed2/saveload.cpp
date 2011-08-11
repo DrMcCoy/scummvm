@@ -145,9 +145,8 @@ bool SaveLoad::getState(SaveStateDescriptor &state, const Common::String &target
 	if (!file)
 		return false;
 
-	Graphics::Surface *thumbnail = new Graphics::Surface;
-
-	if (!Graphics::loadThumbnail(*file, *thumbnail)) {
+	Graphics::Surface *thumbnail = Graphics::loadThumbnail(*file);
+	if (!thumbnail) {
 		delete file;
 		return false;
 	}

@@ -28,7 +28,9 @@
 #include "darkseed2/imageconverter.h"
 #include "darkseed2/palette.h"
 
+namespace Common {
 DECLARE_SINGLETON(DarkSeed2::ImageConverter);
+}
 
 namespace DarkSeed2 {
 

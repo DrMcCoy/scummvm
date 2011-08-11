@@ -127,7 +127,7 @@ SoundHandler::SoundHandler(HugoEngine *vm) : _vm(vm) {
 	curPriority = 0;
 	pcspkrTimer = 0;
 	pcspkrOctave = 3;
-	pcspkrNoteDuration = 2;	
+	pcspkrNoteDuration = 2;
 }
 
 SoundHandler::~SoundHandler() {
@@ -270,7 +270,7 @@ void SoundHandler::pcspkr_player() {
 	static const uint16 pcspkrFlats[8] =  {1435, 1279, 2342, 2150, 1916, 1755, 1611}; // The flats, Ab to Bb
 
 	_vm->getTimerManager()->removeTimerProc(&loopPlayer);
-	_vm->getTimerManager()->installTimerProc(&loopPlayer, 1000000 / 9, this);
+	_vm->getTimerManager()->installTimerProc(&loopPlayer, 1000000 / 9, this, "hugoSoundLoop");
 
 	uint16 count;                                   // Value to set timer chip to for note
 	bool   cmd_note;
@@ -290,7 +290,7 @@ void SoundHandler::pcspkr_player() {
 	} else if (pcspkrTimer >= 0) {                  // Note still going
 		return;
 	}
-	
+
 	// Time to play next note
 	do {
 		cmd_note = true;
@@ -372,7 +372,7 @@ void SoundHandler::loadIntroSong(Common::ReadStream &in) {
 }
 
 void SoundHandler::initPcspkrPlayer() {
-	_vm->getTimerManager()->installTimerProc(&loopPlayer, 1000000 / 9, this);
+	_vm->getTimerManager()->installTimerProc(&loopPlayer, 1000000 / 9, this, "hugoSoundLoop");
 }
 
 } // End of namespace Hugo

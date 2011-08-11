@@ -28,11 +28,14 @@
 #include "tsage/dialogs.h"
 #include "tsage/scenes.h"
 #include "tsage/events.h"
+#include "tsage/sound.h"
 #include "tsage/saveload.h"
 
 namespace tSage {
 
 class Globals : public SavedObject {
+private:
+	static void dispatchSound(ASound *obj);
 public:
 	GfxSurface _screenSurface;
 	GfxManager _gfxManagerInstance;
@@ -55,10 +58,10 @@ public:
 	SoundManager _soundManager;
 	Common::Point _dialogCenter;
 	WalkRegions _walkRegions;
-	SynchronizedList<EventHandler *> _sceneListeners;
+	SynchronizedList<ASound *> _sounds;
 	bool _flags[256];
 	Player _player;
-	SoundHandler _soundHandler;
+	ASound _soundHandler;
 	InvObjectList *_inventory;
 	Region _paneRegions[2];
 	int _paneRefreshFlag[2];
@@ -90,9 +93,25 @@ public:
 	GfxManager &gfxManager() { return **_gfxManagers.begin(); }
 	virtual Common::String getClassName() { return "Globals"; }
 	virtual void synchronize(Serializer &s);
+	void dispatchSounds();
+};
+
+class BlueForceGlobals: public Globals {
+public:
+	ASound _sound1, _sound2, _sound3;
+	int _v4CEA2;
+	int _v51C44;
+	int _v51C24;
+
+	BlueForceGlobals();
+	virtual Common::String getClassName() { return "BFGlobals"; }
+	virtual void synchronize(Serializer &s);
 };
 
 extern Globals *_globals;
+
+#define GLOBALS (*_globals)
+#define BF_GLOBALS (*((BlueForceGlobals *)_globals))
 
 // Note: Currently this can't be part of the _globals structure, since it needs to be constructed
 // prior to many of the fields in Globals execute their constructors

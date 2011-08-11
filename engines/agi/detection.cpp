@@ -258,12 +258,7 @@ SaveStateDescriptor AgiMetaEngine::querySaveMetaInfos(const char *target, int sl
 
 		char saveVersion = in->readByte();
 		if (saveVersion >= 4) {
-			Graphics::Surface *thumbnail = new Graphics::Surface();
-			assert(thumbnail);
-			if (!Graphics::loadThumbnail(*in, *thumbnail)) {
-				delete thumbnail;
-				thumbnail = 0;
-			}
+			Graphics::Surface *const thumbnail = Graphics::loadThumbnail(*in);
 
 			desc.setThumbnail(thumbnail);
 
@@ -473,7 +468,7 @@ bool AgiBase::canLoadGameStateCurrently() {
 bool AgiBase::canSaveGameStateCurrently() {
 	if (getGameID() == GID_BC) // Technically in Black Cauldron we may save anytime
 		return true;
-	
+
 	return (!(getGameType() == GType_PreAGI) && getflag(fMenusWork) && !_noSaveLoadAllowed && _game.inputEnabled);
 }
 

@@ -27,22 +27,22 @@
 #include "common/system.h"
 #include "common/textconsole.h"
 
-DECLARE_SINGLETON(Common::ConfigManager);
-
 static bool isValidDomainName(const Common::String &domName) {
 	const char *p = domName.c_str();
-	while (*p && (isalnum(*p) || *p == '-' || *p == '_'))
+	while (*p && (isalnum(static_cast<unsigned char>(*p)) || *p == '-' || *p == '_'))
 		p++;
 	return *p == 0;
 }
 
 namespace Common {
 
-const char *ConfigManager::kApplicationDomain = "scummvm";
-const char *ConfigManager::kTransientDomain = "__TRANSIENT";
+DECLARE_SINGLETON(ConfigManager);
+
+char const *const ConfigManager::kApplicationDomain = "scummvm";
+char const *const ConfigManager::kTransientDomain = "__TRANSIENT";
 
 #ifdef ENABLE_KEYMAPPER
-const char *ConfigManager::kKeymapperDomain = "keymapper";
+char const *const ConfigManager::kKeymapperDomain = "keymapper";
 #endif
 
 #pragma mark -
@@ -112,7 +112,7 @@ void ConfigManager::loadConfigFile(const String &filename) {
  * Add a ready-made domain based on its name and contents
  * The domain name should not already exist in the ConfigManager.
  **/
-void ConfigManager::addDomain(const Common::String &domainName, const ConfigManager::Domain &domain) {
+void ConfigManager::addDomain(const String &domainName, const ConfigManager::Domain &domain) {
 	if (domainName.empty())
 		return;
 	if (domainName == kApplicationDomain) {
@@ -187,7 +187,7 @@ void ConfigManager::loadFromStream(SeekableReadStream &stream) {
 			// Get the domain name, and check whether it's valid (that
 			// is, verify that it only consists of alphanumerics,
 			// dashes and underscores).
-			while (*p && (isalnum(*p) || *p == '-' || *p == '_'))
+			while (*p && (isalnum(static_cast<unsigned char>(*p)) || *p == '-' || *p == '_'))
 				p++;
 
 			if (*p == '\0')
@@ -205,7 +205,7 @@ void ConfigManager::loadFromStream(SeekableReadStream &stream) {
 
 			// Skip leading whitespaces
 			const char *t = line.c_str();
-			while (isspace(*t))
+			while (isspace(static_cast<unsigned char>(*t)))
 				t++;
 
 			// Skip empty lines / lines with only whitespace
@@ -491,11 +491,9 @@ int ConfigManager::getInt(const String &key, const String &domName) const {
 
 bool ConfigManager::getBool(const String &key, const String &domName) const {
 	String value(get(key, domName));
-
-	if ((value == "true") || (value == "yes") || (value == "1"))
-		return true;
-	if ((value == "false") || (value == "no") || (value == "0"))
-		return false;
+	bool val;
+	if (parseBool(value, val))
+		return val;
 
 	error("ConfigManager::getBool(%s,%s): '%s' is not a valid bool",
 	      key.c_str(), domName.c_str(), value.c_str());
@@ -698,4 +696,3 @@ bool ConfigManager::Domain::hasKVComment(const String &key) const {
 }
 
 } // End of namespace Common
-

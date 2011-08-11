@@ -67,11 +67,14 @@ public:
 	void loadBackground(int xAmount, int yAmount);
 	void refreshBackground(int xAmount, int yAmount);
 	void loadSceneData(int sceneNum);
+	byte *preloadVisage(int resNum);
 };
 
 class SceneManager : public GameHandler, public SaveListener {
 private:
-	void disposeRegions() { warning("TODO: disposeRegions()"); }
+	void disposeRegions() { 
+		// No need to do anything, since regions will be freed automatically when the scene is	
+	}
 	Scene *getNewScene();
 public:
 	Scene *_scene;

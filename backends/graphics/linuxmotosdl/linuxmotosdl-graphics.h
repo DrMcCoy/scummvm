@@ -23,9 +23,9 @@
 #ifndef BACKENDS_GRAPHICS_SDL_LINUXMOTO_H
 #define BACKENDS_GRAPHICS_SDL_LINUXMOTO_H
 
-#include "backends/graphics/sdl/sdl-graphics.h"
+#include "backends/graphics/surfacesdl/surfacesdl-graphics.h"
 
-class LinuxmotoSdlGraphicsManager : public SdlGraphicsManager {
+class LinuxmotoSdlGraphicsManager : public SurfaceSdlGraphicsManager {
 public:
 	LinuxmotoSdlGraphicsManager(SdlEventSource *sdlEventSource);
 
@@ -42,8 +42,7 @@ public:
 	virtual void hideOverlay();
 	virtual void warpMouse(int x, int y);
 
-protected:
-	virtual void adjustMouseEvent(const Common::Event &event);
+	virtual void transformMouseCoordinates(Common::Point &point);
 };
 
 #endif

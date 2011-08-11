@@ -686,12 +686,7 @@ Graphics::Surface *ScummEngine::loadThumbnailFromSlot(const char *target, int sl
 
 	Graphics::Surface *thumb = 0;
 	if (Graphics::checkThumbnailHeader(*in)) {
-		thumb = new Graphics::Surface();
-		assert(thumb);
-		if (!Graphics::loadThumbnail(*in, *thumb)) {
-			delete thumb;
-			thumb = 0;
-		}
+		thumb = Graphics::loadThumbnail(*in);
 	}
 
 	delete in;
@@ -1316,10 +1311,10 @@ void ScummEngine::saveOrLoad(Serializer *s) {
 			MKEND()
 		};
 
-		s->saveLoadArrayOf(_textPalette, 48, sizeof(_textPalette[0]), sleUint8);		
+		s->saveLoadArrayOf(_textPalette, 48, sizeof(_textPalette[0]), sleUint8);
 		s->saveLoadArrayOf(_cyclRects, 10, sizeof(_cyclRects[0]), townsFields);
 		s->saveLoadArrayOf(&_curStringRect, 1, sizeof(_curStringRect), townsFields);
-		s->saveLoadArrayOf(_townsCharsetColorMap, 16, sizeof(_townsCharsetColorMap[0]), sleUint8);		
+		s->saveLoadArrayOf(_townsCharsetColorMap, 16, sizeof(_townsCharsetColorMap[0]), sleUint8);
 		s->saveLoadEntries(this, townsExtraEntries);
 	}
 #endif
@@ -1497,6 +1492,16 @@ void ScummEngine_v5::saveOrLoad(Serializer *s) {
 			resetCursors();
 		}
 	}
+
+	// Regenerate 16bit palette after loading.
+	// This avoids color issues when loading savegames that have been saved with a different ScummVM port
+	// that uses a different 16bit color mode than the ScummVM port which is currently used.
+#ifdef USE_RGB_COLOR
+	if (_game.platform == Common::kPlatformPCEngine && s->isLoading()) {
+		for (int i = 0; i < 256; ++i)
+			_16BitPalette[i] = get16BitColor(_currentPalette[i * 3 + 0], _currentPalette[i * 3 + 1], _currentPalette[i * 3 + 2]);
+	}
+#endif
 }
 
 #ifdef ENABLE_SCUMM_7_8

@@ -2,6 +2,8 @@ MODULE := engines/tsage
 
 MODULE_OBJS := \
 	blueforce_logic.o \
+	blueforce_scenes0.o \
+	blueforce_scenes1.o \
 	converse.o \
 	core.o \
 	debugger.o \
@@ -34,4 +36,3 @@ endif
 
 # Include common rules 
 include $(srcdir)/rules.mk
-

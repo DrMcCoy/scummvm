@@ -57,7 +57,7 @@ Scene::Scene(TeenAgentEngine *engine, OSystem *system) : intro(false), _id(0), o
 	if (!s)
 		error("invalid resource data");
 
-	teenagent.load(s, Animation::kTypeVaria);
+	teenagent.load(*s, Animation::kTypeVaria);
 	if (teenagent.empty())
 		error("invalid mark animation");
 
@@ -65,7 +65,7 @@ Scene::Scene(TeenAgentEngine *engine, OSystem *system) : intro(false), _id(0), o
 	if (!s)
 		error("invalid resource data");
 
-	teenagent_idle.load(s, Animation::kTypeVaria);
+	teenagent_idle.load(*s, Animation::kTypeVaria);
 	if (teenagent_idle.empty())
 		error("invalid mark animation");
 
@@ -340,7 +340,7 @@ void Scene::loadOns() {
 		for (uint32 i = 0; i < ons_count; ++i) {
 			Common::ScopedPtr<Common::SeekableReadStream> s(res->ons.getStream(on_id[i]));
 			if (s) {
-				ons[i].load(s, Surface::kTypeOns);
+				ons[i].load(*s, Surface::kTypeOns);
 			}
 		}
 	}
@@ -363,7 +363,7 @@ void Scene::loadLans() {
 
 		Common::ScopedPtr<Common::SeekableReadStream> s(res->loadLan000(res_id));
 		if (s) {
-			animation[i].load(s, Animation::kTypeLan);
+			animation[i].load(*s, Animation::kTypeLan);
 			if (bxv != 0 && bxv != 0xff)
 				animation[i].id = bxv;
 		}
@@ -412,7 +412,7 @@ void Scene::init(int id, const Common::Point &pos) {
 				sub_hack = 2;
 		}
 	}
-	on.load(stream, SurfaceList::kTypeOn, sub_hack);
+	on.load(*stream, SurfaceList::kTypeOn, sub_hack);
 
 	loadOns();
 	loadLans();
@@ -434,7 +434,7 @@ void Scene::playAnimation(byte idx, uint id, bool loop, bool paused, bool ignore
 	if (!s)
 		error("playing animation %u failed", id);
 
-	custom_animation[idx].load(s);
+	custom_animation[idx].load(*s);
 	custom_animation[idx].loop = loop;
 	custom_animation[idx].paused = paused;
 	custom_animation[idx].ignore = ignore;
@@ -446,7 +446,7 @@ void Scene::playActorAnimation(uint id, bool loop, bool ignore) {
 	if (!s)
 		error("playing animation %u failed", id);
 
-	actor_animation.load(s);
+	actor_animation.load(*s);
 	actor_animation.loop = loop;
 	actor_animation.ignore = ignore;
 	actor_animation.id = id;
@@ -576,7 +576,7 @@ void Scene::paletteEffect(byte step) {
 	byte *src = res->dseg.ptr(0x6609);
 	byte *dst = palette + 3 * 0xf2;
 	for(byte i = 0; i < 0xd; ++i) {
-		for(byte c = 0; c < 3; ++c, ++src) 
+		for(byte c = 0; c < 3; ++c, ++src)
 			*dst++ = *src > step? *src - step: 0;
 	}
 }
@@ -812,9 +812,9 @@ bool Scene::render(bool tick_game, bool tick_mark, uint32 delta) {
 			_system->unlockScreen();
 			continue;
 		}
-		//removed mark == null. In final scene of chapter 2 mark rendered above table. 
-		//if it'd cause any bugs, add hack here. (_id != 23 && mark == NULL) 
-		if (on_enabled && 
+		//removed mark == null. In final scene of chapter 2 mark rendered above table.
+		//if it'd cause any bugs, add hack here. (_id != 23 && mark == NULL)
+		if (on_enabled &&
 			debug_features.feature[DebugFeatures::kShowOn]) {
 			on.render(surface, actor_animation_position);
 		}

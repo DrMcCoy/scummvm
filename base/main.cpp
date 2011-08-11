@@ -333,7 +333,7 @@ extern "C" int scummvm_main(int argc, const char * const argv[]) {
 
 	PluginManager::instance().init();
  	PluginManager::instance().loadAllPlugins(); // load plugins for cached plugin manager
-	
+
 	// If we received an invalid music parameter via command line we check this here.
 	// We can't check this before loading the music plugins.
 	// On the other hand we cannot load the plugins before we know the file paths (in case of external plugins).
@@ -385,7 +385,7 @@ extern "C" int scummvm_main(int argc, const char * const argv[]) {
 	system.getAudioCDManager();
 	MusicManager::instance();
 	Common::DebugManager::instance();
-	
+
 	// Init the event manager. As the virtual keyboard is loaded here, it must
 	// take place after the backend is initiated and the screen has been setup
 	system.getEventManager()->init();
@@ -419,15 +419,19 @@ extern "C" int scummvm_main(int argc, const char * const argv[]) {
 			// Try to run the game
 			Common::Error result = runGame(plugin, system, specialDebug);
 
+			// Flush Event recorder file. The recorder does not get reinitialized for next game
+			// which is intentional. Only single game per session is allowed.
+			g_eventRec.deinit();
+
 		#if defined(UNCACHED_PLUGINS) && defined(DYNAMIC_MODULES)
 			// do our best to prevent fragmentation by unloading as soon as we can
 			PluginManager::instance().unloadPluginsExcept(PLUGIN_TYPE_ENGINE, NULL, false);
 			// reallocate the config manager to get rid of any fragmentation
 			ConfMan.defragment();
-		#endif	
-			
+		#endif
+
 			// Did an error occur ?
-			if (result.getCode() != Common::kNoError) {
+			if (result.getCode() != Common::kNoError && result.getCode() != Common::kUserCanceled) {
 				// Shows an informative error dialog if starting the selected game failed.
 				GUI::displayErrorDialog(result, _("Error running game:"));
 			}

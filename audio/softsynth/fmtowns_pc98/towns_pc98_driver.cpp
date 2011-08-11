@@ -1265,7 +1265,7 @@ void TownsPC98_AudioDriver::fadeStep() {
 void TownsPC98_AudioDriver::pause() {
 	_musicPlaying = false;
 }
-	
+
 void TownsPC98_AudioDriver::cont() {
 	_musicPlaying = true;
 }
@@ -1449,4 +1449,3 @@ const uint8 TownsPC98_AudioDriver::_drvTables[] = {
 };
 
 #undef EUPHONY_FADEOUT_TICKS
-

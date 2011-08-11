@@ -26,7 +26,7 @@
 #include "backends/graphics/opengl/gltexture.h"
 #include "backends/graphics/graphics.h"
 #include "common/array.h"
-#include "common/events.h"
+#include "common/rect.h"
 #include "graphics/pixelformat.h"
 
 // Uncomment this to enable the 'on screen display' code.
@@ -50,12 +50,10 @@ enum {
  * the buffers swap, and implement loadGFXMode for handling the window/context if
  * needed. If USE_RGB_COLOR is enabled, getSupportedFormats must be implemented.
  */
-class OpenGLGraphicsManager : public GraphicsManager, public Common::EventObserver {
+class OpenGLGraphicsManager : public GraphicsManager {
 public:
 	OpenGLGraphicsManager();
 	virtual ~OpenGLGraphicsManager();
-
-	virtual void initEventObserver();
 
 	virtual bool hasFeature(OSystem::Feature f);
 	virtual void setFeatureState(OSystem::Feature f, bool enable);
@@ -109,10 +107,6 @@ public:
 	virtual void setCursorPalette(const byte *colors, uint start, uint num);
 
 	virtual void displayMessageOnOSD(const char *msg);
-
-	// Override from Common::EventObserver
-	bool notifyEvent(const Common::Event &event);
-
 protected:
 	/**
 	 * Setup OpenGL settings
@@ -185,7 +179,7 @@ protected:
 
 	/**
 	 * Set the scale factor.
-	 * 
+	 *
 	 * This can only be used in a GFX transaction.
 	 *
 	 * @param newScale New scale factor.
@@ -332,7 +326,7 @@ protected:
 	GLTexture *_osdTexture;
 	Graphics::Surface _osdSurface;
 	uint8 _osdAlpha;
-	uint32 _osdFadeStartTime; 
+	uint32 _osdFadeStartTime;
 	bool _requireOSDUpdate;
 	enum {
 		kOSDFadeOutDelay = 2 * 1000,

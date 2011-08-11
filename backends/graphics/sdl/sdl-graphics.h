@@ -20,319 +20,67 @@
  *
  */
 
-#ifndef BACKENDS_GRAPHICS_SDL_H
-#define BACKENDS_GRAPHICS_SDL_H
+#ifndef BACKENDS_GRAPHICS_SDL_SDLGRAPHICS_H
+#define BACKENDS_GRAPHICS_SDL_SDLGRAPHICS_H
 
-#include "backends/graphics/graphics.h"
-#include "graphics/pixelformat.h"
-#include "graphics/scaler.h"
-#include "common/events.h"
-#include "common/system.h"
+#include "common/rect.h"
 
-#include "backends/events/sdl/sdl-events.h"
-
-#include "backends/platform/sdl/sdl-sys.h"
-
-#ifndef RELEASE_BUILD
-// Define this to allow for focus rectangle debugging
-#define USE_SDL_DEBUG_FOCUSRECT
-#endif
-
-#if !defined(_WIN32_WCE) && !defined(__SYMBIAN32__)
-// Uncomment this to enable the 'on screen display' code.
-#define USE_OSD	1
-#endif
-
-enum {
-	GFX_NORMAL = 0,
-	GFX_DOUBLESIZE = 1,
-	GFX_TRIPLESIZE = 2,
-	GFX_2XSAI = 3,
-	GFX_SUPER2XSAI = 4,
-	GFX_SUPEREAGLE = 5,
-	GFX_ADVMAME2X = 6,
-	GFX_ADVMAME3X = 7,
-	GFX_HQ2X = 8,
-	GFX_HQ3X = 9,
-	GFX_TV2X = 10,
-	GFX_DOTMATRIX = 11
-};
-
-
-class AspectRatio {
-	int _kw, _kh;
-public:
-	AspectRatio() { _kw = _kh = 0; }
-	AspectRatio(int w, int h);
-
-	bool isAuto() const { return (_kw | _kh) == 0; }
-
-	int kw() const { return _kw; }
-	int kh() const { return _kh; }
-};
+class SdlEventSource;
 
 /**
- * SDL graphics manager
+ * Base class for a SDL based graphics manager.
+ *
+ * It features a few extra a few extra features required by SdlEventSource.
+ * FIXME/HACK:
+ * Note it does not inherit from GraphicsManager to avoid a diamon inheritance
+ * in the current OpenGLSdlGraphicsManager.
  */
-class SdlGraphicsManager : public GraphicsManager, public Common::EventObserver {
+class SdlGraphicsManager {
 public:
-	SdlGraphicsManager(SdlEventSource *sdlEventSource);
+	SdlGraphicsManager(SdlEventSource *source);
 	virtual ~SdlGraphicsManager();
 
-	virtual void initEventObserver();
-
-	virtual bool hasFeature(OSystem::Feature f);
-	virtual void setFeatureState(OSystem::Feature f, bool enable);
-	virtual bool getFeatureState(OSystem::Feature f);
-
-	static const OSystem::GraphicsMode *supportedGraphicsModes();
-	virtual const OSystem::GraphicsMode *getSupportedGraphicsModes() const;
-	virtual int getDefaultGraphicsMode() const;
-	virtual bool setGraphicsMode(int mode);
-	virtual int getGraphicsMode() const;
-	virtual void resetGraphicsScale();
-#ifdef USE_RGB_COLOR
-	virtual Graphics::PixelFormat getScreenFormat() const { return _screenFormat; }
-	virtual Common::List<Graphics::PixelFormat> getSupportedFormats() const;
-#endif
-	virtual void initSize(uint w, uint h, const Graphics::PixelFormat *format = NULL);
-	virtual int getScreenChangeID() const { return _screenChangeCount; }
-
-	virtual void beginGFXTransaction();
-	virtual OSystem::TransactionError endGFXTransaction();
-	
-	virtual int16 getHeight();
-	virtual int16 getWidth();
-
-protected:
-	// PaletteManager API
-	virtual void setPalette(const byte *colors, uint start, uint num);
-	virtual void grabPalette(byte *colors, uint start, uint num);
-
-public:
-	virtual void copyRectToScreen(const byte *buf, int pitch, int x, int y, int w, int h);
-	virtual Graphics::Surface *lockScreen();
-	virtual void unlockScreen();
-	virtual void fillScreen(uint32 col);
-	virtual void updateScreen();
-	virtual void setShakePos(int shakeOffset);
-	virtual void setFocusRectangle(const Common::Rect& rect);
-	virtual void clearFocusRectangle();
-
-	virtual void showOverlay();
-	virtual void hideOverlay();
-	virtual Graphics::PixelFormat getOverlayFormat() const { return _overlayFormat; }
-	virtual void clearOverlay();
-	virtual void grabOverlay(OverlayColor *buf, int pitch);
-	virtual void copyRectToOverlay(const OverlayColor *buf, int pitch, int x, int y, int w, int h);
-	virtual int16 getOverlayHeight() { return _videoMode.overlayHeight; }
-	virtual int16 getOverlayWidth() { return _videoMode.overlayWidth; }
-
-	virtual bool showMouse(bool visible);
-	virtual void warpMouse(int x, int y);
-	virtual void setMouseCursor(const byte *buf, uint w, uint h, int hotspotX, int hotspotY, uint32 keycolor, int cursorTargetScale = 1, const Graphics::PixelFormat *format = NULL);
-	virtual void setCursorPalette(const byte *colors, uint start, uint num);
-	
-#ifdef USE_OSD
-	virtual void displayMessageOnOSD(const char *msg);
-#endif
-
-	// Override from Common::EventObserver
-	bool notifyEvent(const Common::Event &event);
-
-protected:
-	SdlEventSource *_sdlEventSource;
-
-#ifdef USE_OSD
-	/** Surface containing the OSD message */
-	SDL_Surface *_osdSurface;
-	/** Transparency level of the OSD */
-	uint8 _osdAlpha;
-	/** When to start the fade out */
-	uint32 _osdFadeStartTime; 
-	/** Enum with OSD options */
-	enum {
-		kOSDFadeOutDelay = 2 * 1000,	/** < Delay before the OSD is faded out (in milliseconds) */
-		kOSDFadeOutDuration = 500,		/** < Duration of the OSD fade out (in milliseconds) */
-		kOSDColorKey = 1,				/** < Transparent color key */
-		kOSDInitialAlpha = 80			/** < Initial alpha level, in percent */
-	};
-#endif
-
-	/** Hardware screen */
-	SDL_Surface *_hwscreen;
-
-	/** Unseen game screen */
-	SDL_Surface *_screen;
-#ifdef USE_RGB_COLOR
-	Graphics::PixelFormat _screenFormat;
-	Graphics::PixelFormat _cursorFormat;
-	Common::List<Graphics::PixelFormat> _supportedFormats;
+	/**
+	 * Notify the graphics manager that the graphics needs to be redrawn, since
+	 * the application window was modified.
+	 *
+	 * This is basically called when SDL_VIDEOEXPOSE was received.
+	 */
+	virtual void notifyVideoExpose() = 0;
 
 	/**
-	 * Update the list of supported pixel formats.
-	 * This method is invoked by loadGFXMode().
+	 * Notify the graphics manager about an resize event.
+	 *
+	 * It is noteworthy that the requested width/height should actually be set
+	 * up as is and not changed by the graphics manager, since else it might
+	 * lead to odd behavior for certain window managers.
+	 *
+	 * It is only required to overwrite this method in case you want a
+	 * resizable window. The default implementation just does nothing.
+	 *
+	 * @param width Requested window width.
+	 * @param height Requested window height.
 	 */
-	void detectSupportedFormats();
-#endif
-
-	/** Temporary screen (for scalers) */
-	SDL_Surface *_tmpscreen;
-	/** Temporary screen (for scalers) */
-	SDL_Surface *_tmpscreen2;
-
-	SDL_Surface *_overlayscreen;
-	bool _overlayVisible;
-	Graphics::PixelFormat _overlayFormat;
-
-	enum {
-		kTransactionNone = 0,
-		kTransactionActive = 1,
-		kTransactionRollback = 2
-	};
-
-	struct TransactionDetails {
-		bool sizeChanged;
-		bool needHotswap;
-		bool needUpdatescreen;
-		bool normal1xScaler;
-#ifdef USE_RGB_COLOR
-		bool formatChanged;
-#endif
-	};
-	TransactionDetails _transactionDetails;
-
-	struct VideoState {
-		bool setup;
-
-		bool fullscreen;
-		bool aspectRatioCorrection;
-		AspectRatio desiredAspectRatio;
-
-		int mode;
-		int scaleFactor;
-
-		int screenWidth, screenHeight;
-		int overlayWidth, overlayHeight;
-		int hardwareWidth, hardwareHeight;
-#ifdef USE_RGB_COLOR
-		Graphics::PixelFormat format;
-#endif
-	};
-	VideoState _videoMode, _oldVideoMode;
-
-	/** Force full redraw on next updateScreen */
-	bool _forceFull;
-
-	ScalerProc *_scalerProc;
-	int _scalerType;
-	int _transactionMode;
-
-	bool _screenIsLocked;
-	Graphics::Surface _framebuffer;
-
-	int _screenChangeCount;
-
-	enum {
-		NUM_DIRTY_RECT = 100,
-		MAX_SCALING = 3
-	};
-
-	// Dirty rect management
-	SDL_Rect _dirtyRectList[NUM_DIRTY_RECT];
-	int _numDirtyRects;
-
-	struct MousePos {
-		// The mouse position, using either virtual (game) or real
-		// (overlay) coordinates.
-		int16 x, y;
-
-		// The size and hotspot of the original cursor image.
-		int16 w, h;
-		int16 hotX, hotY;
-
-		// The size and hotspot of the pre-scaled cursor image, in real
-		// coordinates.
-		int16 rW, rH;
-		int16 rHotX, rHotY;
-
-		// The size and hotspot of the pre-scaled cursor image, in game
-		// coordinates.
-		int16 vW, vH;
-		int16 vHotX, vHotY;
-
-		MousePos() : x(0), y(0), w(0), h(0), hotX(0), hotY(0),
-					rW(0), rH(0), rHotX(0), rHotY(0), vW(0), vH(0),
-					vHotX(0), vHotY(0)
-			{ }
-	};
-
-	bool _mouseVisible;
-	bool _mouseNeedsRedraw;
-	byte *_mouseData;
-	SDL_Rect _mouseBackup;
-	MousePos _mouseCurState;
-#ifdef USE_RGB_COLOR
-	uint32 _mouseKeyColor;
-#else
-	byte _mouseKeyColor;
-#endif
-	int _cursorTargetScale;
-	bool _cursorPaletteDisabled;
-	SDL_Surface *_mouseOrigSurface;
-	SDL_Surface *_mouseSurface;
-	enum {
-		kMouseColorKey = 1
-	};
-
-	// Shake mode
-	int _currentShakePos;
-	int _newShakePos;
-
-	// Palette data
-	SDL_Color *_currentPalette;
-	uint _paletteDirtyStart, _paletteDirtyEnd;
-
-	// Cursor palette data
-	SDL_Color *_cursorPalette;
+	virtual void notifyResize(const uint width, const uint height) {}
 
 	/**
-	 * Mutex which prevents multiple threads from interfering with each other
-	 * when accessing the screen.
+	 * Transforms real screen coordinates into the current active screen
+	 * coordinates (may be either game screen or overlay).
+	 *
+	 * @param point Mouse coordinates to transform.
 	 */
-	OSystem::MutexRef _graphicsMutex;
+	virtual void transformMouseCoordinates(Common::Point &point) = 0;
 
-#ifdef USE_SDL_DEBUG_FOCUSRECT
-	bool _enableFocusRectDebugCode;
-	bool _enableFocusRect;
-	Common::Rect _focusRect;
-#endif
+	/**
+	 * Notifies the graphics manager about a position change according to the
+	 * real screen coordinates.
+	 *
+	 * @param mouse Mouse position.
+	 */
+	virtual void notifyMousePos(Common::Point mouse) = 0;
 
-	virtual void addDirtyRect(int x, int y, int w, int h, bool realCoordinates = false);
-
-	virtual void drawMouse();
-	virtual void undrawMouse();
-	virtual void blitCursor();
-
-	virtual void internUpdateScreen();
-
-	virtual bool loadGFXMode();
-	virtual void unloadGFXMode();
-	virtual bool hotswapGFXMode();
-
-	virtual void setFullscreenMode(bool enable);
-	virtual void setAspectRatioCorrection(bool enable);
-
-	virtual int effectiveScreenHeight() const;
-
-	virtual void setGraphicsModeIntern();
-
-	virtual bool handleScalerHotkeys(Common::KeyCode key);
-	virtual bool isScalerHotkey(const Common::Event &event);
-	virtual void adjustMouseEvent(const Common::Event &event);
-	virtual void setMousePos(int x, int y);
-	virtual void toggleFullScreen();
-	virtual bool saveScreenshot(const char *filename);
+protected:
+	SdlEventSource *_eventSource;
 };
 
 #endif

@@ -423,7 +423,7 @@ void OSystem_Android::setFeatureState(Feature f, bool enable) {
 		showVirtualKeyboard(enable);
 		break;
 	case kFeatureCursorPalette:
-		_use_mouse_palette = !enable;
+		_use_mouse_palette = enable;
 		if (!enable)
 			disableCursorPalette();
 		break;
@@ -602,4 +602,3 @@ void AndroidPluginProvider::addCustomDirectories(Common::FSList &dirs) const {
 #endif
 
 #endif
-

@@ -223,10 +223,10 @@ public:
 			}
 			break;
 
-		default: 
+		default:
 			_vm->_nextPart = _firstLocation[selection].part;
 			_vm->scheduleLocationSwitch(_firstLocation[selection].location);
-		
+
 		}
 
 		_vm->_system->showMouse(false);
@@ -548,4 +548,3 @@ void Parallaction_br::startIngameMenu() {
 
 
 } // namespace Parallaction
-

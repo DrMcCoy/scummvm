@@ -41,8 +41,7 @@ namespace Audio {
 //   <http://wiki.multimedia.cx/index.php?title=Microsoft_IMA_ADPCM>.
 
 ADPCMStream::ADPCMStream(Common::SeekableReadStream *stream, DisposeAfterUse::Flag disposeAfterUse, uint32 size, int rate, int channels, uint32 blockAlign)
-	: _stream(stream),
-		_disposeAfterUse(disposeAfterUse),
+	: _stream(stream, disposeAfterUse),
 		_startpos(stream->pos()),
 		_endpos(_startpos + size),
 		_channels(channels),
@@ -50,11 +49,6 @@ ADPCMStream::ADPCMStream(Common::SeekableReadStream *stream, DisposeAfterUse::Fl
 		_rate(rate) {
 
 	reset();
-}
-
-ADPCMStream::~ADPCMStream() {
-	if (_disposeAfterUse == DisposeAfterUse::YES)
-		delete _stream;
 }
 
 void ADPCMStream::reset() {
@@ -234,7 +228,7 @@ int MSIma_ADPCMStream::readBuffer(int16 *buffer, const int numSamples) {
 
 		while (samples < numSamples && _samplesLeft[0] != 0) {
 			for (int i = 0; i < _channels; i++) {
-				buffer[samples] = _buffer[i][8 - _samplesLeft[i]];
+				buffer[samples + i] = _buffer[i][8 - _samplesLeft[i]];
 				_samplesLeft[i]--;
 			}
 
@@ -342,14 +336,14 @@ do { \
 		_topNibble = true; \
 	} \
 } while (0)
-		
+
 
 int DK3_ADPCMStream::readBuffer(int16 *buffer, const int numSamples) {
 	int samples = 0;
 
 	assert((numSamples % 4) == 0);
 
-	while (samples < numSamples && !_stream->eos() && _stream->pos() < _endpos) {	
+	while (samples < numSamples && !_stream->eos() && _stream->pos() < _endpos) {
 		if ((_stream->pos() % _blockAlign) == 0) {
 			_stream->readUint16LE(); // Unknown
 			uint16 rate = _stream->readUint16LE(); // Copy of rate

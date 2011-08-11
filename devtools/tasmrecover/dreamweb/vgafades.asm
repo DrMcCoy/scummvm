@@ -862,6 +862,3 @@ Initialmoncols	proc	near
 	ret
 
 	endp
-
-
-

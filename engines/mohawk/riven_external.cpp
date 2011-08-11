@@ -244,7 +244,7 @@ void RivenExternal::runCredits(uint16 video, uint32 delay) {
 				_vm->_gfx->updateCredits();
 			}
 		} else if (_vm->_video->updateMovies())
-			_vm->_system->updateScreen(); 
+			_vm->_system->updateScreen();
 
 		Common::Event event;
 		while (_vm->_system->getEventManager()->pollEvent(event))
@@ -1889,21 +1889,42 @@ void RivenExternal::xjplaybeetle_1450(uint16 argc, uint16 *argv) {
 }
 
 void RivenExternal::xjlagoon700_alert(uint16 argc, uint16 *argv) {
-	// TODO: Sunner related
+	// Handle sunner reactions (mid-staircase)
+
+	if (_vm->_vars["jsunners"] == 0)
+		_vm->_video->playMovieRiven(1);
 }
 
 void RivenExternal::xjlagoon800_alert(uint16 argc, uint16 *argv) {
-	// TODO: Sunner related
+	// Handle sunner reactions (lower-staircase)
+
+	uint32 &sunners = _vm->_vars["jsunners"];
+
+	if (sunners == 0) {
+		// Show the sunners alert video
+		_vm->_video->playMovieRiven(1);
+	} else if (sunners == 1) {
+		// Show the sunners leaving if you moved forward in their "alert" status
+		_vm->_video->playMovieBlockingRiven(2);
+		_vm->_video->playMovieBlockingRiven(6);
+		sunners = 2;
+		_vm->refreshCard();
+	}
 }
 
 void RivenExternal::xjlagoon1500_alert(uint16 argc, uint16 *argv) {
-	// Have the sunners move a bit as you get closer ;)
+	// Handle sunner reactions (beach)
+
 	uint32 &sunners = _vm->_vars["jsunners"];
+
 	if (sunners == 0) {
+		// Show the sunners alert video
 		_vm->_video->playMovieBlockingRiven(3);
 	} else if (sunners == 1) {
+		// Show the sunners leaving if you moved forward in their "alert" status
 		_vm->_video->playMovieBlockingRiven(2);
 		sunners = 2;
+		_vm->refreshCard();
 	}
 }
 
@@ -2060,7 +2081,7 @@ void RivenExternal::xbookclick(uint16 argc, uint16 *argv) {
 		_vm->_cursor->setCursor(kRivenMainCursor);
 
 	_vm->_system->updateScreen();
-	
+
 	// OK, Gehn has opened the trap book and has asked us to go in. Let's watch
 	// and see what the player will do...
 	while (_vm->_video->getElapsedTime(video) < endTime && !_vm->shouldQuit()) {
@@ -2216,7 +2237,7 @@ void RivenExternal::xgwatch(uint16 argc, uint16 *argv) {
 			curSound++;
 			soundTime = _vm->_system->getMillis();
 		}
-		
+
 		// Poll events just to check for quitting
 		Common::Event event;
 		while (_vm->_system->getEventManager()->pollEvent(event)) {}
@@ -2525,7 +2546,7 @@ static Common::Rect generateMarbleGridRect(uint16 x, uint16 y) {
 }
 
 void RivenExternal::xt7500_checkmarbles(uint16 argc, uint16 *argv) {
-	// Set apower if the marbles are in their correct spot. 
+	// Set apower if the marbles are in their correct spot.
 
 	bool valid = true;
 	static const uint32 marbleFinalValues[] = { 1114121, 1441798, 0, 65552, 65558, 262146 };
