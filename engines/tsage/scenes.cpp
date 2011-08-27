@@ -22,11 +22,11 @@
 
 #include "tsage/scenes.h"
 #include "tsage/globals.h"
-#include "tsage/ringworld_logic.h"
+#include "tsage/ringworld/ringworld_logic.h"
 #include "tsage/tsage.h"
 #include "tsage/saveload.h"
 
-namespace tSage {
+namespace TsAGE {
 
 SceneManager::SceneManager() {
 	_scene = NULL;
@@ -38,6 +38,7 @@ SceneManager::SceneManager() {
 	_scrollerRect = Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	_saver->addListener(this);
 	_objectCount = 0;
+	_loadMode = 0;
 }
 
 SceneManager::~SceneManager() {
@@ -113,7 +114,7 @@ void SceneManager::sceneChange() {
 		assert(_objectCount == _saver->getObjectCount());
 	}
 	_objectCount = _saver->getObjectCount();
-	_globals->_sceneHandler._delayTicks = 2;
+	_globals->_sceneHandler->_delayTicks = 2;
 
 	// Instantiate and set the new scene
 	_scene = getNewScene();
@@ -257,6 +258,7 @@ void SceneManager::listenerSynchronize(Serializer &s) {
 Scene::Scene() : _sceneBounds(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT),
 			_backgroundBounds(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT) {
 	_sceneMode = 0;
+	_activeScreenNumber = 0;
 	_oldSceneBounds = Rect(4000, 4000, 4100, 4100);
 	Common::set_to(&_zoomPercents[0], &_zoomPercents[256], 0);
 }
@@ -424,6 +426,11 @@ void Scene::refreshBackground(int xAmount, int yAmount) {
 								(xSectionSrc + 1) * 160, (ySectionSrc + 1) * 100);
 						Rect destBounds(xSectionDest * 160, ySectionDest * 100,
 								(xSectionDest + 1) * 160, (ySectionDest + 1) * 100);
+						if (_vm->getGameID() == GType_BlueForce) {
+							// For Blue Force, if the scene has an interface area, exclude it from the copy
+							srcBounds.bottom = MIN<int16>(srcBounds.bottom, BF_GLOBALS._interfaceY);
+							destBounds.bottom = MIN<int16>(destBounds.bottom, BF_GLOBALS._interfaceY);
+						}
 
 						_backSurface.copyFrom(_backSurface, srcBounds, destBounds);
 					}
@@ -501,16 +508,6 @@ void Scene::setZoomPercents(int yStart, int minPercent, int yEnd, int maxPercent
 		_zoomPercents[yEnd++] = minPercent;
 }
 
-byte *Scene::preloadVisage(int resNum) {
-	// This isn't being used, since modern systems can load the data much quicker, and in any case
-	// visage data is specially loaded into the Visage class, and the resources discarded from memory.
-	return NULL;
-/*
-	assert(!_v52C9F);
-	return _resourceManager->getResource(RES_VISAGE, resNum, 9999, false);
-*/
-}
-
 /*--------------------------------------------------------------------------*/
 
 void Game::execute() {
@@ -529,4 +526,4 @@ void Game::execute() {
 	} while (activeFlag && !_vm->shouldQuit());
 }
 
-} // End of namespace tSage
+} // End of namespace TsAGE

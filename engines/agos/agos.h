@@ -25,6 +25,7 @@
 
 #include "engines/engine.h"
 
+#include "common/archive.h"
 #include "common/array.h"
 #include "common/error.h"
 #include "common/keyboard.h"
@@ -186,6 +187,22 @@ class Debugger;
 #	define _OPCODE(ver, x)	{ &ver::x, "" }
 #endif
 
+class ArchiveMan : public Common::SearchSet {
+public:
+	ArchiveMan();
+
+	void enableFallback(bool val) { _fallBack = val; }
+
+#ifdef ENABLE_AGOS2
+	void registerArchive(const Common::String &filename, int priority);
+#endif
+
+	Common::SeekableReadStream *open(const Common::String &filename);
+
+private:
+	bool _fallBack;
+};
+
 class AGOSEngine : public Engine {
 protected:
 	friend class Debugger;
@@ -324,7 +341,7 @@ protected:
 	bool _backFlag;
 
 	uint16 _debugMode;
-	uint16 _language;
+	Common::Language _language;
 	bool _copyProtection;
 	bool _pause;
 	bool _dumpScripts;
@@ -599,6 +616,8 @@ public:
 	AGOSEngine(OSystem *system, const AGOSGameDescription *gd);
 	virtual ~AGOSEngine();
 
+	ArchiveMan _archives;
+
 	byte *_curSfxFile;
 	uint32 _curSfxFileSize;
 	uint16 _sampleEnd, _sampleWait;
@@ -607,6 +626,10 @@ protected:
 	virtual uint16 to16Wrapper(uint value);
 	virtual uint16 readUint16Wrapper(const void *src);
 	virtual uint32 readUint32Wrapper(const void *src);
+
+#ifdef ENABLE_AGOS2
+	void loadArchives();
+#endif
 
 	int allocGamePcVars(Common::SeekableReadStream *in);
 	void createPlayer();
@@ -792,14 +815,14 @@ protected:
 	void loadTextIntoMem(uint16 stringId);
 
 	uint loadTextFile(const char *filename, byte *dst);
-	Common::File *openTablesFile(const char *filename);
-	void closeTablesFile(Common::File *in);
+	Common::SeekableReadStream *openTablesFile(const char *filename);
+	void closeTablesFile(Common::SeekableReadStream *in);
 
 	uint loadTextFile_simon1(const char *filename, byte *dst);
-	Common::File *openTablesFile_simon1(const char *filename);
+	Common::SeekableReadStream *openTablesFile_simon1(const char *filename);
 
 	uint loadTextFile_gme(const char *filename, byte *dst);
-	Common::File *openTablesFile_gme(const char *filename);
+	Common::SeekableReadStream *openTablesFile_gme(const char *filename);
 
 	void invokeTimeEvent(TimeEvent *te);
 	bool kickoffTimeEvents();

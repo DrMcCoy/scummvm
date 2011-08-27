@@ -110,14 +110,6 @@ void DreamWebEngine::processEvents() {
 		return;
 	}
 
-	if (_enableSavingOrLoading && _loadSavefile >= 0 && _loadSavefile <= 6) {
-		debug(1, "loading save state %d", _loadSavefile);
-		_context.data.byte(_context.kCurrentslot) = _loadSavefile;
-		_loadSavefile = -1;
-		_context.loadposition();
-		_context.data.byte(_context.kGetback) = 1;
-	}
-
 	soundHandler();
 	Common::Event event;
 	int softKey, hardKey;
@@ -216,13 +208,7 @@ Common::Error DreamWebEngine::run() {
 	syncSoundSettings();
 	_console = new DreamWebConsole(this);
 
-	if (ConfMan.hasKey("save_slot")) {
-		_enableSavingOrLoading = true;
-		_loadSavefile = ConfMan.getInt("save_slot");
-	} else {
-		_enableSavingOrLoading = false;
-		_loadSavefile = -1;
-	}
+	ConfMan.registerDefault("dreamweb_originalsaveload", "true");
 
 	getTimerManager()->installTimerProc(vSyncInterrupt, 1000000 / 70, this, "dreamwebVSync");
 	_context.__start();
@@ -317,7 +303,7 @@ void DreamWebEngine::keyPressed(uint16 ascii) {
 	keybuf[in] = ascii;
 }
 
-void DreamWebEngine::mouseCall() {
+void DreamWebEngine::mouseCall(uint16 *x, uint16 *y, uint16 *state) {
 	processEvents();
 	Common::EventManager *eventMan = _system->getEventManager();
 	Common::Point pos = eventMan->getMousePos();
@@ -329,13 +315,12 @@ void DreamWebEngine::mouseCall() {
 		pos.y = 15;
 	if (pos.y > 184)
 		pos.y = 184;
-	_context.cx = pos.x;
-	_context.dx = pos.y;
+	*x = pos.x;
+	*y = pos.y;
 
-	unsigned state = eventMan->getButtonState();
-	_context.bx = state == _oldMouseState? 0: state;
-	_oldMouseState = state;
-	_context.flags._c = false;
+	unsigned newState = eventMan->getButtonState();
+	*state = (newState == _oldMouseState? 0 : newState);
+	_oldMouseState = newState;
 }
 
 void DreamWebEngine::fadeDos() {

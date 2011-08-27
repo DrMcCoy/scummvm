@@ -68,7 +68,7 @@ enum {
 class Button {
 public:
 	Button() { }
-	Button(Common::SeekableReadStream *stream, uint16 id);
+	Button(Common::SeekableReadStream *stream, uint16 id, uint gameType);
 
 	bool contains(const Common::Point &pos) const;
 
@@ -140,6 +140,8 @@ private:
 	Audio::QueuingAudioStream *_audioStream;
 	uint16 _currSoundPriority;
 
+	uint32 _currentTime, _lastTime;
+
 	bool _needsUpdate;
 	Common::Array<Common::Rect> _dirtyRects;
 	Graphics::Surface _surface;
@@ -172,6 +174,7 @@ private:
 
 	Common::String getStringFromConfig(const Common::String &section, const Common::String &key);
 	Common::String getFilename(const Common::String &section, uint id);
+	Common::String mangleFilename(Common::String filename);
 	void loadLibrary(uint id);
 	void unloadLibrary(uint id);
 

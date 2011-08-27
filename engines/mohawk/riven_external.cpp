@@ -234,10 +234,10 @@ void RivenExternal::runCredits(uint16 video, uint32 delay) {
 				// Set us up to start after delay ms
 				nextCreditsFrameStart = _vm->_system->getMillis() + delay;
 			} else if (_vm->_system->getMillis() >= nextCreditsFrameStart) {
-				// the first two frames stay on for 5 seconds
+				// the first two frames stay on for 4 seconds
 				// the rest of the scroll updates happen at 30Hz
 				if (_vm->_gfx->getCurCreditsImage() < 304)
-					nextCreditsFrameStart = _vm->_system->getMillis() + 5000;
+					nextCreditsFrameStart = _vm->_system->getMillis() + 4000;
 				else
 					nextCreditsFrameStart = _vm->_system->getMillis() + 1000 / 30;
 
@@ -2747,6 +2747,7 @@ void RivenExternal::xtatboundary(uint16 argc, uint16 *argv) {
 
 void RivenExternal::xflies(uint16 argc, uint16 *argv) {
 	// TODO: Activate the "flies" effect
+	debug(1, "STUB: xflies(): create %d %s fl%s", argv[1], (argv[0] == 0) ? "black" : "glowing", (argv[1] == 1) ? "y" : "ies");
 }
 
 } // End of namespace Mohawk

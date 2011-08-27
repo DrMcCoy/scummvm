@@ -28,7 +28,7 @@
 #include "tsage/graphics.h"
 #include "tsage/tsage.h"
 
-namespace tSage {
+namespace TsAGE {
 
 static SoundManager *_soundManager = NULL;
 
@@ -69,6 +69,14 @@ SoundManager::~SoundManager() {
 		_sfTerminate();
 
 //		g_system->getTimerManager()->removeTimerProc(_sfUpdateCallback);
+	}
+
+	// Free any allocated voice type structures
+	for (int idx = 0; idx < SOUND_ARR_SIZE; ++idx) {
+		if (sfManager()._voiceTypeStructPtrs[idx]) {
+			delete sfManager()._voiceTypeStructPtrs[idx];
+			sfManager()._voiceTypeStructPtrs[idx] = NULL;
+		}
 	}
 
 	_soundManager = NULL;
@@ -2448,7 +2456,7 @@ void ASound::unPrime() {
 	_action = NULL;
 }
 
-void ASound::fade(int fadeDest, int fadeSteps, int fadeTicks, bool stopAfterFadeFlag, Action *action) {
+void ASound::fade(int fadeDest, int fadeSteps, int fadeTicks, bool stopAfterFadeFlag, EventHandler *action) {
 	if (action)
 		_action = action;
 
@@ -2474,6 +2482,19 @@ void ASoundExt::synchronize(Serializer &s) {
 void ASoundExt::signal() {
 	if (_soundNum != 0) {
 		fadeSound(_soundNum);
+	}
+}
+
+void ASoundExt::fadeOut2(EventHandler *action) {
+	fade(0, 10, 10, true, action);
+}
+
+void ASoundExt::changeSound(int soundNum) {
+	if (isPlaying()) {
+		_soundNum = soundNum;
+		fadeOut2(this);
+	} else {
+		fadeSound(soundNum);
 	}
 }
 
@@ -2929,4 +2950,4 @@ void SoundBlasterDriver::proc42(int channel, int cmd, int value, int *v1, int *v
 		*v1 = 1;
 }
 
-} // End of namespace tSage
+} // End of namespace TsAGE

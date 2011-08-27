@@ -82,6 +82,7 @@ class cpp:
 		self.skip_output = skip_output
 		self.translated = []
 		self.proc_addr = []
+		self.used_data_offsets = set()
 		self.methods = []
 		self.fd.write("""%s
 
@@ -99,11 +100,13 @@ namespace %s {
 		if self.indirection == -1:
 			try:
 				offset,p,p = self.context.get_offset(name)
-				print "OFFSET = %d" %offset
-				self.indirection = 0
-				return str(offset)
 			except:
 				pass
+			else:
+				print "OFFSET = %d" %offset
+				self.indirection = 0
+				self.used_data_offsets.add((name,offset))
+				return "offset_%s" % (name,)
 		
 		g = self.context.get_global(name)
 		if isinstance(g, op.const):
@@ -581,11 +584,17 @@ namespace %s {
 		data_bin = self.data_seg
 		data_impl = "\n\tstatic const uint8 src[] = {\n\t\t"
 		n = 0
+		comment = str()
 		for v in data_bin:
 			data_impl += "0x%02x, " %v
 			n += 1
+
+			comment += chr(v) if (v >= 0x20 and v < 0x7f and v != ord('\\')) else "."
 			if (n & 0xf) == 0:
-				data_impl += "\n\t\t"
+				data_impl += "\n\t\t//0x%04x: %s\n\t\t" %(n - 16, comment)
+				comment = str()
+			elif (n & 0x3) == 0:
+				comment += " "
 		data_impl += "};\n\tds.assign(src, src + sizeof(src));\n"
 		self.hd.write(
 """\n#include "dreamweb/runtime.h"
@@ -604,6 +613,10 @@ public:
 		for name,addr in self.proc_addr:
 			self.hd.write("\tstatic const uint16 addr_%s = 0x%04x;\n" %(name, addr))
 
+
+		for name,addr in self.used_data_offsets:
+			self.hd.write("\tstatic const uint16 offset_%s = 0x%04x;\n" %(name, addr))
+
 		offsets = []
 		for k, v in self.context.get_globals().items():
 			if isinstance(v, op.var):
@@ -613,7 +626,7 @@ public:
 		
 		offsets = sorted(offsets, key=lambda t: t[1])
 		for o in offsets:
-			self.hd.write("\tconst static uint16 k%s = %s;\n" %o)
+			self.hd.write("\tstatic const uint16 k%s = %s;\n" %o)
 		self.hd.write("\n")
 		for p in set(self.methods):
 			if p in self.blacklist:

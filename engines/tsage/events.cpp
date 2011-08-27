@@ -31,7 +31,7 @@
 #include "tsage/tsage.h"
 #include "tsage/globals.h"
 
-namespace tSage {
+namespace TsAGE {
 
 EventsClass::EventsClass() {
 	_currentCursor = CURSOR_NONE;
@@ -270,6 +270,17 @@ void EventsClass::setCursor(Graphics::Surface &cursor, int transColor, const Com
 	_currentCursor = cursorId;
 }
 
+void EventsClass::setCursor(GfxSurface &cursor) {
+	// TODO: Find proper parameters for this form in Blue Force
+	Graphics::Surface s = cursor.lockSurface();
+
+	const byte *cursorData = (const byte *)s.getBasePtr(0, 0);
+	CursorMan.replaceCursor(cursorData, cursor.getBounds().width(), cursor.getBounds().height(), 
+		cursor._centroid.x, cursor._centroid.y, cursor._transColor);
+
+	_currentCursor = CURSOR_NONE;
+}
+
 void EventsClass::setCursorFromFlag() {
 	setCursor(isCursorVisible() ? _currentCursor : CURSOR_NONE);
 }
@@ -278,8 +289,10 @@ void EventsClass::showCursor() {
 	setCursor(_currentCursor);
 }
 
-void EventsClass::hideCursor() {
+CursorType EventsClass::hideCursor() {
+	CursorType oldCursor = _currentCursor;
 	setCursor(CURSOR_NONE);
+	return oldCursor;
 }
 
 bool EventsClass::isCursorVisible() const {
@@ -325,4 +338,4 @@ void EventsClass::loadNotifierProc(bool postFlag) {
 	}
 }
 
-} // end of namespace tSage
+} // end of namespace TsAGE

@@ -33,7 +33,7 @@
 #include "tsage/globals.h"
 #include "tsage/sound.h"
 
-namespace tSage {
+namespace TsAGE {
 
 // The engine uses ScumMVM screen buffering, so all logic is hardcoded to use pane buffer 0
 #define CURRENT_PANENUM 0
@@ -53,6 +53,13 @@ InvObject::InvObject(int sceneNumber, int rlbNum, int cursorNum, CursorType curs
 	_bounds = s.getBounds();
 
 	DEALLOCATE(imgData);
+}
+
+InvObject::InvObject(int visage, int strip, int frame, int sceneNumber) {
+	_visage = visage;
+	_strip = strip;
+	_frame = frame;
+	_sceneNumber = sceneNumber;
 }
 
 void InvObject::setCursor() {
@@ -1576,6 +1583,17 @@ void SceneItem::display(int resNum, int lineNum, ...) {
 	}
 }
 
+void SceneItem::display2(int resNum, int lineNum) {
+	if (_vm->getGameID() == GType_BlueForce)
+		display(resNum, lineNum, SET_WIDTH, 312, 
+			SET_X, 4 + GLOBALS._sceneManager._scene->_sceneBounds.left, 
+			SET_Y, GLOBALS._sceneManager._scene->_sceneBounds.top + BF_INTERFACE_Y + 2,
+			SET_FONT, 4, SET_BG_COLOR, 1, SET_FG_COLOR, 19, SET_EXT_BGCOLOR, 9,
+			SET_EXT_FGCOLOR, 13, LIST_END);
+	else
+		display(resNum, lineNum, SET_WIDTH, 200, SET_EXT_BGCOLOR, 7, LIST_END);
+}
+
 /*--------------------------------------------------------------------------*/
 
 void SceneHotspot::doAction(int action) {
@@ -1599,6 +1617,11 @@ void SceneHotspot::doAction(int action) {
 
 /*--------------------------------------------------------------------------*/
 
+NamedHotspot::NamedHotspot() : SceneHotspot() {
+	_resNum = 0;
+	_lookLineNum = _useLineNum = _talkLineNum = -1;
+}
+
 void NamedHotspot::doAction(int action) {
 	switch (action) {
 	case CURSOR_WALK:
@@ -1608,13 +1631,19 @@ void NamedHotspot::doAction(int action) {
 		if (_lookLineNum == -1)
 			SceneHotspot::doAction(action);
 		else
-			SceneItem::display(_resnum, _lookLineNum, SET_Y, 20, SET_WIDTH, 200, SET_EXT_BGCOLOR, 7, LIST_END);
+			SceneItem::display(_resNum, _lookLineNum, SET_Y, 20, SET_WIDTH, 200, SET_EXT_BGCOLOR, 7, LIST_END);
 		break;
 	case CURSOR_USE:
 		if (_useLineNum == -1)
 			SceneHotspot::doAction(action);
 		else
-			SceneItem::display(_resnum, _useLineNum, SET_Y, 20, SET_WIDTH, 200, SET_EXT_BGCOLOR, 7, LIST_END);
+			SceneItem::display(_resNum, _useLineNum, SET_Y, 20, SET_WIDTH, 200, SET_EXT_BGCOLOR, 7, LIST_END);
+		break;
+	case CURSOR_TALK:
+		if (_talkLineNum == -1)
+			SceneHotspot::doAction(action);
+		else
+			SceneItem::display2(_resNum, _talkLineNum);
 		break;
 	default:
 		SceneHotspot::doAction(action);
@@ -1624,17 +1653,52 @@ void NamedHotspot::doAction(int action) {
 
 void NamedHotspot::setup(int ys, int xs, int ye, int xe, const int resnum, const int lookLineNum, const int useLineNum) {
 	setBounds(ys, xe, ye, xs);
-	_resnum = resnum;
+	_resNum = resnum;
 	_lookLineNum = lookLineNum;
 	_useLineNum = useLineNum;
+	_talkLineNum = -1;
 	_globals->_sceneItems.addItems(this, NULL);
+}
+
+void NamedHotspot::setup(const Rect &bounds, int resNum, int lookLineNum, int talkLineNum, int useLineNum, int mode, SceneItem *item) {
+	setBounds(bounds);
+	_resNum = resNum;
+	_lookLineNum = lookLineNum;
+	_talkLineNum = talkLineNum;
+	_useLineNum = useLineNum;
+
+	switch (mode) {
+	case 2:
+		_globals->_sceneItems.push_front(this);
+		break;
+	case 4:
+		_globals->_sceneItems.addBefore(item, this);
+		break;
+	case 5:
+		_globals->_sceneItems.addAfter(item, this);
+		break;
+	default:
+		_globals->_sceneItems.push_back(this);
+		break;
+	}
+}
+
+void NamedHotspot::setup(int sceneRegionId, int resNum, int lookLineNum, int talkLineNum, int useLineNum, int mode) {
+	_sceneRegionId = sceneRegionId;
+	_resNum = resNum;
+	_lookLineNum = lookLineNum;
+	_talkLineNum = talkLineNum;
+	_useLineNum = useLineNum;
 }
 
 void NamedHotspot::synchronize(Serializer &s) {
 	SceneHotspot::synchronize(s);
-	s.syncAsSint16LE(_resnum);
+	s.syncAsSint16LE(_resNum);
 	s.syncAsSint16LE(_lookLineNum);
 	s.syncAsSint16LE(_useLineNum);
+
+	if (_vm->getGameID() == GType_BlueForce)
+		s.syncAsSint16LE(_talkLineNum);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1655,6 +1719,11 @@ void SceneObjectWrapper::remove() {
 }
 
 void SceneObjectWrapper::dispatch() {
+	if (_vm->getGameID() == GType_Ringworld)
+		check();
+}
+
+void SceneObjectWrapper::check() {
 	_visageImages.setVisage(_sceneObject->_visage);
 	int frameCount = _visageImages.getFrameCount();
 	int angle = _sceneObject->_angle;
@@ -1713,6 +1782,7 @@ SceneObject::SceneObject() : SceneHotspot() {
 	_sceneRegionId = 0;
 	_percent = 100;
 	_flags |= OBJFLAG_PANES;
+	_priority = 0;
 
 	_frameChange = 0;
 	_visage = 0;
@@ -2002,6 +2072,7 @@ void SceneObject::animate(AnimateMode animMode, ...) {
 		break;
 
 	case ANIM_MODE_8:
+	case ANIM_MODE_9:
 		_field68 = va_arg(va, int);
 		_endAction = va_arg(va, Action *);
 		_frameChange = 1;
@@ -2188,7 +2259,25 @@ void SceneObject::dispatch() {
 			} else {
 				setFrame(changeFrame());
 			}
+			break;
 
+		case ANIM_MODE_9:
+			if (_frame == _endFrame) {
+				if (_frameChange != -1) {
+					_frameChange = -1;
+					_strip = ((_strip - 1) ^ 1) + 1;
+					_endFrame = 1;
+				} else if ((_field68 == 0) || (--_field68 != 0)) {
+					_frameChange = 1;
+					_endFrame = getFrameCount();
+
+					setFrame(changeFrame());
+				} else {
+					animEnded();
+				}
+			} else {
+				setFrame(changeFrame());
+			}
 			break;
 
 		default:
@@ -2277,6 +2366,18 @@ void SceneObject::updateScreen() {
 	}
 }
 
+void SceneObject::updateAngle(SceneObject *sceneObj) {
+	checkAngle(sceneObj);
+	if (_objectWrapper)
+		_objectWrapper->check();
+}
+
+void SceneObject::changeAngle(int angle) {
+	_angle = angle;
+	if (_objectWrapper)
+		_objectWrapper->check();
+}
+
 void SceneObject::setup(int visage, int stripFrameNum, int frameNum, int posX, int posY, int priority) {
 	postInit();
 	setVisage(visage);
@@ -2288,18 +2389,12 @@ void SceneObject::setup(int visage, int stripFrameNum, int frameNum, int posX, i
 
 /*--------------------------------------------------------------------------*/
 
-void SceneObjectExt2::postInit(SceneObjectList *OwnerList) {
-	_v8A = -1;
-	_v8C = -1;
-	_v8E = -1;
-	SceneObject::postInit();
+void AltSceneObject::postInit(SceneObjectList *OwnerList) {
+	SceneObject::postInit(&_globals->_sceneManager._altSceneObjects);
 }
 
-void SceneObjectExt2::synchronize(Serializer &s) {
-	SceneObject::synchronize(s);
-	s.syncAsSint16LE(_v8A);
-	s.syncAsSint16LE(_v8C);
-	s.syncAsSint16LE(_v8E);
+void AltSceneObject::draw() {
+	SceneObject::draw();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -2732,6 +2827,9 @@ void Player::synchronize(Serializer &s) {
 	s.syncAsByte(_canWalk);
 	s.syncAsByte(_uiEnabled);
 	s.syncAsSint16LE(_field8C);
+
+	if (_vm->getGameID() == GType_BlueForce)
+		s.syncAsSint16LE(_field8E);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -3456,11 +3554,16 @@ void GameHandler::synchronize(Serializer &s) {
 SceneHandler::SceneHandler() {
 	_saveGameSlot = -1;
 	_loadGameSlot = -1;
+	_prevFrameNumber = 0;
 }
 
 void SceneHandler::registerHandler() {
 	postInit();
 	_globals->_game->addHandler(this);
+}
+
+uint32 SceneHandler::getFrameDifference() {
+	return GLOBALS._events.getFrameNumber() - _prevFrameNumber;
 }
 
 void SceneHandler::postInit(SceneObjectList *OwnerList) {
@@ -3577,10 +3680,19 @@ void SceneHandler::dispatch() {
 	// Not actually used
 	//_eventListeners.forEach(SceneHandler::handleListener);
 
-	// Handle pending eents
+	// Handle pending events
 	Event event;
-	while (_globals->_events.getEvent(event))
+	if (_globals->_events.getEvent(event)) {
+		// Process pending events
+		do {
+			process(event);
+		} while (_globals->_events.getEvent(event));
+	} else if (_vm->getGameID() == GType_BlueForce) {
+		// For Blue Force, 'none' events need to be generated in the absence of any
+		event.eventType = EVENT_NONE;
+		event.mousePos = _globals->_events._mousePos;
 		process(event);
+	}
 
 	// Handle drawing the contents of the scene
 	if (_globals->_sceneManager._scene)
@@ -3603,4 +3715,4 @@ void SceneHandler::dispatchObject(EventHandler *obj) {
 void SceneHandler::saveListener(Serializer &ser) {
 }
 
-} // End of namespace tSage
+} // End of namespace TsAGE

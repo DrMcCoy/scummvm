@@ -27,6 +27,7 @@
 #include "backends/graphics/graphics.h"
 #include "common/array.h"
 #include "common/rect.h"
+#include "graphics/font.h"
 #include "graphics/pixelformat.h"
 
 // Uncomment this to enable the 'on screen display' code.
@@ -214,10 +215,7 @@ protected:
 	virtual void calculateDisplaySize(int &width, int &height);
 	virtual void refreshDisplaySize();
 
-	/**
-	 * Returns the current target aspect ratio x 10000
-	 */
-	virtual uint getAspectRatio();
+	uint getAspectRatio() const;
 
 	bool _formatBGR;
 
@@ -317,6 +315,11 @@ protected:
 	 * The OSD contents.
 	 */
 	Common::Array<Common::String> _osdLines;
+
+  /**
+   * Returns the font used for on screen display
+   */
+  virtual const Graphics::Font *getFontOSD();
 
 	/**
 	 * Update the OSD texture / surface.

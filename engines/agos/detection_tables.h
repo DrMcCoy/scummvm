@@ -1040,7 +1040,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::EN_ANY,
 			Common::kPlatformAcorn,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NOSUBTITLES
 		},
 
@@ -1208,7 +1208,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::EN_ANY,
 			Common::kPlatformAmiga,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NOSUBTITLES | GUIO_NOMIDI
 		},
 
@@ -1232,7 +1232,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::EN_ANY,
 			Common::kPlatformAmiga,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NOSUBTITLES | GUIO_NOMIDI
 		},
 
@@ -1546,7 +1546,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::EN_ANY,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NOSUBTITLES
 		},
 
@@ -1571,7 +1571,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::EN_ANY,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NOSUBTITLES
 		},
 
@@ -1596,7 +1596,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::RU_RUS,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -1621,7 +1621,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::FR_FRA,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -1671,7 +1671,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::HE_ISR,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -1696,7 +1696,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::IT_ITA,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -1722,7 +1722,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			// FIXME: DOS version which uses WAV format
 			Common::IT_ITA,
 			Common::kPlatformWindows,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -1747,7 +1747,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::ES_ESP,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -1772,7 +1772,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::EN_ANY,
 			Common::kPlatformWindows,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NOSUBTITLES
 		},
 
@@ -1797,7 +1797,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::DE_DEU,
 			Common::kPlatformWindows,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NOSUBTITLES
 		},
 
@@ -2022,7 +2022,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::EN_ANY,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2047,7 +2047,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::EN_ANY,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2072,7 +2072,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::FR_FRA,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2097,7 +2097,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::DE_DEU,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2122,7 +2122,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::DE_DEU,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2147,7 +2147,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::HE_ISR,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2173,7 +2173,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			// FIXME: DOS version which uses WAV format
 			Common::IT_ITA,
 			Common::kPlatformWindows,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2198,7 +2198,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::ES_ESP,
 			Common::kPlatformPC,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2223,7 +2223,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::CZ_CZE,
 			Common::kPlatformWindows,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2248,7 +2248,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::EN_ANY,
 			Common::kPlatformWindows,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2273,7 +2273,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::FR_FRA,
 			Common::kPlatformWindows,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2298,7 +2298,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::DE_DEU,
 			Common::kPlatformWindows,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2323,7 +2323,7 @@ static const AGOSGameDescription gameDescriptions[] = {
 			},
 			Common::PL_POL,
 			Common::kPlatformWindows,
-			ADGF_NO_FLAGS,
+			ADGF_CD,
 			GUIO_NONE
 		},
 
@@ -2519,6 +2519,27 @@ static const AGOSGameDescription gameDescriptions[] = {
 		GF_OLD_BUNDLE | GF_ZLIBCOMP | GF_TALKIE
 	},
 
+	// The Feeble Files - English Windows 2CD (with InstallShield cab)
+	{
+		{
+			"feeble",
+			"2CD",
+
+			{
+	{ "data1.cab",		0,	"600db08891e7a21badc8215e604cd88f", 28845430},
+	{ NULL, 0, NULL, 0}
+			},
+			Common::EN_ANY,
+			Common::kPlatformWindows,
+			ADGF_NO_FLAGS,
+			GUIO_NOSUBTITLES | GUIO_NOMUSIC
+		},
+
+		GType_FF,
+		GID_FEEBLEFILES,
+		GF_OLD_BUNDLE | GF_TALKIE | GF_PACKED
+	},
+
 	// The Feeble Files - English Windows 2CD
 	{
 		{
@@ -2563,6 +2584,27 @@ static const AGOSGameDescription gameDescriptions[] = {
 		GType_FF,
 		GID_FEEBLEFILES,
 		GF_OLD_BUNDLE | GF_TALKIE
+	},
+
+	// The Feeble Files - English Windows 4CD (with InstallShield cab)
+	{
+		{
+			"feeble",
+			"4CD",
+
+			{
+	{ "data1.cab",		0,	"65804cbc9036ac4b1275d97e0de3be2f", 28943062},
+	{ NULL, 0, NULL, 0}
+			},
+			Common::EN_ANY,
+			Common::kPlatformWindows,
+			ADGF_NO_FLAGS,
+			GUIO_NOSUBTITLES | GUIO_NOMUSIC
+		},
+
+		GType_FF,
+		GID_FEEBLEFILES,
+		GF_OLD_BUNDLE | GF_TALKIE | GF_PACKED
 	},
 
 	// The Feeble Files - English Windows 4CD
@@ -2703,6 +2745,27 @@ static const AGOSGameDescription gameDescriptions[] = {
 		GF_OLD_BUNDLE | GF_TALKIE
 	},
 
+	// Simon the Sorcerer's Puzzle Pack - Demon in my Pocket (with InstallShield cab)
+	{
+		{
+			"dimp",
+			"CD",
+
+			{
+	{ "data1.cab", 0, "36dd86c1d872cea81ac1de7753dd684a", 40394693},
+	{ NULL, 0, NULL, 0}
+			},
+			Common::EN_ANY,
+			Common::kPlatformWindows,
+			ADGF_NO_FLAGS,
+			GUIO_NOSUBTITLES | GUIO_NOMUSIC
+		},
+
+		GType_PP,
+		GID_DIMP,
+		GF_OLD_BUNDLE | GF_TALKIE | GF_PACKED
+	},
+
 	// Simon the Sorcerer's Puzzle Pack - Demon in my Pocket
 	{
 		{
@@ -2722,6 +2785,27 @@ static const AGOSGameDescription gameDescriptions[] = {
 		GType_PP,
 		GID_DIMP,
 		GF_OLD_BUNDLE | GF_TALKIE
+	},
+
+	// Simon the Sorcerer's Puzzle Pack - Jumble (with InstallShield cab)
+	{
+		{
+			"jumble",
+			"CD",
+
+			{
+	{ "data1.cab", 0, "36dd86c1d872cea81ac1de7753dd684a", 40394693},
+	{ NULL, 0, NULL, 0}
+			},
+			Common::EN_ANY,
+			Common::kPlatformWindows,
+			ADGF_NO_FLAGS,
+			GUIO_NOSUBTITLES
+		},
+
+		GType_PP,
+		GID_JUMBLE,
+		GF_OLD_BUNDLE | GF_TALKIE | GF_PACKED
 	},
 
 	// Simon the Sorcerer's Puzzle Pack - Jumble
@@ -2745,6 +2829,27 @@ static const AGOSGameDescription gameDescriptions[] = {
 		GF_OLD_BUNDLE | GF_TALKIE
 	},
 
+	// Simon the Sorcerer's Puzzle Pack - NoPatience (with InstallShield cab)
+	{
+		{
+			"puzzle",
+			"CD",
+
+			{
+	{ "data1.cab", 0, "36dd86c1d872cea81ac1de7753dd684a", 40394693},
+	{ NULL, 0, NULL, 0}
+			},
+			Common::EN_ANY,
+			Common::kPlatformWindows,
+			ADGF_NO_FLAGS,
+			GUIO_NOSUBTITLES
+		},
+
+		GType_PP,
+		GID_PUZZLE,
+		GF_OLD_BUNDLE | GF_TALKIE | GF_PACKED
+	},
+
 	// Simon the Sorcerer's Puzzle Pack - NoPatience
 	{
 		{
@@ -2764,6 +2869,27 @@ static const AGOSGameDescription gameDescriptions[] = {
 		GType_PP,
 		GID_PUZZLE,
 		GF_OLD_BUNDLE | GF_TALKIE
+	},
+
+	// Simon the Sorcerer's Puzzle Pack - Swampy Adventures - English (with InstallShield cab)
+	{
+		{
+			"swampy",
+			"CD",
+
+			{
+	{ "data1.cab", 0, "36dd86c1d872cea81ac1de7753dd684a", 40394693},
+	{ NULL, 0, NULL, 0}
+			},
+			Common::EN_ANY,
+			Common::kPlatformWindows,
+			ADGF_NO_FLAGS,
+			GUIO_NOSUBTITLES
+		},
+
+		GType_PP,
+		GID_SWAMPY,
+		GF_OLD_BUNDLE | GF_TALKIE | GF_PACKED
 	},
 
 	// Simon the Sorcerer's Puzzle Pack - Swampy Adventures - English

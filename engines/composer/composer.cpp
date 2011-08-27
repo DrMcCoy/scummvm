@@ -81,8 +81,12 @@ Common::Error ComposerEngine::run() {
 	_directoriesToStrip = 1;
 	if (!_bookIni.loadFromFile("book.ini")) {
 		_directoriesToStrip = 0;
-		if (!_bookIni.loadFromFile("programs/book.ini"))
-			error("failed to find book.ini");
+		if (!_bookIni.loadFromFile("programs/book.ini")) {
+			// mac version?
+			if (!_bookIni.loadFromFile("Darby the Dragon.ini"))
+				if (!_bookIni.loadFromFile("Gregory.ini"))
+					error("failed to find book.ini");
+		}
 	}
 
 	uint width = 640;
@@ -97,9 +101,13 @@ Common::Error ComposerEngine::run() {
 
 	loadLibrary(0);
 
+	_currentTime = 0;
+	_lastTime = 0;
+
 	uint fps = atoi(getStringFromConfig("Common", "FPS").c_str());
 	uint frameTime = 1000 / fps;
 	uint32 lastDrawTime = 0;
+
 	while (!shouldQuit()) {
 		for (uint i = 0; i < _pendingPageChanges.size(); i++) {
 			if (_pendingPageChanges[i]._remove)
@@ -112,22 +120,31 @@ Common::Error ComposerEngine::run() {
 		_pendingPageChanges.clear();
 
 		uint32 thisTime = _system->getMillis();
+		// maintain our own internal timing, since otherwise we get
+		// confused when starved of CPU (for example when the user
+		// is dragging the scummvm window around)
+		if (thisTime > _lastTime + frameTime)
+			_currentTime += frameTime;
+		else
+			_currentTime += thisTime - _lastTime;
+		_lastTime = thisTime;
+
 		for (uint i = 0; i < _queuedScripts.size(); i++) {
 			QueuedScript &script = _queuedScripts[i];
 			if (!script._count)
 				continue;
-			if (script._baseTime + script._duration > thisTime)
+			if (script._baseTime + script._duration > _currentTime)
 				continue;
 			if (script._count != 0xffffffff)
 				script._count--;
-			script._baseTime = thisTime;
+			script._baseTime = _currentTime;
 			runScript(script._scriptId, i, 0, 0);
 		}
 
 		if (lastDrawTime + frameTime <= thisTime) {
-			// catch up if we're more than 5 frames behind
-			if (lastDrawTime + (frameTime * 5) <= thisTime)
-				lastDrawTime = thisTime - (frameTime * 5);
+			// catch up if we're more than 2 frames behind
+			if (lastDrawTime + (frameTime * 2) <= thisTime)
+				lastDrawTime = thisTime;
 			else
 				lastDrawTime += frameTime;
 
@@ -174,11 +191,6 @@ Common::Error ComposerEngine::run() {
 				}
 
 				onKeyDown(event.kbd.keycode);
-				break;
-
-			case Common::EVENT_QUIT:
-			case Common::EVENT_RTL:
-				quitGame();
 				break;
 
 			default:
@@ -253,16 +265,15 @@ void ComposerEngine::setCursor(uint16 id, const Common::Point &offset) {
 }
 
 void ComposerEngine::setCursorVisible(bool visible) {
-	if (!_mouseSpriteId)
-		return;
-
 	if (visible && !_mouseVisible) {
 		_mouseVisible = true;
-		addSprite(_mouseSpriteId, 0, 0, _lastMousePos - _mouseOffset);
+		if (_mouseSpriteId)
+			addSprite(_mouseSpriteId, 0, 0, _lastMousePos - _mouseOffset);
 		onMouseMove(_lastMousePos);
 	} else if (!visible && _mouseVisible) {
 		_mouseVisible = false;
-		removeSprite(_mouseSpriteId, 0);
+		if (_mouseSpriteId)
+			removeSprite(_mouseSpriteId, 0);
 	}
 }
 
@@ -276,13 +287,18 @@ Common::String ComposerEngine::getStringFromConfig(const Common::String &section
 Common::String ComposerEngine::getFilename(const Common::String &section, uint id) {
 	Common::String key = Common::String::format("%d", id);
 	Common::String filename = getStringFromConfig(section, key);
+
+	return mangleFilename(filename);
+}
+
+Common::String ComposerEngine::mangleFilename(Common::String filename) {
 	while (filename.size() && (filename[0] == '~' || filename[0] == ':' || filename[0] == '\\'))
 		filename = filename.c_str() + 1;
 
 	uint slashesToStrip = _directoriesToStrip;
 	while (slashesToStrip--) {
 		for (uint i = 0; i < filename.size(); i++) {
-			if (filename[i] != '\\')
+			if (filename[i] != '\\' && filename[i] != ':')
 				continue;
 			filename = filename.c_str() + i + 1;
 			break;
@@ -291,7 +307,7 @@ Common::String ComposerEngine::getFilename(const Common::String &section, uint i
 
 	Common::String outFilename;
 	for (uint i = 0; i < filename.size(); i++) {
-		if (filename[i] == '\\')
+		if (filename[i] == '\\' || filename[i] == ':')
 			outFilename += '/';
 		else
 			outFilename += filename[i];
@@ -318,11 +334,11 @@ void ComposerEngine::loadLibrary(uint id) {
 	for (uint i = 0; i < buttonResources.size(); i++) {
 		uint16 buttonId = buttonResources[i];
 		Common::SeekableReadStream *stream = library._archive->getResource(ID_BUTN, buttonId);
-		Button button(stream, buttonId);
+		Button button(stream, buttonId, getGameType());
 
 		bool inserted = false;
 		for (Common::List<Button>::iterator b = newLib._buttons.begin(); b != newLib._buttons.end(); b++) {
-			if (button._zorder <= b->_zorder)
+			if (button._zorder < b->_zorder)
 				continue;
 			newLib._buttons.insert(b, button);
 			inserted = true;
@@ -405,22 +421,32 @@ Common::SeekableReadStream *ComposerEngine::getResource(uint32 tag, uint16 id) {
 	error("No loaded library contains '%s' %04x", tag2str(tag), id);
 }
 
-Button::Button(Common::SeekableReadStream *stream, uint16 id) {
+Button::Button(Common::SeekableReadStream *stream, uint16 id, uint gameType) {
 	_id = id;
 
 	_type = stream->readUint16LE();
 	_active = (_type & 0x8000) ? true : false;
 	_type &= 0xfff;
-	debug(9, "button: type %d, active %d", _type, _active);
+	debug(9, "button %d: type %d, active %d", id, _type, _active);
 
-	_zorder = stream->readUint16LE();
-	_scriptId = stream->readUint16LE();
-	_scriptIdRollOn = stream->readUint16LE();
-	_scriptIdRollOff = stream->readUint16LE();
+	uint16 flags = 0;
+	uint16 size = 4;
+	if (gameType == GType_ComposerV1) {
+		flags = stream->readUint16LE();
+		_zorder = 0;
+		_scriptId = stream->readUint16LE();
+		_scriptIdRollOn = 0;
+		_scriptIdRollOff = 0;
+	} else {
+		_zorder = stream->readUint16LE();
+		_scriptId = stream->readUint16LE();
+		_scriptIdRollOn = stream->readUint16LE();
+		_scriptIdRollOff = stream->readUint16LE();
 
-	stream->skip(4);
+		stream->skip(4);
 
-	uint16 size = stream->readUint16LE();
+		size = stream->readUint16LE();
+	}
 
 	switch (_type) {
 	case kButtonRect:
@@ -431,15 +457,21 @@ Button::Button(Common::SeekableReadStream *stream, uint16 id) {
 		_rect.top = stream->readSint16LE();
 		_rect.right = stream->readSint16LE();
 		_rect.bottom = stream->readSint16LE();
-		debug(9, "button: (%d, %d, %d, %d)", _rect.left, _rect.top, _rect.right, _rect.bottom);
 		break;
 	case kButtonSprites:
+		if (gameType == GType_ComposerV1)
+			error("encountered kButtonSprites in V1 data");
 		for (uint i = 0; i < size; i++) {
-			_spriteIds.push_back(stream->readSint16LE());
+			_spriteIds.push_back(stream->readUint16LE());
 		}
 		break;
 	default:
 		error("unknown button type %d", _type);
+	}
+
+	if (flags & 0x40) {
+		_scriptIdRollOn = stream->readUint16LE();
+		_scriptIdRollOff = stream->readUint16LE();
 	}
 
 	delete stream;

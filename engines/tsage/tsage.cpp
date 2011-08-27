@@ -30,7 +30,7 @@
 #include "tsage/resources.h"
 #include "tsage/globals.h"
 
-namespace tSage {
+namespace TsAGE {
 
 TSageEngine *_vm = NULL;
 
@@ -81,7 +81,7 @@ void TSageEngine::initialize() {
 			_resourceManager->addLib("FILES.RLB");
 			_resourceManager->addLib("TSAGE.RLB");
 		}
-		_globals = new BlueForceGlobals();
+		_globals = new BlueForce::BlueForceGlobals();
 	}
 
 	_globals->gfxManager().setDefaults();
@@ -102,7 +102,7 @@ Common::Error TSageEngine::run() {
 	// Basic initialisation
 	initialize();
 
-	_globals->_sceneHandler.registerHandler();
+	_globals->_sceneHandler->registerHandler();
 	_globals->_game->execute();
 
 	deinitialize();
@@ -155,4 +155,4 @@ bool TSageEngine::shouldQuit() {
 	return getEventManager()->shouldQuit() || getEventManager()->shouldRTL();
 }
 
-} // End of namespace tSage
+} // End of namespace TsAGE
