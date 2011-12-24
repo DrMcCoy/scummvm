@@ -618,9 +618,11 @@ void FontManager::trim(TextLine &text) const {
 		c = _font->getChar(txt);
 	}
 
+	backTrimStart = _font->nextChar(backTrimStart);
+
 	// Calculate the number of bytes to trim
 	int32 trimFront = frontTrimEnd  ? (frontTrimEnd - text.getText()) : 0;
-	int32 trimBack  = backTrimStart ? ((txt - backTrimStart) - 1)     : 0;
+	int32 trimBack  = backTrimStart ? (txt          - backTrimStart ) : 0;
 
 	// Trim
 	if (trimFront > 0)
