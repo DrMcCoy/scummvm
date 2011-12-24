@@ -2894,7 +2894,7 @@ const char Music::_tuneList[TOTAL_TUNES][8] = {
 const FxDef Sound::_fxList[312] = {
 		// 0
 	{
-		0,						// sampleId
+		{0,0,0},						// sampleId
 		0,						// type				(FX_LOOP, FX_RANDOM or FX_SPOT)
 		0,						// delay			(random chance for FX_RANDOM sound fx)
 		{							// roomVolList
@@ -7055,7 +7055,7 @@ const uint8 g_genWhiteCoat[] = {
 	INIT_SEQ_END
 };
 
-const uint8 *Logic::_startData[] = {
+const uint8 *const Logic::_startData[] = {
 	g_startPos0,
 	g_startPos1,
 	g_startPos2,
@@ -7139,7 +7139,7 @@ const uint8 *Logic::_startData[] = {
 	g_startPos80
 };
 
-const uint8 *Logic::_helperData[] = {
+const uint8 *const Logic::_helperData[] = {
 	g_genIreland,
 	g_genSyria,
 	g_genSpain,

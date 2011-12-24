@@ -59,10 +59,6 @@ static const PlainGameDescriptor darkseed2Games[] = {
 
 namespace DarkSeed2 {
 
-using Common::GUIO_NOSPEECH;
-using Common::GUIO_NOSUBTITLES;
-using Common::GUIO_NONE;
-
 static const ADGameDescription gameDescriptions[] = {
 	{ // English version
 		"darkseed2",
@@ -74,7 +70,7 @@ static const ADGameDescription gameDescriptions[] = {
 		EN_ANY,
 		kPlatformWindows,
 		ADGF_NO_FLAGS,
-		GUIO_NONE
+		GUIO0()
 	},
 	{ // German version from the PC Joker. English speech, German text
 		"darkseed2",
@@ -86,7 +82,7 @@ static const ADGameDescription gameDescriptions[] = {
 		DE_DEU,
 		kPlatformWindows,
 		ADGF_NO_FLAGS,
-		GUIO_NONE
+		GUIO0()
 	},
 	{ // French version. English speech, French text
 		"darkseed2",
@@ -98,7 +94,7 @@ static const ADGameDescription gameDescriptions[] = {
 		FR_FRA,
 		kPlatformWindows,
 		ADGF_NO_FLAGS,
-		GUIO_NONE
+		GUIO0()
 	},
 	{ // English Demo version
 		"darkseed2",
@@ -109,7 +105,7 @@ static const ADGameDescription gameDescriptions[] = {
 		EN_ANY,
 		kPlatformWindows,
 		ADGF_DEMO,
-		GUIO_NONE
+		GUIO0()
 	},
 	{ // Japanese Sega Saturn version
 		"darkseed2",
@@ -122,7 +118,7 @@ static const ADGameDescription gameDescriptions[] = {
 		JA_JPN,
 		kPlatformSaturn,
 		ADGF_NO_FLAGS,
-		GUIO_NOSPEECH
+		GUIO1(GUIO_NOSPEECH)
 	},
 	{ // English Macintosh Version
 		"darkseed2",
@@ -134,7 +130,7 @@ static const ADGameDescription gameDescriptions[] = {
 		EN_ANY,
 		kPlatformMacintosh,
 		ADGF_MACRESFORK,
-		GUIO_NOSPEECH
+		GUIO0()
 	},
 	AD_TABLE_END_MARKER
 };
@@ -147,7 +143,7 @@ static const ADGameDescription fallbackDescs[] = {
 		UNK_LANG,
 		kPlatformPC,
 		ADGF_NO_FLAGS,
-		GUIO_NONE
+		GUIO0()
 	},
 	{ // 1
 		"darkseed2",
@@ -156,7 +152,7 @@ static const ADGameDescription fallbackDescs[] = {
 		UNK_LANG,
 		kPlatformSaturn,
 		ADGF_NO_FLAGS,
-		GUIO_NONE
+		GUIO0()
 	}
 };
 

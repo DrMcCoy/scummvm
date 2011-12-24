@@ -49,35 +49,6 @@ public:
 	ConfigDialog();
 };
 
-class RightClickButton : public GfxButton {
-private:
-	GfxSurface *_savedButton;
-public:
-	int _buttonIndex;
-
-	RightClickButton(int buttonIndex, int xp, int yp);
-	~RightClickButton() { delete _savedButton; }
-
-	virtual void highlight();
-};
-
-class RightClickDialog : public GfxDialog {
-private:
-	GfxSurface _surface;
-	RightClickButton *_highlightedButton;
-	int _selectedAction;
-	RightClickButton _walkButton, _lookButton, _useButton, _talkButton, _inventoryButton, _optionsButton;
-
-	RightClickButton *findButton(const Common::Point &pt);
-public:
-	RightClickDialog();
-	~RightClickDialog();
-
-	virtual void draw();
-	virtual bool process(Event &event);
-	void execute();
-};
-
 /*--------------------------------------------------------------------------*/
 
 class ModalDialog : public GfxDialog {
@@ -89,43 +60,9 @@ public:
 
 /*--------------------------------------------------------------------------*/
 
-class GfxInvImage : public GfxImage {
+class SoundDialog {
 public:
-	InvObject *_invObject;
-public:
-	GfxInvImage() : GfxImage(), _invObject(NULL) {}
-
-	virtual bool process(Event &event);
-};
-
-#define MAX_INVOBJECT_DISPLAY 20
-
-class InventoryDialog : public ModalDialog {
-private:
-	Common::Array<GfxInvImage *> _images;
-	GfxButton _btnOk, _btnLook;
-public:
-	InventoryDialog();
-	virtual ~InventoryDialog();
-	void execute();
-
-	static void show();
-};
-
-/*--------------------------------------------------------------------------*/
-
-class OptionsDialog : public ModalDialog {
-private:
-	GfxButton _btnSave, _btnRestore, _btnRestart;
-	GfxButton _btnQuit, _btnResume;
-	GfxButton _btnSound;
-	GfxMessage _gfxMessage;
-public:
-	OptionsDialog();
-	virtual ~OptionsDialog() {}
-	GfxButton *execute() { return GfxDialog::execute(&_btnResume); }
-
-	static void show();
+	static void execute();
 };
 
 } // End of namespace TsAGE

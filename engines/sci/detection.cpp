@@ -296,8 +296,10 @@ Common::String convertSierraGameId(Common::String sierraId, uint32 *gameFlags, R
 		sierraId == "mg" || sierraId == "pq" ||
 		sierraId == "jones" ||
 		sierraId == "cardgames" || sierraId == "solitare" ||
-		sierraId == "hoyle3" || sierraId == "hoyle4")
+		sierraId == "hoyle4")
 		demoThreshold = 40;
+	if (sierraId == "hoyle3")
+		demoThreshold = 45;	// cnick-kq has 42 scripts. The actual hoyle 3 demo has 27.
 	if (sierraId == "fp" || sierraId == "gk" || sierraId == "pq4")
 		demoThreshold = 150;
 
@@ -310,8 +312,11 @@ Common::String convertSierraGameId(Common::String sierraId, uint32 *gameFlags, R
 			return "cnick-lsl";
 		if (sierraId == "sq4" && resources->size() == 34)
 			return "cnick-sq";
-
-		// TODO: cnick-kq, cnick-laurabow and cnick-longbow (their resources can't be read)
+		if (sierraId == "hoyle3" && resources->size() == 42)
+			return "cnick-kq";
+		if (sierraId == "rh budget" && resources->size() == 39)
+			return "cnick-longbow";
+		// TODO: cnick-laurabow (the name of the game object contains junk)
 
 		// Handle Astrochicken 1 (SQ3) and 2 (SQ4)
 		if (sierraId == "sq3" && resources->size() == 20)
@@ -368,7 +373,7 @@ static ADGameDescription s_fallbackDesc = {
 	Common::UNK_LANG,
 	Common::kPlatformPC,
 	ADGF_NO_FLAGS,
-	Common::GUIO_NONE
+	GUIO0()
 };
 
 static char s_fallbackGameIdBuf[256];
@@ -430,7 +435,7 @@ const ADGameDescription *SciMetaEngine::fallbackDetect(const FileMap &allFiles, 
 	s_fallbackDesc.flags = ADGF_NO_FLAGS;
 	s_fallbackDesc.platform = Common::kPlatformPC;	// default to PC platform
 	s_fallbackDesc.gameid = "sci";
-	s_fallbackDesc.guioptions = Common::GUIO_NONE;
+	s_fallbackDesc.guioptions = GUIO0();
 
 	if (allFiles.contains("resource.map") || allFiles.contains("Data1")
 	    || allFiles.contains("resmap.001") || allFiles.contains("resmap.001")) {
@@ -560,7 +565,7 @@ const ADGameDescription *SciMetaEngine::fallbackDetect(const FileMap &allFiles, 
 	const bool isCD = (s_fallbackDesc.flags & ADGF_CD);
 
 	if (!isCD)
-		s_fallbackDesc.guioptions |= Common::GUIO_NOSPEECH;
+		s_fallbackDesc.guioptions = GUIO1(GUIO_NOSPEECH);
 
 	if (gameId.hasSuffix("sci")) {
 		s_fallbackDesc.extra = "SCI";

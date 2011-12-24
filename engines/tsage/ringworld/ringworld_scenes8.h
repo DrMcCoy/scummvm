@@ -25,6 +25,7 @@
 
 #include "common/scummsys.h"
 #include "tsage/ringworld/ringworld_logic.h"
+#include "tsage/ringworld/ringworld_speakers.h"
 #include "tsage/events.h"
 #include "tsage/core.h"
 #include "tsage/scenes.h"
@@ -479,7 +480,7 @@ public:
 	SceneHotspot11 _sceneHotspot34;
 	SceneHotspot11 _sceneHotspot35;
 	SceneHotspot11 _sceneHotspot36;
-	int _field977, _field979, _field97B;
+	int _seatCountLeft1, _seatCountRight, _seatCountLeft2;
 
 	Scene7700();
 	virtual void postInit(SceneObjectList *OwnerList = NULL);

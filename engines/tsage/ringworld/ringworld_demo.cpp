@@ -31,9 +31,9 @@ namespace Ringworld {
 
 void RingworldDemoGame::start() {
 	// Start the demo's single scene
-	_globals->_sceneManager.changeScene(1);
+	g_globals->_sceneManager.changeScene(1);
 
-	_globals->_events.setCursor(CURSOR_NONE);
+	g_globals->_events.setCursor(CURSOR_NONE);
 }
 
 Scene *RingworldDemoGame::createScene(int sceneNumber) {
@@ -41,13 +41,21 @@ Scene *RingworldDemoGame::createScene(int sceneNumber) {
 	return new RingworldDemoScene();
 }
 
+bool RingworldDemoGame::canLoadGameStateCurrently() {
+	return false;
+}
+
+bool RingworldDemoGame::canSaveGameStateCurrently() {
+	return false;
+}
+
 void RingworldDemoGame::quitGame() {
 	if (MessageDialog::show(DEMO_EXIT_MSG, EXIT_BTN_STRING, DEMO_BTN_STRING) == 0)
-		_vm->quitGame();
+		g_vm->quitGame();
 }
 
 void RingworldDemoGame::pauseGame() {
-	_globals->_events.setCursor(CURSOR_ARROW);
+	g_globals->_events.setCursor(CURSOR_ARROW);
 	MessageDialog *dlg = new MessageDialog(DEMO_PAUSED_MSG, EXIT_BTN_STRING, DEMO_RESUME_BTN_STRING);
 	dlg->draw();
 
@@ -55,10 +63,10 @@ void RingworldDemoGame::pauseGame() {
 	bool exitFlag  =  selectedButton != &dlg->_btn2;
 
 	delete dlg;
-	_globals->_events.hideCursor();
+	g_globals->_events.hideCursor();
 
 	if (exitFlag)
-		_vm->quitGame();
+		g_vm->quitGame();
 }
 
 void RingworldDemoGame::processEvent(Event &event) {
@@ -74,8 +82,8 @@ void RingworldDemoGame::processEvent(Event &event) {
 			ConfigDialog *dlg = new ConfigDialog();
 			dlg->runModal();
 			delete dlg;
-			_globals->_soundManager.syncSounds();
-			_globals->_events.setCursorFromFlag();
+			g_globals->_soundManager.syncSounds();
+			g_globals->_events.setCursorFromFlag();
 			break;
 		}
 

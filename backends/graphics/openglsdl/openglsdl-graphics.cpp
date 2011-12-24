@@ -318,12 +318,12 @@ bool OpenGLSdlGraphicsManager::loadGFXMode() {
 		// only used to ensure that the original pixel size aspect for these
 		// modes is used.
 		// (Non-square pixels on old monitors vs square pixel on new ones).
-		if (_videoMode.aspectRatioCorrection
-		    && ((_videoMode.screenWidth == 320 && _videoMode.screenHeight == 200)
-		    || (_videoMode.screenWidth == 640 && _videoMode.screenHeight == 400)))
-			_videoMode.overlayHeight = _videoMode.hardwareHeight = 240 * scaleFactor;
-		else
-			_videoMode.overlayHeight = _videoMode.hardwareHeight = _videoMode.screenHeight * scaleFactor;
+		if (_videoMode.aspectRatioCorrection) {
+		 	if (_videoMode.screenWidth == 320 && _videoMode.screenHeight == 200)
+				_videoMode.overlayHeight = _videoMode.hardwareHeight = 240 * scaleFactor;
+			else if (_videoMode.screenWidth == 640 && _videoMode.screenHeight == 400)
+				_videoMode.overlayHeight = _videoMode.hardwareHeight = 480 * scaleFactor;
+		}
 	}
 
 	_screenResized = false;
@@ -460,6 +460,10 @@ void OpenGLSdlGraphicsManager::toggleFullScreen(int loop) {
 			_activeFullscreenMode = -2;
 			setFullscreenMode(!isFullscreen);
 		}
+
+		// HACK: We need to force a refresh here, since we change the
+		// fullscreen mode.
+		_transactionDetails.needRefresh = true;
 	endGFXTransaction();
 
 	// Ignore resize events for the next 10 frames

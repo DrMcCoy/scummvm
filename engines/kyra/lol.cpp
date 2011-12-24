@@ -34,8 +34,13 @@
 
 #include "common/config-manager.h"
 #include "common/system.h"
+#include "common/translation.h"
+
+#include "backends/keymapper/keymapper.h"
 
 namespace Kyra {
+
+const char *const LoLEngine::kKeymapName = "lol";
 
 LoLEngine::LoLEngine(OSystem *system, const GameFlags &flags) : KyraEngine_v1(system, flags) {
 	_screen = 0;
@@ -246,6 +251,10 @@ LoLEngine::LoLEngine(OSystem *system, const GameFlags &flags) : KyraEngine_v1(sy
 LoLEngine::~LoLEngine() {
 	setupPrologueData(false);
 
+#ifdef ENABLE_KEYMAPPER
+	_eventMan->getKeymapper()->cleanupGameKeymaps();
+#endif
+
 	delete[] _landsFile;
 	delete[] _levelLangFile;
 
@@ -425,6 +434,9 @@ Common::Error LoLEngine::init() {
 	assert(_screen);
 	_screen->setResolution();
 
+	_debugger = new Debugger_LoL(this);
+	assert(_debugger);
+
 	KyraEngine_v1::init();
 	initStaticResource();
 
@@ -538,10 +550,51 @@ Common::Error LoLEngine::init() {
 	_spellProcs.push_back(new SpellProc(this, 0));
 	_spellProcs.push_back(new SpellProc(this, &LoLEngine::castGuardian));
 
-	_debugger = new Debugger_LoL(this);
-	assert(_debugger);
+	initKeymap();
 
 	return Common::kNoError;
+}
+
+void LoLEngine::initKeymap() {
+#ifdef ENABLE_KEYMAPPER
+
+	bool tmp;
+	Common::Keymapper *mapper = _eventMan->getKeymapper();
+
+	// Do not try to recreate same keymap over again
+	if (mapper->getKeymap(kKeymapName, tmp) != 0)
+		return;
+
+	Common::Action *act;
+	Common::Keymap *engineKeyMap = new Common::Keymap(kKeymapName);
+
+	const Common::KeyActionEntry keyActionEntries[] = {
+		{Common::KeyState(Common::KEYCODE_F1, Common::ASCII_F1, 0), "AT1", _("Attack 1")},
+		{Common::KeyState(Common::KEYCODE_F2, Common::ASCII_F2, 0), "AT2", _("Attack 2")},
+		{Common::KeyState(Common::KEYCODE_F3, Common::ASCII_F2, 0), "AT3", _("Attack 3")},
+		{Common::KeyState(Common::KEYCODE_UP), "MVF", _("Move Forward")},
+		{Common::KeyState(Common::KEYCODE_DOWN), "MVB", _("Move Back")},
+		{Common::KeyState(Common::KEYCODE_LEFT), "SLL", _("Slide Left")},
+		{Common::KeyState(Common::KEYCODE_RIGHT), "SLR", _("Slide Right")},
+		{Common::KeyState(Common::KEYCODE_HOME), "TL", _("Turn Left")},
+		{Common::KeyState(Common::KEYCODE_PAGEUP), "TR", _("Turn Right")},
+		{Common::KeyState(Common::KEYCODE_r), "RST", _("Rest")},
+		{Common::KeyState(Common::KEYCODE_o), "OPT", _("Options")},
+		{Common::KeyState(Common::KEYCODE_SLASH), "SPL", _("Choose Spell")},
+		{Common::KeyState(), 0, 0}
+	};
+
+	const Common::KeyActionEntry *entry;
+	for (entry = keyActionEntries; entry->id; ++entry) {
+		act = new Common::Action(engineKeyMap, entry->id, Common::String(entry->description), Common::kGenericActionType, Common::kActionKeyType);
+		act->addKeyEvent(Common::KeyState(entry->ks));
+	}
+
+	mapper->addGameKeymap(engineKeyMap);
+
+	mapper->pushKeymap(kKeymapName, true);
+
+#endif
 }
 
 Common::Error LoLEngine::go() {
@@ -896,7 +949,7 @@ void LoLEngine::startupNew() {
 	_availableSpells[0] = 0;
 	setupScreenDims();
 
-	memset(_globalScriptVars2, 0x100, 8);
+	Common::fill(_globalScriptVars2, ARRAYEND(_globalScriptVars2), 0x100);
 
 	static const int selectIds[] = { -9, -1, -8, -5 };
 	assert(_charSelection >= 0);
@@ -911,6 +964,9 @@ void LoLEngine::startupNew() {
 }
 
 void LoLEngine::runLoop() {
+	// Initialize debugger since how it should be fully usable
+	_debugger->initialize();
+
 	enableSysTimer(2);
 
 	bool _runFlag = true;
@@ -993,6 +1049,10 @@ void LoLEngine::writeSettings() {
 
 void LoLEngine::readSettings() {
 	_monsterDifficulty = ConfMan.getInt("monster_difficulty");
+	if (_monsterDifficulty < 0 || _monsterDifficulty > 2) {
+		_monsterDifficulty = CLIP(_monsterDifficulty, 0, 2);
+		warning("LoLEngine: Config file contains invalid difficulty setting.");
+	}
 	_smoothScrollingEnabled = ConfMan.getBool("smooth_scrolling");
 	_floatingCursorsEnabled = ConfMan.getBool("floating_cursors");
 
@@ -1922,8 +1982,7 @@ int LoLEngine::playCharacterScriptChat(int charId, int mode, int restorePortrait
 	stopPortraitSpeechAnim();
 
 	if (charId < 0) {
-		charId = ch = (_rnd.getRandomNumber(0x7fff) * countActiveCharacters()) / 0x8000;
-		ch = _rnd.getRandomNumber(countActiveCharacters() - 1);
+		charId = ch = _rnd.getRandomNumber(countActiveCharacters() - 1);
 	} else if (charId > 0) {
 		int i = 0;
 

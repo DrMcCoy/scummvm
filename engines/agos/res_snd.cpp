@@ -413,7 +413,7 @@ bool AGOSEngine::loadVGASoundFile(uint16 id, uint8 type) {
 	return true;
 }
 
-static const char *dimpSoundList[32] = {
+static const char *const dimpSoundList[32] = {
 	"Beep",
 	"Birth",
 	"Boiling",
@@ -495,7 +495,7 @@ void AGOSEngine::loadSound(uint16 sound, int16 pan, int16 vol, uint16 type) {
 		}
 
 		if (getPlatform() == Common::kPlatformAmiga)
-			sprintf(filename, "sfx%d.wav", file);
+			sprintf(filename, "sfx%u.wav", file);
 		else
 			sprintf(filename, "effects.wav");
 
@@ -606,7 +606,7 @@ void AGOSEngine::loadVoice(uint speechId) {
 		}
 
 		if (getPlatform() == Common::kPlatformAmiga)
-			sprintf(filename, "sp%d.wav", file);
+			sprintf(filename, "sp%u.wav", file);
 		else
 			sprintf(filename, "speech.wav");
 

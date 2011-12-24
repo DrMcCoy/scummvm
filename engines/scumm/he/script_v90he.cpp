@@ -2358,7 +2358,7 @@ void ScummEngine_v90he::o90_kernelSetFunctions() {
 		_wiz->_rectOverrideEnabled = false;
 		break;
 	case 714:
-		debug(5, "o90_kernelSetFunctions: case 714: type %d resId %d unk1 %d", args[1], args[2], args[3]);
+		setResourceOffHeap(args[1], args[2], args[3]);
 		break;
 	case 1492:
 		// Remote start script function
@@ -2372,6 +2372,9 @@ void ScummEngine_v90he::o90_kernelSetFunctions() {
 		break;
 	case 2001:
 		_logicHE->dispatch(args[1], num - 2, (int32 *)&args[2]);
+		break;
+	case 201102:
+		// Used in puttzoo iOS
 		break;
 	default:
 		error("o90_kernelSetFunctions: default case %d (param count %d)", args[0], num);

@@ -197,6 +197,7 @@ public:
 	void registerArchive(const Common::String &filename, int priority);
 #endif
 
+	bool hasFile(const Common::String &name);
 	Common::SeekableReadStream *open(const Common::String &filename);
 
 private:
@@ -257,6 +258,7 @@ protected:
 
 	uint8 _numMusic, _numSFX;
 	uint16 _numSpeech;
+	uint16 _numZone;
 
 	uint8 _numBitArray1, _numBitArray2, _numBitArray3, _numItemStore;
 	uint16 _numVars;

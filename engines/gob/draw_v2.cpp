@@ -138,6 +138,9 @@ void Draw_v2::animateCursor(int16 cursor) {
 		if (_cursorHotspotXVar != -1) {
 			newX -= hotspotX = (uint16) VAR(_cursorIndex + _cursorHotspotXVar);
 			newY -= hotspotY = (uint16) VAR(_cursorIndex + _cursorHotspotYVar);
+		} else if (_cursorHotspotX != -1) {
+			newX -= hotspotX = _cursorHotspotX;
+			newY -= hotspotY = _cursorHotspotY;
 		}
 
 		_scummvmCursor->clear();
@@ -550,13 +553,13 @@ void Draw_v2::printTotText(int16 id) {
 			cmd = ptrEnd[17] & 0x7F;
 			if (cmd == 0) {
 				val = READ_LE_UINT16(ptrEnd + 18) * 4;
-				sprintf(buf, "%d",  VAR_OFFSET(val));
+				sprintf(buf, "%d", (int32)VAR_OFFSET(val));
 			} else if (cmd == 1) {
 				val = READ_LE_UINT16(ptrEnd + 18) * 4;
 				Common::strlcpy(buf, GET_VARO_STR(val), 20);
 			} else {
 				val = READ_LE_UINT16(ptrEnd + 18) * 4;
-				sprintf(buf, "%d",  VAR_OFFSET(val));
+				sprintf(buf, "%d", (int32)VAR_OFFSET(val));
 				if (buf[0] == '-') {
 					while (strlen(buf) - 1 < (uint32)ptrEnd[17]) {
 						_vm->_util->insertStr("0", buf, 1);

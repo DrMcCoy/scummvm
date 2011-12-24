@@ -93,7 +93,7 @@ const char *getSciVersionDesc(SciVersion version) {
 
 //#define SCI_VERBOSE_RESMAN 1
 
-static const char *sci_error_types[] = {
+static const char *const sci_error_types[] = {
 	"No error",
 	"I/O error",
 	"Resource is empty (size 0)",
@@ -107,7 +107,7 @@ static const char *sci_error_types[] = {
 	"SCI version is unsupported"
 };
 
-static const char *s_resourceTypeNames[] = {
+static const char *const s_resourceTypeNames[] = {
 	"view", "pic", "script", "text", "sound",
 	"memory", "vocab", "font", "cursor",
 	"patch", "bitmap", "palette", "cdaudio",
@@ -120,7 +120,7 @@ static const char *s_resourceTypeNames[] = {
 // Resource type suffixes. Note that the
 // suffic of SCI3 scripts has been changed from
 // scr to csc
-static const char *s_resourceTypeSuffixes[] = {
+static const char *const s_resourceTypeSuffixes[] = {
 	"v56", "p56", "scr", "tex", "snd",
 	   "", "voc", "fon", "cur", "pat",
 	"bit", "pal", "cda", "aud", "syn",
@@ -169,8 +169,11 @@ ResourceType ResourceManager::convertResType(byte type) {
 		if (type < ARRAYSIZE(s_resTypeMapSci21)) {
 			// LSL6 hires doesn't have the chunk resource type, to match
 			// the resource types of the lowres version, thus we use the
-			// older resource types here
-			if (g_sci && g_sci->getGameId() == GID_LSL6HIRES)
+			// older resource types here.
+			// PQ4 CD and QFG4 CD are SCI2.1, but use the resource types of the
+			// corresponding SCI2 floppy disk versions.
+			if (g_sci && (g_sci->getGameId() == GID_LSL6HIRES ||
+				g_sci->getGameId() == GID_QFG4 || g_sci->getGameId() == GID_PQ4))
 				return s_resTypeMapSci0[type];
 			else
 				return s_resTypeMapSci21[type];
@@ -1158,8 +1161,10 @@ ResVersion ResourceManager::detectMapVersion() {
 		}
 	}
 
-	if (!fileStream)
-		error("Failed to open resource map file");
+	if (!fileStream) {
+		warning("Failed to open resource map file");
+		return kResVersionUnknown;
+	}
 
 	// detection
 	// SCI0 and SCI01 maps have last 6 bytes set to FF
@@ -1259,7 +1264,7 @@ ResVersion ResourceManager::detectVolVersion() {
 	}
 
 	if (!fileStream) {
-		error("Failed to open volume file - if you got resource.p01/resource.p02/etc. files, merge them together into resource.000");
+		warning("Failed to open volume file - if you got resource.p01/resource.p02/etc. files, merge them together into resource.000");
 		// resource.p01/resource.p02/etc. may be there when directly copying the files from the original floppies
 		// the sierra installer would merge those together (perhaps we could do this as well?)
 		// possible TODO
@@ -2179,15 +2184,16 @@ void ResourceManager::detectSciVersion() {
 	}
 
 	if (_volVersion == kResVersionSci11Mac) {
-		// SCI32 doesn't have the resource.cfg file, so we can figure out
-		// which of the games are SCI1.1. Note that there are no Mac SCI2 games.
-		// Yes, that means that GK1 Mac is SCI2.1 and not SCI2.
+		Resource *res = testResource(ResourceId(kResourceTypeScript, 64920));
+		// Distinguish between SCI1.1 and SCI32 games here. SCI32 games will
+		// always include script 64920 (the Array class). Note that there are
+		// no Mac SCI2 games. Yes, that means that GK1 Mac is SCI2.1 and not SCI2.
 
 		// TODO: Decide between SCI2.1 and SCI3
-		if (Common::File::exists("resource.cfg"))
-			s_sciVersion = SCI_VERSION_1_1;
-		else
+		if (res)
 			s_sciVersion = SCI_VERSION_2_1;
+		else
+			s_sciVersion = SCI_VERSION_1_1;
 		return;
 	}
 
@@ -2352,7 +2358,7 @@ bool ResourceManager::detectFontExtended() {
 }
 
 // detects, if SCI1.1 game uses palette merging or copying - this is supposed to only get used on SCI1.1 games
-bool ResourceManager::detectForPaletteMergingForSci11() {
+bool ResourceManager::detectPaletteMergingSci11() {
 	// Load palette 999 (default palette)
 	Resource *res = findResource(ResourceId(kResourceTypePalette, 999), false);
 

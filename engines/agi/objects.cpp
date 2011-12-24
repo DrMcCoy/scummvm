@@ -52,7 +52,7 @@ int AgiEngine::decodeObjects(uint8 *mem, uint32 flen) {
 
 	// alloc memory for object list
 	// byte 3 = number of animated objects. this is ignored.. ??
-	if (READ_LE_UINT16(mem) / padsize >= 256) {
+	if (READ_LE_UINT16(mem) / padsize > 256) {
 		// die with no error! AGDS game needs not to die to work!! :(
 		return errOK;
 	}
@@ -68,15 +68,20 @@ int AgiEngine::decodeObjects(uint8 *mem, uint32 flen) {
 	for (i = 0, so = spos; i < _game.numObjects; i++, so += padsize) {
 		int offset;
 
-		(_objects + i)->location = *(mem + so + 2);
+		_objects[i].location = *(mem + so + 2);
 		offset = READ_LE_UINT16(mem + so) + spos;
 
 		if ((uint) offset < flen) {
-			(_objects + i)->name = (char *)strdup((const char *)mem + offset);
+			_objects[i].name = (char *)strdup((const char *)mem + offset);
 		} else {
 			warning("object %i name beyond object filesize (%04x > %04x)", i, offset, flen);
-			(_objects + i)->name = strdup("");
+			_objects[i].name = strdup("");
 		}
+
+		// Don't show the invalid "?" object in ego's inventory in the fanmade
+		// game Beyond the Titanic 2 (bug #3116541).
+		if (!strcmp(_objects[i].name, "?") && _objects[i].location == EGO_OWNED)
+			_objects[i].location = 0;
 	}
 	debug(0, "Reading objects: %d objects read.", _game.numObjects);
 

@@ -65,7 +65,7 @@ void AudioManager::muteMusic(bool muted) {
 }
 
 void AudioManager::muteVoice(bool muted) {
-	if(voiceStillPlaying() && _channels[2]) {
+	if (voiceStillPlaying() && _channels[2]) {
 		_channels[2]->setVolume(muted ? 0 : 255);
 	}
 	_voiceMuted = muted;
@@ -84,7 +84,7 @@ void AudioManager::removeInstance(AudioStreamInstance *inst) {
 	}
 }
 
-void AudioManager::playMusic(Common::String dir, Common::String music) {
+void AudioManager::playMusic(const Common::String &dir, const Common::String &music) {
 	debugC(1, kDebugAudio, "playMusic(%s, %s)", dir.c_str(), music.c_str());
 
 	// two musics can be played at same time
@@ -199,7 +199,7 @@ void AudioManager::closeAudioPack(int32 id) {
 	_audioPacks[id] = NULL;
 }
 
-bool AudioManager::loadAudioPack(int32 id, Common::String indexFile, Common::String packFile) {
+bool AudioManager::loadAudioPack(int32 id, const Common::String &indexFile, const Common::String &packFile) {
 	debugC(4, kDebugAudio, "loadAudioPack(%d, %s, %s)", id, indexFile.c_str(), packFile.c_str());
 
 	closeAudioPack(id);
@@ -272,7 +272,7 @@ AudioStreamInstance::~AudioStreamInstance() {
 int AudioStreamInstance::readBuffer(int16 *buffer, const int numSamples) {
 	debugC(5, kDebugAudio, "readBuffer(buffer, %d)", numSamples);
 
-	if(_stopped)
+	if (_stopped)
 		return 0;
 
 	handleFade(numSamples);
@@ -481,7 +481,7 @@ AudioStreamPackage::~AudioStreamPackage() {
 	delete _file;
 }
 
-bool AudioStreamPackage::loadAudioPackage(Common::String indexFile, Common::String streamFile) {
+bool AudioStreamPackage::loadAudioPackage(const Common::String &indexFile, const Common::String &streamFile) {
 	debugC(4, kDebugAudio, "loadAudioPackage(%s, %s)", indexFile.c_str(), streamFile.c_str());
 
 	uint32 size = 0;
@@ -598,7 +598,7 @@ void AudioManager::updateAmbientSFX()
 	for (int32 i = 0; i < 4; i++) {
 		AudioAmbientSFX* ambient = &_ambientSFXs[i];
 		if (ambient->_enabled && (ambient->_channel < 0 || !(_channels[ambient->_channel] && _channels[ambient->_channel]->isPlaying()))) {
-			if(ambient->_mode == 1) {
+			if  (ambient->_mode == 1) {
 				if (_vm->randRange(0, 32767) < ambient->_delay) {
 					ambient->_channel = playSFX(ambient->_id, ambient->_volume, false);
 				}

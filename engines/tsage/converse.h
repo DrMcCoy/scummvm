@@ -34,6 +34,8 @@ public:
 	virtual void stripCallback(int v) = 0;
 };
 
+typedef void (*SequenceCallback)(int v1, int v2);
+
 class SequenceManager : public Action {
 private:
 	void setup();
@@ -54,6 +56,7 @@ public:
 	SceneObject *_sceneObject;
 	SceneObject *_objectList[6];
 	ASound _soundHandler;
+	SequenceCallback _onCallback;
 public:
 	SequenceManager();
 
@@ -175,17 +178,25 @@ public:
 };
 
 #define OBJ44_LIST_SIZE 5
+#define OBJ0A_LIST_SIZE ((g_vm->getGameID() == GType_Ringworld2) ? 8 : 5)
 
 class Obj44 : public Serialisable {
 public:
 	int _id;
-	int _field2[OBJ44_LIST_SIZE];
-	Obj0A _list[OBJ44_LIST_SIZE];
+	int _callbackId[OBJ44_LIST_SIZE];
+	Obj0A _list[8];
 	uint _speakerOffset;
+
+	// Return to Ringworld specific field
+	int _mode;
+	int _lookupValue, _lookupIndex, _field6;
+	int _field8, _field16;
 public:
 	void load(const byte *dataP);
 	virtual void synchronize(Serializer &s);
 };
+
+typedef void (*StripProc)();
 
 class StripManager : public Action {
 private:
@@ -208,6 +219,11 @@ public:
 	int _field2E8;
 	Common::Array<Obj44> _obj44List;
 	Common::Array<byte> _script;
+	StripProc _onBegin;
+	StripProc _onEnd;
+
+	// Ringworld 2 specific fields
+	byte *_lookupList;
 public:
 	StripManager();
 	virtual ~StripManager();
@@ -218,6 +234,7 @@ public:
 	virtual void process(Event &event);
 
 	void start(int stripNum, EventHandler *owner, StripCallback *callback = NULL);
+	void start3(int stripNum, EventHandler *owner, byte *lookupList);
 	void setCallback(StripCallback *callback) { _callbackObject = callback; }
 	void setColors(int stdColor, int highlightColor) { _choiceDialog.setColors(stdColor, highlightColor); }
 	void setFontNumber(int fontNum) { _choiceDialog.setFontNumber(fontNum); }

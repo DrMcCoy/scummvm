@@ -61,9 +61,10 @@ public:
 	int _frame;
 public:
 	InvObject(int sceneNumber, int rlbNum, int cursorNum, CursorType cursorId, const Common::String description);
-	InvObject(int visage, int strip, int frame, int sceneNumber);
+	InvObject(int visage, int strip, int frame);
+	InvObject(int visage, int strip);
 
-	bool inInventory() const { return _sceneNumber == 1; }
+	bool inInventory() const;
 	void setCursor();
 
 	virtual Common::String getClassName() { return "InvObject"; }
@@ -78,6 +79,9 @@ public:
 	InvObject *_selectedItem;
 
 	InvObjectList();
+	int indexOf(InvObject *obj) const;
+	InvObject *getItem(int objectNum);
+	int getObjectScene(int objectNum);
 
 	virtual Common::String getClassName() { return "InvObjectList"; }
 	virtual void synchronize(Serializer &s);
@@ -125,7 +129,7 @@ public:
 	virtual void dispatch();
 	virtual void setAction(Action *action) { setAction(action, NULL); }
 	virtual void setAction(Action *action, EventHandler *endHandler, ...);
-	virtual void destroy() {};
+	virtual void destroy() {}
 };
 
 class Action : public EventHandler {
@@ -163,7 +167,7 @@ public:
 };
 
 #define ADD_PLAYER_MOVER(X, Y) { Common::Point pt(X, Y); PlayerMover *mover = new PlayerMover(); \
-	_globals->_player.addMover(mover, &pt, this); }
+	g_globals->_player.addMover(mover, &pt, this); }
 #define ADD_PLAYER_MOVER_NULL(OBJ, X, Y) { Common::Point pt(X, Y); PlayerMover *mover = new PlayerMover(); \
 	OBJ.addMover(mover, &pt, NULL); }
 #define ADD_PLAYER_MOVER_THIS(OBJ, X, Y) { Common::Point pt(X, Y); PlayerMover *mover = new PlayerMover(); \
@@ -318,6 +322,8 @@ public:
 	int _end;
 	int _rotationMode;
 	int _duration;
+	int _idxChange;
+	int _countdown;
 public:
 	PaletteRotation();
 
@@ -368,6 +374,8 @@ public:
 	bool loadPalette(int paletteNum);
 	void refresh();
 	void setPalette(int index, int count);
+	void getEntry(int index, uint *r, uint *g, uint *b);
+	void setEntry(int index, uint r, uint g, uint b);
 	uint8 indexOf(uint r, uint g, uint b, int threshold = 0xffff);
 	void getPalette(int start = 0, int count = 256);
 	void signalListeners();
@@ -411,7 +419,7 @@ public:
 	virtual Common::String getClassName() { return "SceneItem"; }
 	virtual void remove();
 	virtual void destroy() {}
-	virtual void startMover(CursorType action) { doAction(action); }
+	virtual bool startAction(CursorType action, Event &event);
 	virtual void doAction(int action);
 
 	bool contains(const Common::Point &pt);
@@ -419,6 +427,7 @@ public:
 	void setBounds(const int ys, const int xe, const int ye, const int xs) { _bounds = Rect(MIN(xs, xe), MIN(ys, ye), MAX(xs, xe), MAX(ys, ye)); }
 	static void display(int resNum, int lineNum, ...);
 	static void display2(int resNum, int lineNum);
+	static void display(const Common::String &msg);
 };
 
 class SceneItemExt : public SceneItem {
@@ -434,23 +443,17 @@ public:
 
 class SceneHotspot : public SceneItem {
 public:
-	SceneHotspot() : SceneItem() {}
-
+	int _resNum, _lookLineNum, _useLineNum, _talkLineNum;
+public:
+	SceneHotspot();
+	virtual void synchronize(Serializer &s);
+	virtual bool startAction(CursorType action, Event &event);
 	virtual Common::String getClassName() { return "SceneHotspot"; }
 	virtual void doAction(int action);
-};
 
-class NamedHotspot : public SceneHotspot {
-public:
-	int _resNum, _lookLineNum, _useLineNum, _talkLineNum;
-	NamedHotspot();
-
-	virtual void doAction(int action);
-	virtual Common::String getClassName() { return "NamedHotspot"; }
-	virtual void synchronize(Serializer &s);
-	void setup(int ys, int xs, int ye, int xe, const int resnum, const int lookLineNum, const int useLineNum);
-	virtual void setup(const Rect &bounds, int resNum, int lookLineNum, int talkLineNum, int useLineNum, int mode, SceneItem *item);
-	virtual void setup(int sceneRegionId, int resNum, int lookLineNum, int talkLineNum, int useLineNum, int mode);
+	virtual void setDetails(int ys, int xs, int ye, int xe, const int resnum, const int lookLineNum, const int useLineNum);
+	virtual void setDetails(const Rect &bounds, int resNum, int lookLineNum, int talkLineNum, int useLineNum, int mode, SceneItem *item);
+	virtual void setDetails(int sceneRegionId, int resNum, int lookLineNum, int talkLineNum, int useLineNum, int mode = 0);
 };
 
 enum AnimateMode {ANIM_MODE_NONE = 0, ANIM_MODE_1 = 1, ANIM_MODE_2 = 2, ANIM_MODE_3 = 3,
@@ -464,9 +467,12 @@ class SceneObject;
 class Visage {
 private:
 	byte *_data;
+
+	void flip(GfxSurface &s);
 public:
 	int _resNum;
 	int _rlbNum;
+	bool _flipHoriz;
 public:
 	Visage();
 	Visage(const Visage &v);
@@ -475,7 +481,7 @@ public:
 	void setVisage(int resNum, int rlbNum = 9999);
 	GfxSurface getFrame(int frameNum);
 	int getFrameCount() const;
-	Visage &operator=(const Visage &s);
+	Visage &operator=(const Visage &gfxSurface);
 };
 
 class SceneObjectWrapper : public EventHandler {
@@ -509,7 +515,6 @@ private:
 	int getNewFrame();
 	void animEnded();
 	int changeFrame();
-	bool isNoMover() const { return !_mover || (_regionIndex > 0); }
 public:
 	uint32 _updateStartFrame;
 	uint32 _walkStartFrame;
@@ -535,6 +540,10 @@ public:
 	int _moveRate;
 	Action *_endAction;
 	uint32 _regionBitList;
+
+	// Ringworld 2 specific fields
+	int _shade;
+	int _effect;
 public:
 	SceneObject();
 	SceneObject(const SceneObject &so);
@@ -559,10 +568,12 @@ public:
 	void animate(AnimateMode animMode, ...);
 	SceneObject *clone() const;
 	void checkAngle(const SceneObject *obj);
+	void checkAngle(const Common::Point &pt);
 	void hide();
 	void show();
 	int getSpliceArea(const SceneObject *obj);
 	int getFrameCount();
+	bool isNoMover() const { return !_mover || (_regionIndex > 0); }
 
 	virtual void synchronize(Serializer &s);
 	virtual Common::String getClassName() { return "SceneObject"; }
@@ -577,16 +588,19 @@ public:
 	virtual void draw();
 	virtual void proc19() {}
 	virtual void updateScreen();
-	// New methods introduced by Blue FOrce
-	virtual void updateAngle(SceneObject *sceneObj);
+	// New methods introduced by Blue Force
+	virtual void updateAngle(const Common::Point &pt);
 	virtual void changeAngle(int angle);
+	// New methods introduced by Ringworld 2
+	virtual void copy(SceneObject *src);
 
 	void setup(int visage, int stripFrameNum, int frameNum, int posX, int posY, int priority);
+	void setup(int visage, int stripFrameNum, int frameNum);
 };
 
-class AltSceneObject: public SceneObject {
+class BackgroundSceneObject: public SceneObject {
 public:
-	virtual Common::String getClassName() { return "AltObjectExt"; }
+	virtual Common::String getClassName() { return "BackgroundSceneObject"; }
 	virtual void postInit(SceneObjectList *OwnerList = NULL);
 	virtual void draw();
 };
@@ -609,14 +623,26 @@ public:
 	virtual void synchronize(Serializer &s);
 	virtual Common::String getClassName() { return "SceneText"; }
 	virtual GfxSurface getFrame() { return _textSurface; }
+	virtual void updateScreen();
 };
+
+#define MAX_CHARACTERS 4
+enum R2RCharacter { R2_NONE = 0, R2_QUINN = 1, R2_SEEKER = 2, R2_MIRANDA = 3 };
 
 class Player : public SceneObject {
 public:
 	bool _canWalk;
 	bool _uiEnabled;
 	int _field8C;
-	int _field8E;
+	bool _enabled;
+
+	// Return to Ringworld specific fields
+	R2RCharacter _characterIndex;
+	int _characterScene[MAX_CHARACTERS];
+	int _oldCharacterScene[MAX_CHARACTERS];
+	Common::Point _characterPos[MAX_CHARACTERS];
+	int _characterStrip[MAX_CHARACTERS];
+	int _characterFrame[MAX_CHARACTERS];
 public:
 	Player();
 
@@ -627,6 +653,8 @@ public:
 
 	void disableControl();
 	void enableControl();
+	void disableControl(CursorType cursorId, CursorType objectId = CURSOR_NONE);
+	void enableControl(CursorType cursorId, CursorType objectId = CURSOR_NONE);
 };
 
 /*--------------------------------------------------------------------------*/
@@ -725,6 +753,7 @@ public:
 		_objList.remove(sceneObj);
 		_listAltered = true;
 	}
+	void clear() { _objList.clear(); }
 };
 
 class ScenePriorities : public Common::List<Region> {
@@ -801,8 +830,11 @@ public:
 	Common::Array<WRField18> _field18;
 	Common::Array<int> _idxList;
 	Common::Array<int> _idxList2;
+	Common::List<int> _disabledRegions;
 public:
 	WalkRegions() { _resNum = -1; }
+	virtual ~WalkRegions() {}
+	virtual void synchronize(Serializer &s);
 
 	void clear();
 	void load(int sceneNum);
@@ -811,6 +843,8 @@ public:
 		assert((idx >= 1) && (idx <= (int)_regionList.size()));
 		return _regionList[idx - 1];
 	}
+	void disableRegion(int regionId);
+	void enableRegion(int regionId);
 };
 
 /*--------------------------------------------------------------------------*/
@@ -851,6 +885,9 @@ public:
 	int _delayTicks;
 	Common::String _saveName;
 	uint32 _prevFrameNumber;
+protected:
+	virtual void playerAction(Event &event) {}
+	virtual void processEnd(Event &event) {}
 public:
 	SceneHandler();
 	void registerHandler();

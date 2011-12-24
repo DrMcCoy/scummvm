@@ -36,7 +36,7 @@ static SoundManager *_soundManager = NULL;
 
 SoundManager::SoundManager() {
 	_soundManager = this;
-	__sndmgrReady = false;
+	_sndmgrReady = false;
 	_ourSndResVersion = 0x102;
 	_ourDrvResVersion = 0x10A;
 
@@ -52,9 +52,9 @@ SoundManager::SoundManager() {
 }
 
 SoundManager::~SoundManager() {
-	if (__sndmgrReady) {
+	if (_sndmgrReady) {
 		Common::StackLock slock(_serverDisabledMutex);
-		_vm->_mixer->stopAll();
+		g_vm->_mixer->stopAll();
 
 		for (Common::List<Sound *>::iterator i = _soundList.begin(); i != _soundList.end(); ) {
 			Sound *s = *i;
@@ -83,18 +83,18 @@ SoundManager::~SoundManager() {
 }
 
 void SoundManager::postInit() {
-	if (!__sndmgrReady) {
-		_saver->addSaveNotifier(&SoundManager::saveNotifier);
-		_saver->addLoadNotifier(&SoundManager::loadNotifier);
-		_saver->addListener(this);
+	if (!_sndmgrReady) {
+		g_saver->addSaveNotifier(&SoundManager::saveNotifier);
+		g_saver->addLoadNotifier(&SoundManager::loadNotifier);
+		g_saver->addListener(this);
 
 
 //	I originally separated the sound manager update method into a separate thread, since
 //  it handles updates for both music and Fx. However, since Adlib updates also get done in a
-//	thread, and doesn't get too far ahead, I've left it to the AdlibSoundDriver class to 
+//	thread, and doesn't get too far ahead, I've left it to the AdlibSoundDriver class to
 //	call the update method, rather than having it be called separately
 //		g_system->getTimerManager()->installTimerProc(_sfUpdateCallback, 1000000 / SOUND_FREQUENCY, NULL, "tsageSoundUpdate");
-		__sndmgrReady = true;
+		_sndmgrReady = true;
 	}
 }
 
@@ -136,10 +136,10 @@ void SoundManager::update() {
 }
 
 Common::List<SoundDriverEntry> &SoundManager::buildDriverList(bool detectFlag) {
-	assert(__sndmgrReady);
+	assert(_sndmgrReady);
 	_availableDrivers.clear();
 
-	// Build up a list of available drivers. Currently we only implement an Adlib music 
+	// Build up a list of available drivers. Currently we only implement an Adlib music
 	// and SoundBlaster FX driver
 
 	// Adlib driver
@@ -211,7 +211,7 @@ void SoundManager::installDriver(int driverNum) {
 	case ROLAND_DRIVER_NUM:
 	case ADLIB_DRIVER_NUM: {
 		// Handle loading bank infomation
-		byte *bankData = _resourceManager->getResource(RES_BANK, driverNum, 0, true);
+		byte *bankData = g_resourceManager->getResource(RES_BANK, driverNum, 0, true);
 		if (bankData) {
 			// Install the patch bank data
 			_sfInstallPatchBank(driver, bankData);
@@ -549,7 +549,7 @@ void SoundManager::loadNotifier(bool postFlag) {
 void SoundManager::loadNotifierProc(bool postFlag) {
 	if (!postFlag) {
 		// Stop any currently playing sounds
-		if (__sndmgrReady) {
+		if (_sndmgrReady) {
 			Common::StackLock slock(_serverDisabledMutex);
 
 			for (Common::List<Sound *>::iterator i = _soundList.begin(); i != _soundList.end(); ) {
@@ -569,7 +569,7 @@ void SoundManager::loadNotifierProc(bool postFlag) {
 
 void SoundManager::listenerSynchronize(Serializer &s) {
 	s.validate("SoundManager");
-	assert(__sndmgrReady && _driversDetected);
+	assert(_sndmgrReady && _driversDetected);
 
 	if (s.getVersion() < 6)
 		return;
@@ -798,7 +798,7 @@ void SoundManager::_sfRethinkVoiceTypes() {
 			continue;
 
 		_sfUpdateVoiceStructs();
-		Common::set_to(sound->_chWork, sound->_chWork + SOUND_ARR_SIZE, false);
+		Common::fill(sound->_chWork, sound->_chWork + SOUND_ARR_SIZE, false);
 
 		for (;;) {
 			// Scan for sub priority
@@ -1362,7 +1362,7 @@ void SoundManager::_sfExtractGroupMask() {
 bool SoundManager::_sfInstallDriver(SoundDriver *driver) {
 	if (!driver->open())
 		return false;
-	
+
 	sfManager()._installedDrivers.push_back(driver);
 	driver->_groupOffset = driver->getGroupData();
 	driver->_groupMask = driver->_groupOffset->groupMask;
@@ -1383,7 +1383,7 @@ void SoundManager::_sfUnInstallDriver(SoundDriver *driver) {
 }
 
 void SoundManager::_sfInstallPatchBank(SoundDriver *driver, const byte *bankData) {
-	driver->installPatch(bankData, _vm->_memoryManager.getSize(bankData));
+	driver->installPatch(bankData, g_vm->_memoryManager.getSize(bankData));
 }
 
 /**
@@ -1485,7 +1485,7 @@ Sound::Sound() {
 	memset(_chNumVoices, 0, SOUND_ARR_SIZE * sizeof(int));
 	memset(_chSubPriority, 0, SOUND_ARR_SIZE * sizeof(int));
 	memset(_chFlags, 0, SOUND_ARR_SIZE * sizeof(int));
-	Common::set_to(_chWork, _chWork + SOUND_ARR_SIZE, false);
+	Common::fill(_chWork, _chWork + SOUND_ARR_SIZE, false);
 	memset(_channelData, 0, SOUND_ARR_SIZE * sizeof(byte *));
 	memset(_trkChannel, 0, SOUND_ARR_SIZE * sizeof(int));
 	memset(_trkState, 0, SOUND_ARR_SIZE * sizeof(int));
@@ -1536,7 +1536,7 @@ void Sound::play(int soundNum) {
 }
 
 void Sound::stop() {
-	_globals->_soundManager.removeFromPlayList(this);
+	g_globals->_soundManager.removeFromPlayList(this);
 	_unPrime();
 }
 
@@ -1560,7 +1560,7 @@ void Sound::_prime(int soundResID, bool dontQueue) {
 		// Sound number specified
 		_isEmpty = false;
 		_remoteReceiver = NULL;
-		byte *soundData = _resourceManager->getResource(RES_SOUND, soundResID, 0);
+		byte *soundData = g_resourceManager->getResource(RES_SOUND, soundResID, 0);
 		_soundManager->checkResVersion(soundData);
 		_group = _soundManager->determineGroup(soundData);
 		_sndResPriority = _soundManager->extractPriority(soundData);
@@ -1568,7 +1568,7 @@ void Sound::_prime(int soundResID, bool dontQueue) {
 		_soundManager->extractTrackInfo(&_trackInfo, soundData, _group);
 
 		for (int idx = 0; idx < _trackInfo._numTracks; ++idx) {
-			_channelData[idx] = _resourceManager->getResource(RES_SOUND, soundResID, _trackInfo._chunks[idx]);
+			_channelData[idx] = g_resourceManager->getResource(RES_SOUND, soundResID, _trackInfo._chunks[idx]);
 		}
 
 		DEALLOCATE(soundData);
@@ -1667,7 +1667,7 @@ bool Sound::isMuted() const {
 }
 
 void Sound::pause(bool flag) {
-	Common::StackLock slock(_globals->_soundManager._serverSuspendedMutex);
+	Common::StackLock slock(g_globals->_soundManager._serverSuspendedMutex);
 
 	if (flag)
 		++_pausedCount;
@@ -1678,7 +1678,7 @@ void Sound::pause(bool flag) {
 }
 
 void Sound::mute(bool flag) {
-	Common::StackLock slock(_globals->_soundManager._serverSuspendedMutex);
+	Common::StackLock slock(g_globals->_soundManager._serverSuspendedMutex);
 
 	if (flag)
 		++_mutedCount;
@@ -1689,7 +1689,7 @@ void Sound::mute(bool flag) {
 }
 
 void Sound::fade(int fadeDest, int fadeSteps, int fadeTicks, bool stopAfterFadeFlag) {
-	Common::StackLock slock(_globals->_soundManager._serverSuspendedMutex);
+	Common::StackLock slock(g_globals->_soundManager._serverSuspendedMutex);
 
 	if (fadeDest > 127)
 		fadeDest = 127;
@@ -1789,7 +1789,7 @@ void Sound::_soPrimeSound(bool dontQueue) {
 }
 
 void Sound::_soSetTimeIndex(uint timeIndex) {
-	Common::StackLock slock(_globals->_soundManager._serverSuspendedMutex);
+	Common::StackLock slock(g_globals->_soundManager._serverSuspendedMutex);
 
 	if (timeIndex != _timer) {
 		_soundManager->_soTimeIndexFlag = true;
@@ -2392,13 +2392,13 @@ int Sound::_soFindSound(VoiceTypeStruct *vtStruct, int channelNum) {
 ASound::ASound(): EventHandler() {
 	_action = NULL;
 	_cueValue = -1;
-	if (_globals)
-		_globals->_sounds.push_back(this);
+	if (g_globals)
+		g_globals->_sounds.push_back(this);
 }
 
 ASound::~ASound() {
-	if (_globals)
-		_globals->_sounds.remove(this);
+	if (g_globals)
+		g_globals->_sounds.remove(this);
 }
 
 void ASound::synchronize(Serializer &s) {
@@ -2432,7 +2432,7 @@ void ASound::dispatch() {
 	}
 }
 
-void ASound::play(int soundNum, Action *action, int volume) {
+void ASound::play(int soundNum, EventHandler *action, int volume) {
 	_action = action;
 	_cueValue = 0;
 
@@ -2544,7 +2544,7 @@ AdlibSoundDriver::AdlibSoundDriver(): SoundDriver() {
 	_groupData.v2 = 0;
 	_groupData.pData = &adlib_group_data[0];
 
-	_mixer = _vm->_mixer;
+	_mixer = g_vm->_mixer;
 	_sampleRate = _mixer->getOutputRate();
 	_opl = OPL::Config::create();
 	assert(_opl);
@@ -2557,7 +2557,7 @@ AdlibSoundDriver::AdlibSoundDriver(): SoundDriver() {
 
 	_mixer->playStream(Audio::Mixer::kPlainSoundType, &_soundHandle, this, -1, Audio::Mixer::kMaxChannelVolume, 0, DisposeAfterUse::NO, true);
 
-	Common::set_to(_channelVoiced, _channelVoiced + ADLIB_CHANNEL_COUNT, false);
+	Common::fill(_channelVoiced, _channelVoiced + ADLIB_CHANNEL_COUNT, false);
 	memset(_channelVolume, 0, ADLIB_CHANNEL_COUNT * sizeof(int));
 	memset(_v4405E, 0, ADLIB_CHANNEL_COUNT * sizeof(int));
 	memset(_v44067, 0, ADLIB_CHANNEL_COUNT * sizeof(int));
@@ -2565,7 +2565,7 @@ AdlibSoundDriver::AdlibSoundDriver(): SoundDriver() {
 	memset(_v44079, 0, ADLIB_CHANNEL_COUNT * sizeof(int));
 	memset(_v44082, 0, ADLIB_CHANNEL_COUNT * sizeof(int));
 	_v44082[ADLIB_CHANNEL_COUNT] = 0x90;
-	Common::set_to(_pitchBlend, _pitchBlend + ADLIB_CHANNEL_COUNT, 0x2000);
+	Common::fill(_pitchBlend, _pitchBlend + ADLIB_CHANNEL_COUNT, 0x2000);
 	memset(_v4409E, 0, ADLIB_CHANNEL_COUNT * sizeof(int));
 	_patchData = NULL;
 }
@@ -2858,7 +2858,7 @@ SoundBlasterDriver::SoundBlasterDriver(): SoundDriver() {
 	static byte const group_data[] = { 3, 1, 1, 0, 0xff };
 	_groupData.pData = group_data;
 
-	_mixer = _vm->_mixer;
+	_mixer = g_vm->_mixer;
 	_sampleRate = _mixer->getOutputRate();
 	_audioStream = NULL;
 	_channelData = NULL;
@@ -2904,7 +2904,7 @@ void SoundBlasterDriver::playSound(const byte *channelData, int dataOffset, int 
 	_channelData = channelData + dataOffset;
 
 	// Make a copy of the buffer
-	int dataSize = _vm->_memoryManager.getSize(channelData);
+	int dataSize = g_vm->_memoryManager.getSize(channelData);
 	byte *soundData = (byte *)malloc(dataSize - dataOffset);
 	Common::copy(_channelData, _channelData + (dataSize - dataOffset), soundData);
 

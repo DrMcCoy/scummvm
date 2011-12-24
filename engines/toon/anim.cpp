@@ -29,7 +29,7 @@
 
 namespace Toon {
 
-bool Animation::loadAnimation(Common::String file) {
+bool Animation::loadAnimation(const Common::String &file) {
 	debugC(1, kDebugAnim, "loadAnimation(%s)", file.c_str());
 
 	uint32 fileSize = 0;
@@ -693,7 +693,7 @@ AnimationManager::AnimationManager(ToonEngine *vm) : _vm(vm) {
 
 bool AnimationManager::hasInstance(AnimationInstance* instance) {
 	for (uint32 i = 0; i < _instances.size(); i++) {
-		if(_instances[i] == instance)
+		if (_instances[i] == instance)
 			return true;
 	}
 	return false;
@@ -709,7 +709,7 @@ void AnimationManager::addInstance(AnimationInstance *instance) {
 
 	// if the instance already exists, we skip the add
 	for (uint32 i = 0; i < _instances.size(); i++) {
-		if(_instances[i] == instance)
+		if (_instances[i] == instance)
 			return;
 	}
 

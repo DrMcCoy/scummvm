@@ -40,7 +40,8 @@ namespace TsAGE {
 
 enum {
 	GType_Ringworld = 0,
-	GType_BlueForce = 1
+	GType_BlueForce = 1,
+	GType_Ringworld2 = 2
 };
 
 enum {
@@ -62,7 +63,7 @@ struct tSageGameDescription;
 #define SCREEN_HEIGHT 200
 #define SCREEN_CENTER_X 160
 #define SCREEN_CENTER_Y 100
-#define BF_INTERFACE_Y 168
+#define UI_INTERFACE_Y 168
 
 class TSageEngine : public Engine {
 private:
@@ -94,11 +95,11 @@ public:
 	void deinitialize();
 };
 
-extern TSageEngine *_vm;
+extern TSageEngine *g_vm;
 
-#define ALLOCATE_HANDLE(x) _vm->_memoryManager.allocate(x)
-#define ALLOCATE(x) _vm->_memoryManager.allocate2(x)
-#define DEALLOCATE(x) _vm->_memoryManager.deallocate(x)
+#define ALLOCATE_HANDLE(x) g_vm->_memoryManager.allocate(x)
+#define ALLOCATE(x) g_vm->_memoryManager.allocate2(x)
+#define DEALLOCATE(x) g_vm->_memoryManager.deallocate(x)
 
 } // End of namespace TsAGE
 

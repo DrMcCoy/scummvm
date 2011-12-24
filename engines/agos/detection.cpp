@@ -83,7 +83,7 @@ static const PlainGameDescriptor agosGames[] = {
 
 #include "agos/detection_tables.h"
 
-static const char *directoryGlobs[] = {
+static const char *const directoryGlobs[] = {
 	"execute", // Used by Simon1 Acorn CD
 	0
 };
@@ -93,7 +93,7 @@ using namespace AGOS;
 class AgosMetaEngine : public AdvancedMetaEngine {
 public:
 	AgosMetaEngine() : AdvancedMetaEngine(AGOS::gameDescriptions, sizeof(AGOS::AGOSGameDescription), agosGames) {
-		_guioptions = Common::GUIO_NOLAUNCHLOAD;
+		_guioptions = GUIO1(GUIO_NOLAUNCHLOAD);
 		_maxScanDepth = 2;
 		_directoryGlobs = directoryGlobs;
 	}
@@ -273,8 +273,6 @@ void AGOSEngine::loadArchives() {
 				_archives.registerArchive(ag->fileName, ag->fileType);
 		}
 	}
-
-	_archives.enableFallback(true);
 }
 #endif
 

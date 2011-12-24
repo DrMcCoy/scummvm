@@ -336,11 +336,16 @@ waitexam:	;call	delpointer
 	jz	notuseinv
 	mov	bx,offset cs:withlist1
 notuseinv:	call	checkcoords
+
+	cmp     quitrequested, 0
+	jnz	stopwaiting
+
 	cmp	examagain,0
 	jz	norex
 	jmp	examineagain
 norex:	cmp	getback,0
 	jz	waitexam
+stopwaiting:
 
 	mov	pickup,0
 	cmp	watchingtime,0
@@ -370,7 +375,7 @@ invlist1:	dw	273,320,157,198,getbackfromob
 	dw	inventx+167,inventx+167+(18*3),inventy-18,inventy-2,incryanpage
 	dw	inventx
 openchangesize: dw	inventx+(4*itempicsize)
-	dw	inventy+100,inventy+100+itempicsize,useopened
+invlist1continued:	dw	inventy+100,inventy+100+itempicsize,useopened
 	dw	inventx,inventx+(5*itempicsize)
 	dw	inventy,inventy+(2*itempicsize),intoinv
 	dw	0,320,0,200,blank

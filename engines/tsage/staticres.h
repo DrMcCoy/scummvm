@@ -39,14 +39,11 @@ extern const char *DEFAULT_SCENE_HOTSPOT;
 extern const char *SAVE_ERROR_MSG;
 extern const char *SAVING_NOT_ALLOWED_MSG;
 extern const char *RESTORING_NOT_ALLOWED_MSG;
-extern const char *RESTART_CONFIRM_MSG;
 
 // Dialogs
-extern const char *HELP_MSG;
 extern const char *QUIT_CONFIRM_MSG;
 extern const char *RESTART_MSG;
 extern const char *GAME_PAUSED_MSG;
-extern const char *OPTIONS_MSG;
 extern const char *OK_BTN_STRING;
 extern const char *CANCEL_BTN_STRING;
 extern const char *QUIT_BTN_STRING;
@@ -62,9 +59,11 @@ extern const char *INV_EMPTY_MSG;
 namespace Ringworld {
 
 // Dialog resources
+extern const char *HELP_MSG;
 extern const char *WATCH_INTRO_MSG;
 extern const char *START_PLAY_BTN_STRING;
 extern const char *INTRODUCTION_BTN_STRING;
+extern const char *OPTIONS_MSG;
 
 // Scene specific resources
 extern const char *EXIT_MSG;
@@ -95,9 +94,11 @@ extern const char *DEMO_RESUME_BTN_STRING;
 namespace BlueForce {
 
 // Dialog resources
+extern const char *HELP_MSG;
 extern const char *WATCH_INTRO_MSG;
 extern const char *START_PLAY_BTN_STRING;
 extern const char *INTRODUCTION_BTN_STRING;
+extern const char *OPTIONS_MSG;
 
 // Blue Force messages
 extern const char *BF_NAME;
@@ -121,7 +122,73 @@ extern const char *CITY_HALL_JAIL;
 extern const char *JAMISON_RYAN;
 extern const char *BIKINI_HUT;
 
+extern const char *SCENE570_PASSWORD;
+extern const char *SCENE570_C_DRIVE;
+extern const char *SCENE570_RING;
+extern const char *SCENE570_PROTO;
+extern const char *SCENE570_WACKY;
+extern const char *SCENE570_COBB;
+extern const char *SCENE570_LETTER;
+extern const char *SCENE570_RINGEXE;
+extern const char *SCENE570_RINGDATA;
+extern const char *SCENE570_PROTOEXE;
+extern const char *SCENE570_PROTODATA;
+extern const char *SCENE570_WACKYEXE;
+extern const char *SCENE570_WACKYDATA;
+
+// Scene 60 radio dispatch buttons
+extern const char *RADIO_BTN_LIST[8];
+
+// Scene 180 message
+extern const char *THE_NEXT_DAY;
+
 } // End of namespace BlueForce
+
+namespace Ringworld2 {
+
+// Scene 125 - Console messages
+extern const char *CONSOLE_MESSAGES[];
+
+// Scene 825 - Autodoc Messages
+extern const char *MAIN_MENU;
+extern const char *DIAGNOSIS;
+extern const char *ADVANCED_PROCEDURES;
+extern const char *VITAL_SIGNS;
+extern const char *OPEN_DOOR;
+extern const char *TREATMENTS;
+extern const char *NO_MALADY_DETECTED;
+extern const char *NO_TREATMENT_REQUIRED;
+extern const char *ACCESS_CODE_REQUIRED;
+extern const char *INVALID_ACCESS_CODE;
+extern const char *FOREIGN_OBJECT_EXTRACTED;
+extern const char *AUTODOC_ITEMS[11];
+
+// Dialog messages
+extern const char *HELP_MSG;
+extern const char *CHAR_TITLE;
+extern const char *CHAR_QUINN_MSG;
+extern const char *CHAR_SEEKER_MSG;
+extern const char *CHAR_MIRANDA_MSG;
+extern const char *CHAR_CANCEL_MSG;
+
+extern const char *GAME_VERSION;
+extern const char *SOUND_OPTIONS;
+extern const char *QUIT_GAME;
+extern const char *RESTART_GAME;
+extern const char *SAVE_GAME;
+extern const char *RESTORE_GAME;
+extern const char *SHOW_CREDITS;
+extern const char *PAUSE_GAME;
+extern const char *RESUME_PLAY;
+extern const char *F2;
+extern const char *F3;
+extern const char *F4;
+extern const char *F5;
+extern const char *F7;
+extern const char *F8;
+extern const char *F10;
+
+} // End of namespace Ringworld2
 
 } // End of namespace TsAGE
 

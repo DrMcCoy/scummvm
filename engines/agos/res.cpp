@@ -38,7 +38,7 @@
 namespace AGOS {
 
 ArchiveMan::ArchiveMan() {
-	_fallBack = false;
+	_fallBack = true;
 }
 
 #ifdef ENABLE_AGOS2
@@ -46,6 +46,13 @@ void ArchiveMan::registerArchive(const Common::String &filename, int priority) {
 	add(filename, makeInstallShieldArchive(filename), priority);
 }
 #endif
+
+bool ArchiveMan::hasFile(const Common::String &name) {
+	if (_fallBack && SearchMan.hasFile(name))
+		return true;
+
+	return Common::SearchSet::hasFile(name);
+}
 
 Common::SeekableReadStream *ArchiveMan::open(const Common::String &filename) {
 	if (_fallBack && SearchMan.hasFile(filename)) {
@@ -799,7 +806,7 @@ void AGOSEngine::loadVGABeardFile(uint16 id) {
 	uint32 offs, size;
 
 	if (getFeatures() & GF_OLD_BUNDLE) {
-		Common::File in;
+		Common::SeekableReadStream *in;
 		char filename[15];
 		if (id == 23)
 			id = 112;
@@ -815,22 +822,22 @@ void AGOSEngine::loadVGABeardFile(uint16 id) {
 			sprintf(filename, "0%d.VGA", id);
 		}
 
-		in.open(filename);
-		if (in.isOpen() == false)
+		in = _archives.open(filename);
+		if (!in)
 			error("loadSimonVGAFile: Can't load %s", filename);
 
-		size = in.size();
+		size = in->size();
 		if (getFeatures() & GF_CRUNCHED) {
 			byte *srcBuffer = (byte *)malloc(size);
-			if (in.read(srcBuffer, size) != size)
+			if (in->read(srcBuffer, size) != size)
 				error("loadSimonVGAFile: Read failed");
 			decrunchFile(srcBuffer, _vgaBufferPointers[11].vgaFile2, size);
 			free(srcBuffer);
 		} else {
-			if (in.read(_vgaBufferPointers[11].vgaFile2, size) != size)
+			if (in->read(_vgaBufferPointers[11].vgaFile2, size) != size)
 				error("loadSimonVGAFile: Read failed");
 		}
-		in.close();
+		delete in;
 	} else {
 		offs = _gameOffsetsPtr[id];
 
@@ -840,7 +847,7 @@ void AGOSEngine::loadVGABeardFile(uint16 id) {
 }
 
 void AGOSEngine::loadVGAVideoFile(uint16 id, uint8 type, bool useError) {
-	Common::File in;
+	Common::SeekableReadStream *in;
 	char filename[15];
 	byte *dst;
 	uint32 file, offs, srcSize, dstSize;
@@ -893,8 +900,8 @@ void AGOSEngine::loadVGAVideoFile(uint16 id, uint8 type, bool useError) {
 			}
 		}
 
-		in.open(filename);
-		if (in.isOpen() == false) {
+		in = _archives.open(filename);
+		if (!in) {
 			if (useError)
 				error("loadVGAVideoFile: Can't load %s", filename);
 
@@ -902,11 +909,11 @@ void AGOSEngine::loadVGAVideoFile(uint16 id, uint8 type, bool useError) {
 			return;
 		}
 
-		dstSize = srcSize = in.size();
+		dstSize = srcSize = in->size();
 		if (getGameType() == GType_PN && getPlatform() == Common::kPlatformPC && id == 17 && type == 2) {
 			// The A2.out file isn't compressed in PC version of Personal Nightmare
 			dst = allocBlock(dstSize + extraBuffer);
-			if (in.read(dst, dstSize) != dstSize)
+			if (in->read(dst, dstSize) != dstSize)
 				error("loadVGAVideoFile: Read failed");
 		} else if (getGameType() == GType_PN && (getFeatures() & GF_CRUNCHED)) {
 			Common::Stack<uint32> data;
@@ -914,7 +921,7 @@ void AGOSEngine::loadVGAVideoFile(uint16 id, uint8 type, bool useError) {
 			int dataOutSize = 0;
 
 			for (uint i = 0; i < srcSize / 4; ++i) {
-				uint32 dataVal = in.readUint32BE();
+				uint32 dataVal = in->readUint32BE();
 				// Correct incorrect byte, in corrupt 72.out file, included in some PC versions.
 				if (dataVal == 168042714)
 					data.push(168050906);
@@ -928,7 +935,7 @@ void AGOSEngine::loadVGAVideoFile(uint16 id, uint8 type, bool useError) {
 			delete[] dataOut;
 		} else if (getFeatures() & GF_CRUNCHED) {
 			byte *srcBuffer = (byte *)malloc(srcSize);
-			if (in.read(srcBuffer, srcSize) != srcSize)
+			if (in->read(srcBuffer, srcSize) != srcSize)
 				error("loadVGAVideoFile: Read failed");
 
 			dstSize = READ_BE_UINT32(srcBuffer + srcSize - 4);
@@ -937,10 +944,10 @@ void AGOSEngine::loadVGAVideoFile(uint16 id, uint8 type, bool useError) {
 			free(srcBuffer);
 		} else {
 			dst = allocBlock(dstSize + extraBuffer);
-			if (in.read(dst, dstSize) != dstSize)
+			if (in->read(dst, dstSize) != dstSize)
 				error("loadVGAVideoFile: Read failed");
 		}
-		in.close();
+		delete in;
 	} else {
 		id = id * 2 + (type - 1);
 		offs = _gameOffsetsPtr[id];

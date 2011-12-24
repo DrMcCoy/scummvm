@@ -32,8 +32,8 @@ static const tSageGameDescription gameDescriptions[] = {
 			AD_ENTRY1s("ring.rlb", "466f0e6492d9d0f34d35c5cd088de90f", 37847618),
 			Common::EN_ANY,
 			Common::kPlatformPC,
-			ADGF_TESTING | ADGF_CD,
-			Common::GUIO_NOSPEECH | Common::GUIO_NOSFX
+			ADGF_CD,
+			GUIO2(GUIO_NOSPEECH, GUIO_NOSFX)
 		},
 		GType_Ringworld,
 		GF_CD | GF_ALT_REGIONS
@@ -46,8 +46,8 @@ static const tSageGameDescription gameDescriptions[] = {
 			AD_ENTRY1s("ring.rlb", "cb8bba91b30cd172712371d7123bd763", 7427980),
 			Common::ES_ESP,
 			Common::kPlatformPC,
-			ADGF_TESTING | ADGF_CD,
-			Common::GUIO_NOSPEECH | Common::GUIO_NOSFX
+			ADGF_CD,
+			GUIO2(GUIO_NOSPEECH, GUIO_NOSFX)
 		},
 		GType_Ringworld,
 		GF_CD | GF_ALT_REGIONS
@@ -60,8 +60,8 @@ static const tSageGameDescription gameDescriptions[] = {
 			AD_ENTRY1s("ring.rlb", "7b7f0c5b37b58fa5ec06ebb2ca0d0d9d", 8438770),
 			Common::EN_ANY,
 			Common::kPlatformPC,
-			ADGF_TESTING,
-			Common::GUIO_NOSPEECH | Common::GUIO_NOSFX
+			ADGF_NO_FLAGS,
+			GUIO2(GUIO_NOSPEECH, GUIO_NOSFX)
 		},
 		GType_Ringworld,
 		GF_FLOPPY
@@ -75,7 +75,7 @@ static const tSageGameDescription gameDescriptions[] = {
 			Common::EN_ANY,
 			Common::kPlatformPC,
 			ADGF_DEMO,
-			Common::GUIO_NOSPEECH | Common::GUIO_NOSFX
+			GUIO2(GUIO_NOSPEECH, GUIO_NOSFX)
 		},
 		GType_Ringworld,
 		GF_FLOPPY | GF_DEMO
@@ -90,7 +90,7 @@ static const tSageGameDescription gameDescriptions[] = {
 			Common::EN_ANY,
 			Common::kPlatformPC,
 			ADGF_DEMO,
-			Common::GUIO_NOSPEECH | Common::GUIO_NOSFX
+			GUIO2(GUIO_NOSPEECH, GUIO_NOSFX)
 		},
 		GType_Ringworld,
 		GF_FLOPPY | GF_DEMO | GF_ALT_REGIONS
@@ -105,8 +105,8 @@ static const tSageGameDescription gameDescriptions[] = {
 			AD_ENTRY1s("blue.rlb", "17c3993415e8a2cf93040eef7e88ec93", 1156508),
 			Common::EN_ANY,
 			Common::kPlatformPC,
-			ADGF_UNSTABLE,
-			Common::GUIO_NOSPEECH | Common::GUIO_NOSFX
+			ADGF_TESTING,
+			GUIO2(GUIO_NOSPEECH, GUIO_NOSFX)
 		},
 		GType_BlueForce,
 		GF_FLOPPY
@@ -120,8 +120,8 @@ static const tSageGameDescription gameDescriptions[] = {
 			AD_ENTRY1s("blue.rlb", "17eabb456cb1546c66baf1aff387ba6a", 10032614),
 			Common::EN_ANY,
 			Common::kPlatformPC,
-			ADGF_UNSTABLE,
-			Common::GUIO_NOSPEECH | Common::GUIO_NOSFX
+			ADGF_TESTING,
+			GUIO2(GUIO_NOSPEECH, GUIO_NOSFX)
 		},
 		GType_BlueForce,
 		GF_FLOPPY | GF_ALT_REGIONS
@@ -134,12 +134,28 @@ static const tSageGameDescription gameDescriptions[] = {
 			AD_ENTRY1s("blue.rlb", "99983f48cb218f1f3760cf2f9a7ef11d", 63863322),
 			Common::EN_ANY,
 			Common::kPlatformPC,
-			ADGF_CD | ADGF_UNSTABLE,
-			Common::GUIO_NOSPEECH | Common::GUIO_NOSFX
+			ADGF_CD | ADGF_TESTING,
+			GUIO2(GUIO_NOSPEECH, GUIO_NOSFX)
 		},
 		GType_BlueForce,
 		GF_CD | GF_ALT_REGIONS
 	},
+
+	// Return to Ringworld
+	{
+		{
+			"ringworld2",
+			"CD",
+			AD_ENTRY1s("r2rw.rlb", "df6c25622387007788ca36d99362c1f0", 47586928),
+			Common::EN_ANY,
+			Common::kPlatformPC,
+			ADGF_CD | ADGF_UNSTABLE,
+			GUIO0()
+		},
+		GType_Ringworld2,
+		GF_CD | GF_ALT_REGIONS
+	},
+
 	{ AD_TABLE_END_MARKER, 0, 0 }
 };
 
