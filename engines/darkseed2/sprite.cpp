@@ -299,6 +299,9 @@ bool Sprite::loadFromImage(Resources &resources, const Common::String &image, Im
 	case kImageTypeBDP:
 		return loadFromBDP(resources, image);
 
+	case kImageTypeMacRoom:
+		return loadFromMacRoomImage(resources, image);
+
 	default:
 		return false;
 	}
@@ -586,6 +589,87 @@ bool Sprite::loadFrom256(Resources &resources, const Common::String &f256, int32
 	_fileName = f256;
 
 	return result;
+}
+
+bool Sprite::loadFromMacWalkMap(Resources &resources, const Common::String &image) {
+	if (!resources.hasResource(image))
+		return false;
+
+	Common::SeekableReadStream *stream = resources.getResource(image);
+
+	create(64, 48);
+
+	// TODO: Maybe add some sort of dummy palette?
+
+	for (int32 y = 0; y < 48; y++)
+		stream->read((byte *)_surfacePaletted.getBasePtr(0, y), 64);
+
+	// Completely non-transparent
+	memset(_transparencyMap, 0, _surfacePaletted.w * _surfacePaletted.h);
+	convertToTrueColor();
+
+	delete stream;
+	return true;
+}
+
+bool Sprite::loadFromMacRoomImage(Resources &resources, const Common::String &image) {
+	if (!resources.hasResource(image))
+		return false;
+
+	Common::SeekableReadStream *stream = resources.getResource(image);
+
+	// First, read in the QuickTime palette
+	// We can't read directly to _palette because create() hasn't been
+	// called yet.
+	stream->readUint32BE();
+	stream->readUint16BE();
+	uint16 colorCount = stream->readUint16BE() + 1;
+
+	Palette pal;
+	pal.resize(colorCount);
+
+	for (uint16 i = 0; i < colorCount; i++) {
+		stream->readUint16BE();
+		pal.get()[i * 3 + 0] = stream->readUint16BE() >> 8;
+		pal.get()[i * 3 + 1] = stream->readUint16BE() >> 8;
+		pal.get()[i * 3 + 2] = stream->readUint16BE() >> 8;
+	}
+
+	stream->readUint32BE(); // unknown
+	uint16 height = stream->readUint16BE();
+	uint16 width = stream->readUint16BE();
+
+	create(width, height);
+
+	_palette = pal;
+
+	for (uint16 y = 0; y < height; y++) {
+		// TODO: Figure out what these are exactly
+		// If it's compression, it's the worst compression ever
+		// Might be like the bmp comp 2 crap
+		uint16 unk1 = stream->readUint16BE();
+		uint16 unk2 = stream->readUint16BE();
+		uint16 unk3 = stream->readUint16BE();
+		uint16 unk4 = stream->readUint16BE();
+
+		if (unk1 != 0x100)
+			error("Mac room image unk1 = %d", unk1);
+		if (unk2 != width + 4)
+			error("Mac room image unk2 = %d", unk2);
+		if (unk3 != 0x200)
+			error("Mac room image unk3 = %d", unk3);
+		if (unk4 != width)
+			error("Mac room image unk4 = %d", unk4);
+
+		stream->read((byte *)_surfacePaletted.getBasePtr(0, y), width);
+	}
+
+	// Completely non-transparent
+	memset(_transparencyMap, 0, _surfacePaletted.w * _surfacePaletted.h);
+	convertToTrueColor();
+
+	delete stream;
+	return true;
 }
 
 bool Sprite::loadFromSaturnCursor(Resources &resources, const Common::String &cursor) {

@@ -109,6 +109,12 @@ public:
 	bool loadFromBoxImage(Resources &resources, const Common::String &image,
 			int32 width = 0, int32 height = 0);
 
+	/** Load a sprite from a raw Mac walk map file. */
+	bool loadFromMacWalkMap(Resources &resources, const Common::String &image);
+
+	/** Load a sprite from a raw Mac room image file. */
+	bool loadFromMacRoomImage(Resources &resources, const Common::String &image);
+
 	/** Load from a cursor found in the Sega Saturn version. */
 	bool loadFromSaturnCursor(Resources &resources, const Common::String &cursor);
 
