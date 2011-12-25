@@ -678,6 +678,10 @@ void MacRoomArchive::index(ResourceMap &map) {
 				resFile.c_str(), _resources[i].offset, _resources[i].size);
 	}
 
+	// The room image size is never correct
+	if (resCount >= 2)
+		_resources[1].size = (resCount == 2) ? (_file.size() - _resources[1].offset) : (_resources[2].offset - _resources[1].offset);
+
 	_file.close();
 	_isIndexed = true;
 }
