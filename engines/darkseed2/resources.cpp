@@ -1005,7 +1005,7 @@ Common::SeekableReadStream *Resources::getResource(const Common::String &resourc
 }
 
 Common::String Resources::addExtension(const Common::String &name, const Common::String &extension) {
-	if (name.empty() || extension.empty())
+	if (name.empty() || extension.empty() || name.hasSuffix(extension))
 		return name;
 
 	const char *str = name.c_str();
