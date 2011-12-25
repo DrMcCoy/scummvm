@@ -58,6 +58,7 @@ void PictDecoder::setupOpcodesCommon() {
 	OPCODE(0x0011, o_versionOp, "VersionOp");
 	OPCODE(0x001E, o_nop, "DefHilite");
 	OPCODE(0x0028, o_longText, "LongText");
+	OPCODE(0x00A0, o_shortComment, "ShortComment");
 	OPCODE(0x00A1, o_longComment, "LongComment");
 	OPCODE(0x00FF, o_opEndPic, "OpEndPic");
 	OPCODE(0x0C00, o_headerOp, "HeaderOp");
@@ -128,6 +129,11 @@ void PictDecoder::o_longText(Common::SeekableReadStream *stream) {
 	stream->readUint16BE();
 	stream->readUint16BE();
 	stream->skip(stream->readByte());
+}
+
+void PictDecoder::o_shortComment(Common::SeekableReadStream *stream) {
+	// Ignore
+	stream->readUint16BE();
 }
 
 void PictDecoder::o_longComment(Common::SeekableReadStream *stream) {

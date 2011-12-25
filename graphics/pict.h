@@ -104,6 +104,7 @@ private:
 	DECLARE_OPCODE(o_txRatio);
 	DECLARE_OPCODE(o_versionOp);
 	DECLARE_OPCODE(o_longText);
+	DECLARE_OPCODE(o_shortComment);
 	DECLARE_OPCODE(o_longComment);
 	DECLARE_OPCODE(o_opEndPic);
 	DECLARE_OPCODE(o_headerOp);
