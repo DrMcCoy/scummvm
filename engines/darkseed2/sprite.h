@@ -109,6 +109,9 @@ public:
 	bool loadFromBoxImage(Resources &resources, const Common::String &image,
 			int32 width = 0, int32 height = 0);
 
+	/** Load a sprite from a PICT resource. */
+	bool loadFromPICT(Resources &resources, const Common::String &image);
+
 	/** Load a sprite from a raw Mac walk map file. */
 	bool loadFromMacWalkMap(Resources &resources, const Common::String &image);
 

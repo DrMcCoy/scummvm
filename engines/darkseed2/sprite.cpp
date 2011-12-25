@@ -29,6 +29,7 @@
 
 #include "graphics/font.h"
 #include "graphics/fontman.h"
+#include "graphics/pict.h"
 #include "graphics/pixelformat.h"
 #include "graphics/surface.h"
 
@@ -280,6 +281,9 @@ bool Sprite::loadFromBoxImage(Resources &resources, const Common::String &image,
 
 	case kImageType256:
 		return loadFrom256(resources, image, width, height);
+
+	case kImageTypePICT:
+		return loadFromPICT(resources, image);
 
 	default:
 		return false;
@@ -669,6 +673,43 @@ bool Sprite::loadFromMacRoomImage(Resources &resources, const Common::String &im
 	convertToTrueColor();
 
 	delete stream;
+	return true;
+}
+
+bool Sprite::loadFromPICT(Resources &resources, const Common::String &image) {
+	if (!resources.hasResource(image))
+		return false;
+
+	Common::SeekableReadStream *stream = resources.getResource(image);
+
+	::Graphics::PictDecoder pict(ImgConv.getPixelFormat());
+
+	byte palette[256 * 3];
+	::Graphics::Surface *output = pict.decodeImage(stream, palette);
+	delete stream;
+
+	if (!output) {
+		warning("Failed to decode PICT image");
+		return false;
+	}
+
+	if (output->format.bytesPerPixel != 1) {
+		output->free();
+		delete output;
+		warning("Only 8bpp PICT images supported");
+		return false;
+	}
+
+	create(output->w, output->h);
+	_surfacePaletted.copyFrom(*output);
+	_palette.copyFrom(palette, 256);
+
+	output->free();
+	delete output;
+
+	createTransparencyMap();
+	convertToTrueColor();
+
 	return true;
 }
 
