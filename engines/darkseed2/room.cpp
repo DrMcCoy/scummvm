@@ -387,7 +387,10 @@ bool Room::loadSprites(Resources &resources) {
 		warning("TODO: Sega Saturn walk maps");
 		break;
 	case kWalkMapTypeMac:
-		warning("TODO: Mac walk maps");
+		if (!_walkMap->loadFromMacWalkMap(resources, _walkMapFile)) {
+			warning("Room::setup(): Can't load walk map");
+			return false;
+		}
 		break;
 	case kWalkMapTypeBMP:
 		if (!_walkMap->loadFromImage(resources, _walkMapFile)) {
