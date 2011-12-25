@@ -266,6 +266,10 @@ bool Sprite::loadFromRoomImage(Resources &resources, const Common::String &image
 	return loadFromImage(resources, image, resources.getVersionFormats().getRoomImageType());
 }
 
+bool Sprite::loadFromInvItemImage(Resources &resources, const Common::String &image) {
+	return loadFromImage(resources, image, resources.getVersionFormats().getInvItemImageType());
+}
+
 bool Sprite::loadFromBoxImage(Resources &resources, const Common::String &image,
 		int32 width, int32 height) {
 
@@ -305,6 +309,9 @@ bool Sprite::loadFromImage(Resources &resources, const Common::String &image, Im
 
 	case kImageTypeMacRoom:
 		return loadFromMacRoomImage(resources, image);
+
+	case kImageTypePICT:
+		return loadFromPICT(resources, image);
 
 	default:
 		return false;

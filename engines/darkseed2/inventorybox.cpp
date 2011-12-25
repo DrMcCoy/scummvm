@@ -94,15 +94,16 @@ int32 InventoryBox::getHeight() const {
 void InventoryBox::fillInBoxProperties(GameVersion gameVersion) {
 	switch(gameVersion) {
 	case kGameVersionWindows:
+	case kGameVersionMac:
 		_boxProps.width =  640;
 		_boxProps.height =  70;
 
-		_boxProps.frameFile = "INVNTRY1";
+		_boxProps.frameFile = "INVNTRY1.BMP";
 
-		_boxProps.scrollLeftFile    = "ARWLFT1";
-		_boxProps.scrollNoLeftFile  = "ARWLFT2";
-		_boxProps.scrollRightFile   = "ARWRGHT1";
-		_boxProps.scrollNoRightFile = "ARWRGHT2";
+		_boxProps.scrollLeftFile    = "ARWLFT1.BMP";
+		_boxProps.scrollNoLeftFile  = "ARWLFT2.BMP";
+		_boxProps.scrollRightFile   = "ARWRGHT1.BMP";
+		_boxProps.scrollNoRightFile = "ARWRGHT2.BMP";
 
 		_boxProps.frameTopFile    = 0;
 		_boxProps.frameBottomFile = 0;
@@ -237,11 +238,11 @@ void InventoryBox::loadSprites() {
 	} else {
 		bool loaded0, loaded1, loaded2, loaded3, loaded4;
 
-		loaded0 = _sprites[3].loadFromImage(*_resources, _boxProps.frameFile);
-		loaded1 = _sprites[4].loadFromImage(*_resources, _boxProps.scrollLeftFile);
-		loaded2 = _sprites[5].loadFromImage(*_resources, _boxProps.scrollNoLeftFile);
-		loaded3 = _sprites[6].loadFromImage(*_resources, _boxProps.scrollRightFile);
-		loaded4 = _sprites[7].loadFromImage(*_resources, _boxProps.scrollNoRightFile);
+		loaded0 = _sprites[3].loadFromBoxImage(*_resources, _boxProps.frameFile);
+		loaded1 = _sprites[4].loadFromBoxImage(*_resources, _boxProps.scrollLeftFile);
+		loaded2 = _sprites[5].loadFromBoxImage(*_resources, _boxProps.scrollNoLeftFile);
+		loaded3 = _sprites[6].loadFromBoxImage(*_resources, _boxProps.scrollRightFile);
+		loaded4 = _sprites[7].loadFromBoxImage(*_resources, _boxProps.scrollNoRightFile);
 
 		assert(loaded0 && loaded1 && loaded2 && loaded3 && loaded4);
 	}

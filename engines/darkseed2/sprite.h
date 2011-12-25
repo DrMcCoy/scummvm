@@ -105,6 +105,9 @@ public:
 	/** Load a sprite from a room image file. */
 	bool loadFromRoomImage(Resources &resources, const Common::String &image);
 
+	/** Load a sprite from an inventory item image file. */
+	bool loadFromInvItemImage(Resources &resources, const Common::String &image);
+
 	/** Load a sprite from a box image file. */
 	bool loadFromBoxImage(Resources &resources, const Common::String &image,
 			int32 width = 0, int32 height = 0);

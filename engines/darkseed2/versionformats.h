@@ -81,6 +81,9 @@ public:
 	/** Get the type of images the game uses for boxes. */
 	ImageType getBoxImageType() const;
 
+	/** Get the type of images the game uses for inventory items. */
+	ImageType getInvItemImageType() const;
+
 	/** Get the type of file the game uses for walk maps. */
 	WalkMapType getWalkMapType() const;
 
@@ -93,6 +96,8 @@ public:
 	const char *getWalkMapExtension(WalkMapType walkMapType) const;
 	/** Get the extension used for sounds by the game. */
 	const char *getSoundExtension(SoundType soundType) const;
+	/** Get the extension used for DAT files by the game. */
+	const char *getDATFileExtension() const;
 
 	int getHotspotScale() const;
 
@@ -107,9 +112,10 @@ private:
 
 	Common::Language _language; ///< The game's language.
 
-	ImageType _imageType;     ///< The type of images the game uses for images.
-	ImageType _roomImageType; ///< The type of images the game uses for room images.
-	ImageType _boxImageType;  ///< The type of images the game uses for box images.
+	ImageType _imageType;        ///< The type of images the game uses for images.
+	ImageType _roomImageType;    ///< The type of images the game uses for room images.
+	ImageType _boxImageType;     ///< The type of images the game uses for box images.
+	ImageType _invItemImageType; ///< The type of images the game uses for inventory items.
 
 	WalkMapType _walkMapType; ///< The type of file the game uses for walk maps.
 

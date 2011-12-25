@@ -65,11 +65,12 @@ void VersionFormats::setGameVersion(GameVersion gameVersion) {
 
 	switch (_gameVersion) {
 	case kGameVersionWindows:
-		_imageType     = kImageTypeBMP;
-		_roomImageType = kImageTypeBMP;
-		_boxImageType  = kImageTypeBMP;
-		_walkMapType   = kWalkMapTypeBMP;
-		_soundType     = kSoundTypeWAV;
+		_imageType        = kImageTypeBMP;
+		_roomImageType    = kImageTypeBMP;
+		_boxImageType     = kImageTypeBMP;
+		_invItemImageType = kImageTypeBMP;
+		_walkMapType      = kWalkMapTypeBMP;
+		_soundType        = kSoundTypeWAV;
 
 		_hotspotScale = 1;
 
@@ -77,11 +78,12 @@ void VersionFormats::setGameVersion(GameVersion gameVersion) {
 		break;
 
 	case kGameVersionSaturn:
-		_imageType     = kImageTypeRGB;
-		_roomImageType = kImageTypeBDP;
-		_boxImageType  = kImageType256;
-		_walkMapType   = kWalkMapTypeMAP;
-		_soundType     = kSoundTypeAIF;
+		_imageType        = kImageTypeRGB;
+		_roomImageType    = kImageTypeBDP;
+		_boxImageType     = kImageType256;
+		_invItemImageType = kImageTypeRGB;
+		_walkMapType      = kWalkMapTypeMAP;
+		_soundType        = kSoundTypeAIF;
 
 		_hotspotScale = 2;
 
@@ -89,11 +91,12 @@ void VersionFormats::setGameVersion(GameVersion gameVersion) {
 		break;
 
 	case kGameVersionMac:
-		_imageType     = kImageTypeMacUnk;
-		_roomImageType = kImageTypeMacRoom;
-		_boxImageType  = kImageTypePICT;
-		_walkMapType   = kWalkMapTypeMac;
-		_soundType     = kSoundTypeSND;
+		_imageType        = kImageTypeMacUnk;
+		_roomImageType    = kImageTypeMacRoom;
+		_boxImageType     = kImageTypePICT;
+		_invItemImageType = kImageTypePICT;
+		_walkMapType      = kWalkMapTypeMac;
+		_soundType        = kSoundTypeSND;
 
 		_hotspotScale = 1;
 
@@ -130,6 +133,10 @@ ImageType VersionFormats::getBoxImageType() const {
 	return _boxImageType;
 }
 
+ImageType VersionFormats::getInvItemImageType() const {
+	return _invItemImageType;
+}
+
 WalkMapType VersionFormats::getWalkMapType() const {
 	return _walkMapType;
 }
@@ -154,6 +161,10 @@ const char *VersionFormats::getSoundExtension(SoundType soundType) const {
 	assert((soundType >= 0) && (soundType < ARRAYSIZE(kSoundExtensions)));
 
 	return kSoundExtensions[soundType];
+}
+
+const char *VersionFormats::getDATFileExtension() const {
+	return (_gameVersion == kGameVersionMac) ? "" : "DAT";
 }
 
 int VersionFormats::getHotspotScale() const {

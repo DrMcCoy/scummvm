@@ -37,10 +37,10 @@ static const int32 kWidth  = 640;
 static const int32 kHeight =  70;
 
 // Sprites
-static const char *kFileFrame        = "INVNTRY1";
-static const char *kFileScrollUpDown = "DIALOG1";
-static const char *kFileScrollDown   = "DIALOG2";
-static const char *kFileScrollUp     = "DIALOG3";
+static const char *kFileFrame        = "INVNTRY1.BMP";
+static const char *kFileScrollUpDown = "DIALOG1.BMP";
+static const char *kFileScrollDown   = "DIALOG2.BMP";
+static const char *kFileScrollUp     = "DIALOG3.BMP";
 
 // Scroll button coordinates
 static const int32 kScrollUp  [4] = {  15,  24,  34,  40};
@@ -192,13 +192,13 @@ void ConversationBoxWindows::updateStatus() {
 bool ConversationBoxWindows::loadSprites() {
 	_sprites = new Sprite[6];
 
-	if (!_sprites[2].loadFromImage(*_resources, kFileFrame))
+	if (!_sprites[2].loadFromBoxImage(*_resources, kFileFrame))
 		return false;
-	if (!_sprites[3].loadFromImage(*_resources, kFileScrollUpDown))
+	if (!_sprites[3].loadFromBoxImage(*_resources, kFileScrollUpDown))
 		return false;
-	if (!_sprites[4].loadFromImage(*_resources, kFileScrollDown))
+	if (!_sprites[4].loadFromBoxImage(*_resources, kFileScrollDown))
 		return false;
-	if (!_sprites[5].loadFromImage(*_resources, kFileScrollUp))
+	if (!_sprites[5].loadFromBoxImage(*_resources, kFileScrollUp))
 		return false;
 
 	return true;

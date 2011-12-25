@@ -150,7 +150,7 @@ bool Graphics::init(TalkManager &talkManager, ScriptRegister &scriptRegister,
 	// Conversation box
 
 	GameVersion gameVersion = _resources->getVersionFormats().getGameVersion();
-	if        (gameVersion == kGameVersionWindows) {
+	if        (gameVersion == kGameVersionWindows || gameVersion == kGameVersionMac) {
 		_conversationBox = new ConversationBoxWindows(*_resources, *_variables, *this, talkManager, *_fontMan);
 	} else if (gameVersion == kGameVersionSaturn) {
 		_conversationBox = new ConversationBoxSaturn(*_resources, *_variables, *this, talkManager, *_fontMan);

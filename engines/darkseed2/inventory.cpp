@@ -108,7 +108,7 @@ bool Inventory::parse(DATFile &dat) {
 
 			Sprite *sprite = new Sprite;
 
-			if (!sprite->loadFromImage(*_resources, it->spriteName)) {
+			if (!sprite->loadFromInvItemImage(*_resources, it->spriteName)) {
 				delete sprite;
 				return false;
 			}
@@ -173,7 +173,7 @@ bool Inventory::parseUse(Item &item, ScriptChunk &useScript) {
 }
 
 bool Inventory::parse(Resources &resources, const Common::String &inv) {
-	Common::String datFile = Resources::addExtension(inv, "DAT");
+	Common::String datFile = Resources::addExtension(inv, resources.getVersionFormats().getDATFileExtension());
 	if (!resources.hasResource(datFile))
 		return false;
 
