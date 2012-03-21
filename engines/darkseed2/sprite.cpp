@@ -29,7 +29,7 @@
 
 #include "graphics/font.h"
 #include "graphics/fontman.h"
-#include "graphics/pict.h"
+#include "graphics/decoders/pict.h"
 #include "graphics/pixelformat.h"
 #include "graphics/surface.h"
 
@@ -689,20 +689,18 @@ bool Sprite::loadFromPICT(Resources &resources, const Common::String &image) {
 
 	Common::SeekableReadStream *stream = resources.getResource(image);
 
-	::Graphics::PictDecoder pict(ImgConv.getPixelFormat());
-
-	byte palette[256 * 3];
-	::Graphics::Surface *output = pict.decodeImage(stream, palette);
-	delete stream;
-
-	if (!output) {
+	::Graphics::PICTDecoder pict;
+	if (!pict.loadStream(*stream)) {
 		warning("Failed to decode PICT image");
 		return false;
 	}
 
+	const ::Graphics::Surface *output = pict.getSurface();
+	const byte *palette = pict.getPalette();
+
+	delete stream;
+
 	if (output->format.bytesPerPixel != 1) {
-		output->free();
-		delete output;
 		warning("Only 8bpp PICT images supported");
 		return false;
 	}
@@ -710,9 +708,6 @@ bool Sprite::loadFromPICT(Resources &resources, const Common::String &image) {
 	create(output->w, output->h);
 	_surfacePaletted.copyFrom(*output);
 	_palette.copyFrom(palette, 256);
-
-	output->free();
-	delete output;
 
 	createTransparencyMap();
 	convertToTrueColor();
