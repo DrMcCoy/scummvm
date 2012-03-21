@@ -424,7 +424,7 @@ Common::Error DarkSeed2Engine::loadGameState(int slot) {
 	return Common::kNoError;
 }
 
-Common::Error DarkSeed2Engine::saveGameState(int slot, const char *desc) {
+Common::Error DarkSeed2Engine::saveGameState(int slot, const Common::String &desc) {
 	_graphics->retrace();
 
 	SaveMetaInfo meta;

@@ -155,7 +155,7 @@ private:
 	bool canSaveGameStateCurrently();
 
 	Common::Error loadGameState(int slot);
-	Common::Error saveGameState(int slot, const char *desc);
+	Common::Error saveGameState(int slot, const Common::String &desc);
 
 	bool saveLoad(Common::Serializer &serializer, SaveMetaInfo &meta);
 };

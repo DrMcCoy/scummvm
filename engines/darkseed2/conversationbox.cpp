@@ -227,7 +227,8 @@ void ConversationBox::redraw(Sprite &sprite, Common::Rect area) {
 }
 
 bool ConversationBox::saveLoad(Common::Serializer &serializer, Resources &resources) {
-	return false;
+	// FIXME - Implement this...
+	return true;
 }
 
 bool ConversationBox::loading(Resources &resources) {

@@ -867,6 +867,7 @@ bool Conversation::saveLoad(Common::Serializer &serializer, Resources &resources
 	_currentNodeIndex = _currentNode ? _currentNode->listIndex : 0;
 
 	SaveLoad::sync(serializer, _name);
+	// FIXME: Need to look at how to serialize (TextLine *)
 	//SaveLoad::sync(serializer, _speakers);
 
 	SaveLoad::sync(serializer, _nodeList);
