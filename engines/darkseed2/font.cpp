@@ -405,11 +405,11 @@ bool ScummVMLatin1::validBreakSpace(const byte *textStart, const byte *curPositi
 	uint32 next = (cur == 0) ? 0 : getChar(nextChar(curPosition));
 
 	// In French text, ! and ? are preceeded by a space. We don't want to break there.
-	return isspace(cur) && (next != '!') && (next != '?');
+	return Common::isSpace(cur) && (next != '!') && (next != '?');
 }
 
 bool ScummVMLatin1::isTrimmable(uint32 c) const {
-	return (c == '\n') || (c == '\r') || isspace(c);
+	return (c == '\n') || (c == '\r') || Common::isSpace(c);
 }
 
 void ScummVMLatin1::drawChar(uint32 c, ::Graphics::Surface &surface, int32 x, int32 y, uint32 color) const {

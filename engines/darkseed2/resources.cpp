@@ -238,7 +238,7 @@ bool GlueArchive::isCompressed() {
 
 		// Only these character are allowed in a resource file name
 		for (int i = 0; (i < 12) && (buffer[i] != 0); i++)
-			if (!isalnum(buffer[i]) && (buffer[i] != '.') && (buffer[i] != '_'))
+			if (!Common::isAlnum(buffer[i]) && (buffer[i] != '.') && (buffer[i] != '_'))
 				return true;
 
 		uint32 size   = _file->readUint32LE();
