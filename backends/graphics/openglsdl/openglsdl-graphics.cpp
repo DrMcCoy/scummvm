@@ -376,7 +376,7 @@ bool OpenGLSdlGraphicsManager::loadGFXMode() {
 	}
 
 	// Check if the screen is BGR format
-	_formatBGR = _hwscreen->format->Rshift != 0;
+	setFormatIsBGR(_hwscreen->format->Rshift != 0);
 
 	if (isFullscreen) {
 		_lastFullscreenModeWidth = _videoMode.hardwareWidth;
@@ -460,10 +460,6 @@ void OpenGLSdlGraphicsManager::toggleFullScreen(int loop) {
 			_activeFullscreenMode = -2;
 			setFullscreenMode(!isFullscreen);
 		}
-
-		// HACK: We need to force a refresh here, since we change the
-		// fullscreen mode.
-		_transactionDetails.needRefresh = true;
 	endGFXTransaction();
 
 	// Ignore resize events for the next 10 frames
@@ -486,7 +482,7 @@ void OpenGLSdlGraphicsManager::toggleFullScreen(int loop) {
 }
 
 bool OpenGLSdlGraphicsManager::notifyEvent(const Common::Event &event) {
-	switch ((int)event.type) {
+	switch (event.type) {
 	case Common::EVENT_KEYDOWN:
 		if (event.kbd.hasFlags(Common::KBD_ALT)) {
 			// Alt-Return and Alt-Enter toggle full screen mode
@@ -671,8 +667,7 @@ void OpenGLSdlGraphicsManager::transformMouseCoordinates(Common::Point &point) {
 }
  
 void OpenGLSdlGraphicsManager::notifyMousePos(Common::Point mouse) {
-	_cursorState.x = mouse.x;
-	_cursorState.y = mouse.y;
+	setMousePosition(mouse.x, mouse.y);
 }
 
 #endif

@@ -22,26 +22,26 @@
 
 #include "dreamweb/dreamweb.h"
 
-namespace DreamGen {
+namespace DreamWeb {
 
-void DreamGenContext::newPlace() {
-	if (data.byte(kNeedtotravel) == 1) {
-		data.byte(kNeedtotravel) = 0;
+void DreamWebEngine::newPlace() {
+	if (_vars._needToTravel == 1) {
+		_vars._needToTravel = 0;
 		selectLocation();
-	} else if (data.byte(kAutolocation) != 0xFF) {
-		data.byte(kNewlocation) = data.byte(kAutolocation);
-		data.byte(kAutolocation) = 0xFF;
+	} else if (_autoLocation != 0xFF) {
+		_newLocation = _autoLocation;
+		_autoLocation = 0xFF;
 	}
 }
 
-void DreamGenContext::selectLocation() {
-	data.byte(kInmaparea) = 0;
+void DreamWebEngine::selectLocation() {
+	_inMapArea = 0;
 	clearBeforeLoad();
-	data.byte(kGetback) = 0;
-	data.byte(kPointerframe) = 22;
+	_getBack = 0;
+	_pointerFrame = 22;
 	readCityPic();
 	showCity();
-	getRidOfTemp();
+	_cityGraphics.clear();
 	readDestIcon();
 	loadTravelText();
 	showPanel();
@@ -50,16 +50,16 @@ void DreamGenContext::selectLocation() {
 	showExit();
 	locationPic();
 	underTextLine();
-	data.byte(kCommandtype) = 255;
+	_commandType = 255;
 	readMouse();
-	data.byte(kPointerframe) = 0;
+	_pointerFrame = 0;
 	showPointer();
-	workToScreenCPP();
+	workToScreen();
 	playChannel0(9, 255);
-	data.byte(kNewlocation) = 255;
+	_newLocation = 255;
 
-	while (data.byte(kNewlocation) == 255) {
-		if (quitRequested())
+	while (_newLocation == 255) {
+		if (_quitRequested)
 			break;
 
 		delPointer();
@@ -69,106 +69,110 @@ void DreamGenContext::selectLocation() {
 		dumpPointer();
 		dumpTextLine();
 
-		if (data.byte(kGetback) == 1)
+		if (_getBack == 1)
 			break;
 
-		RectWithCallback<DreamGenContext> destList[] = {
-			{ 238,258,4,44,&DreamGenContext::nextDest },
-			{ 104,124,4,44,&DreamGenContext::lastDest },
-			{ 280,308,4,44,&DreamGenContext::lookAtPlace },
-			{ 104,216,138,192,&DreamGenContext::destSelect },
-			{ 273,320,157,198,&DreamBase::getBack1 },
-			{ 0,320,0,200,&DreamBase::blank },
+		RectWithCallback destList[] = {
+			{ 238,258,4,44,&DreamWebEngine::nextDest },
+			{ 104,124,4,44,&DreamWebEngine::lastDest },
+			{ 280,308,4,44,&DreamWebEngine::lookAtPlace },
+			{ 104,216,138,192,&DreamWebEngine::destSelect },
+			{ 273,320,157,198,&DreamWebEngine::getBack1 },
+			{ 0,320,0,200,&DreamWebEngine::blank },
 			{ 0xFFFF,0,0,0,0 }
 		};
 		checkCoords(destList);
 	}
 
-	if (quitRequested() || data.byte(kGetback) == 1 || data.byte(kNewlocation) == data.byte(kLocation)) {
-		data.byte(kNewlocation) = data.byte(kReallocation);
-		data.byte(kGetback) = 0;
+	if (_quitRequested || _getBack == 1 || _newLocation == _vars._location) {
+		_newLocation = _realLocation;
+		_getBack = 0;
 	}
 
-	getRidOfTemp();
-	getRidOfTemp2();
-	getRidOfTemp3();
-	deallocateMem(data.word(kTraveltext));
+	_newplaceGraphics.clear();
+	_newplaceGraphics2.clear();
+	_newplaceGraphics3.clear();
+
+	_travelText.clear();
 }
 
-void DreamGenContext::showCity() {
+void DreamWebEngine::showCity() {
 	clearWork();
-	showFrame(tempGraphics(), 57, 32, 0, 0);
-	showFrame(tempGraphics(), 120+57, 32, 1, 0);
+	showFrame(_cityGraphics, 57, 32, 0, 0);
+	showFrame(_cityGraphics, 120+57, 32, 1, 0);
 }
 
-void DreamGenContext::lookAtPlace() {
-	if (data.byte(kCommandtype) != 224) {
-		data.byte(kCommandtype) = 224;
-		commandOnly(27);
-	}
+void DreamWebEngine::lookAtPlace() {
+	commandOnlyCond(27, 224);
 
-	if (!(data.word(kMousebutton) & 1) ||
-		data.word(kMousebutton) == data.word(kOldbutton) ||
-		data.byte(kDestpos) >= 15)
+	if (!(_mouseButton & 1) ||
+		_mouseButton == _oldButton ||
+		_destPos >= 15)
 		return; // noinfo
 
 	delPointer();
 	delTextLine();
 	getUnderCentre();
-	showFrame(tempGraphics3(), 60, 72, 0, 0);
-	showFrame(tempGraphics3(), 60, 72 + 55, 4, 0);
-	if (data.byte(kForeignrelease))
-		showFrame(tempGraphics3(), 60, 72+55+21, 4, 0);
+	showFrame(_newplaceGraphics3, 60, 72, 0, 0);
+	showFrame(_newplaceGraphics3, 60, 72 + 55, 4, 0);
+	if (_foreignRelease)
+		showFrame(_newplaceGraphics3, 60, 72+55+21, 4, 0);
 
-	uint16 offset = kTextstart + getSegment(data.word(kTraveltext)).word(data.byte(kDestpos) * 2);
-	const uint8 *string = getSegment(data.word(kTraveltext)).ptr(offset, 0);
+	const uint8 *string = (const uint8 *)_travelText.getString(_destPos);
 	findNextColon(&string);
-	uint16 y = (data.byte(kForeignrelease)) ? 84 + 4 : 84;
+	uint16 y = (_foreignRelease) ? 84 + 4 : 84;
 	printDirect(&string, 63, &y, 191, 191 & 1);
 	workToScreenM();
 	hangOnP(500);
-	data.byte(kPointermode) = 0;
-	data.byte(kPointerframe) = 0;
+	_pointerMode = 0;
+	_pointerFrame = 0;
 	putUnderCentre();
 	workToScreenM();
 }
 
-void DreamBase::getUnderCentre() {
-	multiGet(mapStore(), 58, 72, 254, 110);
+void DreamWebEngine::getUnderCentre() {
+	multiGet(_mapStore, 58, 72, 254, 110);
 }
 
-void DreamBase::putUnderCentre() {
-	multiPut(mapStore(), 58, 72, 254, 110);
+void DreamWebEngine::putUnderCentre() {
+	multiPut(_mapStore, 58, 72, 254, 110);
 }
 
-// TODO: put Locationpic here
+void DreamWebEngine::locationPic() {
+	const int roomPics[] = { 5, 0, 3, 2, 4, 1, 10, 9, 8, 6, 11, 4, 7, 7, 0 };
+	byte picture = roomPics[_destPos];
 
-// TODO: put Getdestinfo here
+	if (picture >= 6)
+		showFrame(_newplaceGraphics2, 104, 138 + 14, picture - 6, 0);	// Second slot
+	else
+		showFrame(_newplaceGraphics,  104, 138 + 14, picture + 4, 0);
 
-void DreamBase::showArrows() {
-	showFrame(tempGraphics(), 116 - 12, 16, 0, 0);
-	showFrame(tempGraphics(), 226 + 12, 16, 1, 0);
-	showFrame(tempGraphics(), 280, 14, 2, 0);
+	if (_destPos == _realLocation)
+		showFrame(_newplaceGraphics, 104, 140 + 14, 3, 0);	// Currently in this location
+
+	const uint8 *string = (const uint8 *)_travelText.getString(_destPos);
+	printDirect(string, 50, 20, 241, 241 & 1);
 }
 
-void DreamGenContext::nextDest() {
-	if (data.byte(kCommandtype) != 218) {
-		data.byte(kCommandtype) = 218;
-		commandOnly(28);
-	}
+void DreamWebEngine::showArrows() {
+	showFrame(_newplaceGraphics, 116 - 12, 16, 0, 0);
+	showFrame(_newplaceGraphics, 226 + 12, 16, 1, 0);
+	showFrame(_newplaceGraphics, 280, 14, 2, 0);
+}
 
-	if (!(data.word(kMousebutton) & 1) || data.word(kOldbutton) == 1)
+void DreamWebEngine::nextDest() {
+	commandOnlyCond(28, 218);
+
+	if (!(_mouseButton & 1) || _oldButton == 1)
 		return;	// nodu
 
 	do {
-		data.byte(kDestpos)++;
-		if (data.byte(kDestpos) == 15)
-			data.byte(kDestpos) = 0;	// last destination
+		_destPos++;
+		if (_destPos == 15)
+			_destPos = 0;	// last destination
+	} while (!getLocation(_destPos));
 
-		getDestInfo();
-	} while (al == 0);
-
-	data.byte(kNewtextline) = 1;
+	_newTextLine = 1;
 	delTextLine();
 	delPointer();
 	showPanel();
@@ -178,28 +182,23 @@ void DreamGenContext::nextDest() {
 	underTextLine();
 	readMouse();
 	showPointer();
-	workToScreenCPP();
+	workToScreen();
 	delPointer();
 }
 
-void DreamGenContext::lastDest() {
-	if (data.byte(kCommandtype) != 219) {
-		data.byte(kCommandtype) = 219;
-		commandOnly(29);
-	}
+void DreamWebEngine::lastDest() {
+	commandOnlyCond(29, 219);
 
-	if (!(data.word(kMousebutton) & 1) || data.word(kOldbutton) == 1)
+	if (!(_mouseButton & 1) || _oldButton == 1)
 		return;	// nodd
 
 	do {
-		data.byte(kDestpos)--;
-		if (data.byte(kDestpos) == 0xFF)
-			data.byte(kDestpos) = 15;	// first destination
+		_destPos--;
+		if (_destPos == 0xFF)
+			_destPos = 15;	// first destination
+	} while (!getLocation(_destPos));
 
-		getDestInfo();
-	} while (al == 0);
-
-	data.byte(kNewtextline) = 1;
+	_newTextLine = 1;
 	delTextLine();
 	delPointer();
 	showPanel();
@@ -209,32 +208,32 @@ void DreamGenContext::lastDest() {
 	underTextLine();
 	readMouse();
 	showPointer();
-	workToScreenCPP();
+	workToScreen();
 	delPointer();
 }
 
-void DreamGenContext::destSelect() {
-	if (data.byte(kCommandtype) != 222) {
-		data.byte(kCommandtype) = 222;
-		commandOnly(30);
-	}
+void DreamWebEngine::destSelect() {
+	commandOnlyCond(30, 222);
 
-	if (!(data.word(kMousebutton) & 1) || data.word(kOldbutton) == 1)
+	if (!(_mouseButton & 1) || _oldButton == 1)
 		return;	// notrav
 
-	getDestInfo();
-	data.byte(kNewlocation) = data.byte(kDestpos);
+	_newLocation = _destPos;
 }
 
-uint8 DreamBase::getLocation(uint8 index) {
-	return data.byte(kRoomscango + index);
+uint8 DreamWebEngine::getLocation(uint8 index) {
+	return _roomsCanGo[index];
 }
 
-void DreamBase::setLocation(uint8 index) {
-	data.byte(kRoomscango + index) = 1;
+void DreamWebEngine::setLocation(uint8 index) {
+	_roomsCanGo[index] = 1;
 }
 
-void DreamBase::resetLocation(uint8 index) {
+void DreamWebEngine::clearLocation(uint8 index) {
+	_roomsCanGo[index] = 0;
+}
+
+void DreamWebEngine::resetLocation(uint8 index) {
 	if (index == 5) {
 		// delete hotel
 		purgeALocation(5);
@@ -256,19 +255,17 @@ void DreamBase::resetLocation(uint8 index) {
 		purgeALocation(29);
 	}
 
-	data.byte(kRoomscango + index) = 0;
+	clearLocation(index);
 }
 
-void DreamGenContext::readDestIcon() {
-	loadIntoTemp("DREAMWEB.G05");
-	loadIntoTemp2("DREAMWEB.G06");
-	loadIntoTemp3("DREAMWEB.G08");
+void DreamWebEngine::readDestIcon() {
+	loadGraphicsFile(_newplaceGraphics, "G05");
+	loadGraphicsFile(_newplaceGraphics2, "G06");
+	loadGraphicsFile(_newplaceGraphics3, "G08");
 }
 
-void DreamGenContext::readCityPic() {
-	loadIntoTemp("DREAMWEB.G04");
+void DreamWebEngine::readCityPic() {
+	loadGraphicsFile(_cityGraphics, "G04");
 }
 
-
-
-} // End of namespace DreamGen
+} // End of namespace DreamWeb

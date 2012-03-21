@@ -22,12 +22,12 @@
 
 #include "dreamweb/dreamweb.h"
 
-namespace DreamGen {
+namespace DreamWeb {
 
-void DreamGenContext::talk() {
-	data.byte(kTalkpos) = 0;
-	data.byte(kInmaparea) = 0;
-	data.byte(kCharacter) = data.byte(kCommand);
+void DreamWebEngine::talk() {
+	_talkPos = 0;
+	_inMapArea = 0;
+	_character = _command;
 	createPanel();
 	showPanel();
 	showMan();
@@ -35,15 +35,15 @@ void DreamGenContext::talk() {
 	underTextLine();
 	convIcons();
 	startTalk();
-	data.byte(kCommandtype) = 255;
+	_commandType = 255;
 	readMouse();
 	showPointer();
-	workToScreenCPP();
+	workToScreen();
 
-	RectWithCallback<DreamGenContext> talkList[] = {
-		{ 273,320,157,198,&DreamBase::getBack1 },
-		{ 240,290,2,44,&DreamGenContext::moreTalk },
-		{ 0,320,0,200,&DreamBase::blank },
+	RectWithCallback talkList[] = {
+		{ 273,320,157,198,&DreamWebEngine::getBack1 },
+		{ 240,290,2,44,&DreamWebEngine::moreTalk },
+		{ 0,320,0,200,&DreamWebEngine::blank },
 		{ 0xFFFF,0,0,0,0 }
 	};
 
@@ -55,72 +55,152 @@ void DreamGenContext::talk() {
 		vSync();
 		dumpPointer();
 		dumpTextLine();
-		data.byte(kGetback) = 0;
+		_getBack = 0;
 		checkCoords(talkList);
-		if (data.byte(kQuitrequested))
+		if (_quitRequested)
 			break;
-	} while (!data.byte(kGetback));
+	} while (!_getBack);
 
-	if (data.byte(kTalkpos) >= 4)
+	if (_talkPos >= 4)
 		_personData->b7 |= 128;
 
 	redrawMainScrn();
 	workToScreenM();
-	if (data.byte(kSpeechloaded) == 1) {
+	if (_speechLoaded) {
 		cancelCh1();
-		data.byte(kVolumedirection) = (byte)-1;
-		data.byte(kVolumeto) = 0;
+		_volumeDirection = -1;
+		_volumeTo = 0;
 	}
 }
 
-void DreamGenContext::convIcons() {
-	uint8 index = data.byte(kCharacter) & 127;
+void DreamWebEngine::convIcons() {
+	uint8 index = _character & 127;
 	uint16 frame = getPersFrame(index);
-	const Frame *base = findSource(frame);
-	showFrame(base, 234, 2, frame, 0);
+	const GraphicsFile *base = findSource(frame);
+	showFrame(*base, 234, 2, frame, 0);
 }
 
-uint16 DreamGenContext::getPersFrame(uint8 index) {
-	return getSegment(data.word(kPeople)).word(kPersonframes + index * 2);
+uint16 DreamWebEngine::getPersFrame(uint8 index) {
+	return READ_LE_UINT16(&_personFramesLE[index]);
 }
 
-// TODO: put Starttalk here
+void DreamWebEngine::startTalk() {
+	_talkMode = 0;
 
-// TODO: put Getpersontext here
+	const uint8 *str = getPersonText(_character & 0x7F, 0);
+	uint16 y;
 
-void DreamGenContext::moreTalk() {
-	if (data.byte(kTalkmode) != 0) {
+	_charShift = 91+91;
+	y = 64;
+	printDirect(&str, 66, &y, 241, true);
+
+	_charShift = 0;
+	y = 80;
+	printDirect(&str, 66, &y, 241, true);
+
+	if (hasSpeech()) {
+		_speechLoaded = false;
+		loadSpeech('R', _realLocation, 'C', 64*(_character & 0x7F));
+		if (_speechLoaded) {
+			_volumeDirection = 1;
+			_volumeTo = 6;
+			playChannel1(50 + 12);
+		}
+	}
+}
+
+const uint8 *DreamWebEngine::getPersonText(uint8 index, uint8 talkPos) {
+	return (const uint8 *)_personText.getString(index*64 + talkPos);
+}
+
+void DreamWebEngine::moreTalk() {
+	if (_talkMode != 0) {
 		redes();
 		return;
 	}
 
-	if (data.byte(kCommandtype) != 215) {
-		data.byte(kCommandtype) = 215;
-		commandOnly(49);
-	}
+	commandOnlyCond(49, 215);
 
-	if (data.word(kMousebutton) == data.word(kOldbutton))
+	if (_mouseButton == _oldButton)
 		return;	// nomore
 
-	if (!(data.word(kMousebutton) & 1))
+	if (!(_mouseButton & 1))
 		return;
 
-	data.byte(kTalkmode) = 2;
-	data.byte(kTalkpos) = 4;
+	_talkMode = 2;
+	_talkPos = 4;
 
-	if (data.byte(kCharacter) >= 100)
-		data.byte(kTalkpos) = 48; // second part
+	if (_character >= 100)
+		_talkPos = 48; // second part
 	doSomeTalk();
 }
 
-// TODO: put Dosometalk here
+void DreamWebEngine::doSomeTalk() {
+	// FIXME: This is for the CD version only
 
-void DreamGenContext::hangOnPQ() {
-	data.byte(kGetback) = 0;
+	while (true) {
+		const uint8 *str = getPersonText(_character & 0x7F, _talkPos);
 
-	RectWithCallback<DreamBase> quitList[] = {
-		{ 273,320,157,198,&DreamBase::getBack1 },
-		{ 0,320,0,200,&DreamBase::blank },
+		if (*str == 0) {
+			// endheartalk
+			_pointerMode = 0;
+			return;
+		}
+
+		createPanel();
+		showPanel();
+		showMan();
+		showExit();
+		convIcons();
+
+		printDirect(str, 164, 64, 144, false);
+
+		loadSpeech('R', _realLocation, 'C', (64 * (_character & 0x7F)) + _talkPos);
+		if (_speechLoaded)
+			playChannel1(62);
+
+		_pointerMode = 3;
+		workToScreenM();
+		if (hangOnPQ())
+			return;
+
+		_talkPos++;
+
+		str = getPersonText(_character & 0x7F, _talkPos);
+		if (*str == 0) {
+			// endheartalk
+			_pointerMode = 0;
+			return;
+		}
+
+		if (*str != ':' && *str != 32) {
+			createPanel();
+			showPanel();
+			showMan();
+			showExit();
+			convIcons();
+			printDirect(str, 48, 128, 144, false);
+
+			loadSpeech('R', _realLocation, 'C', (64 * (_character & 0x7F)) + _talkPos);
+			if (_speechLoaded)
+				playChannel1(62);
+
+			_pointerMode = 3;
+			workToScreenM();
+			if (hangOnPQ())
+				return;
+		}
+
+		_talkPos++;
+	}
+}
+
+bool DreamWebEngine::hangOnPQ() {
+	_getBack = 0;
+
+	RectWithCallback quitList[] = {
+		{ 273,320,157,198,&DreamWebEngine::getBack1 },
+		{ 0,320,0,200,&DreamWebEngine::blank },
 		{ 0xFFFF,0,0,0,0 }
 	};
 
@@ -136,39 +216,35 @@ void DreamGenContext::hangOnPQ() {
 		dumpTextLine();
 		checkCoords(quitList);
 
-		if (data.byte(kGetback) == 1 || data.byte(kQuitrequested)) {
+		if (_getBack == 1 || _quitRequested) {
 			// Quit conversation
 			delPointer();
-			data.byte(kPointermode) = 0;
+			_pointerMode = 0;
 			cancelCh1();
-			flags._c = true;
-			return;
+			return true;
 		}
 
-		if (data.byte(kSpeechloaded) == 1 && data.byte(kCh1playing) == 255) {
+		if (_speechLoaded && _channel1Playing == 255) {
 			speechFlag++;
 			if (speechFlag == 40)
 				break;
 		}
-	} while (!data.word(kMousebutton) || data.word(kOldbutton));
+	} while (!_mouseButton || _oldButton);
 
 	delPointer();
-	data.byte(kPointermode) = 0;
-	flags._c = false;
+	_pointerMode = 0;
+	return false;
 }
 
-void DreamGenContext::redes() {
-	if (data.byte(kCh1playing) != 255 || data.byte(kTalkmode) != 2) {
+void DreamWebEngine::redes() {
+	if (_channel1Playing != 255 || _talkMode != 2) {
 		blank();
 		return;
 	}
 
-	if (data.byte(kCommandtype) != 217) {
-		data.byte(kCommandtype) = 217;
-		commandOnly(50);
-	}
+	commandOnlyCond(50, 217);
 
-	if (!(data.word(kMousebutton) & 1))
+	if (!(_mouseButton & 1))
 		return;
 
 	delPointer();
@@ -180,8 +256,8 @@ void DreamGenContext::redes() {
 	startTalk();
 	readMouse();
 	showPointer();
-	workToScreenCPP();
+	workToScreen();
 	delPointer();
 }
 
-} // End of namespace DreamGen
+} // End of namespace DreamWeb

@@ -22,13 +22,12 @@
 
 #include "dreamweb/dreamweb.h"
 
-namespace DreamGen {
+namespace DreamWeb {
 
-void DreamBase::doBlocks() {
-	uint16 dstOffset = data.word(kMapady) * 320 + data.word(kMapadx);
-	uint16 mapOffset = kMap + data.byte(kMapy) * kMapwidth + data.byte(kMapx);
-	const uint8 *mapData = getSegment(data.word(kMapdata)).ptr(mapOffset, 0);
-	const uint8 *blocks = getSegment(data.word(kBackdrop)).ptr(kBlocks, 0);
+void DreamWebEngine::doBlocks() {
+	uint16 dstOffset = _mapAdY * 320 + _mapAdX;
+	uint16 mapOffset = _mapY * kMapWidth + _mapX;
+	const uint8 *mapData = _mapData + mapOffset;
 	uint8 *dstBuffer = workspace() + dstOffset;
 
 	for (size_t i = 0; i < 10; ++i) {
@@ -36,7 +35,7 @@ void DreamBase::doBlocks() {
 			uint16 blockType = mapData[j];
 			if (blockType != 0) {
 				uint8 *dst = dstBuffer + i * 320 * 16 + j * 16;
-				const uint8 *block = blocks + blockType * 256;
+				const uint8 *block = _backdropBlocks + blockType * 256;
 				for (size_t k = 0; k < 4; ++k) {
 					memcpy(dst, block, 16);
 					block += 16;
@@ -58,38 +57,38 @@ void DreamBase::doBlocks() {
 				memset(dst, 0xdf, 16);
 			}
 		}
-		mapData += kMapwidth;
+		mapData += kMapWidth;
 	}
 }
 
-uint8 DreamBase::getXAd(const uint8 *setData, uint8 *result) {
+uint8 DreamWebEngine::getXAd(const uint8 *setData, uint8 *result) {
 	uint8 v0 = setData[0];
 	uint8 v1 = setData[1];
 	uint8 v2 = setData[2];
 	if (v0 != 0)
 		return 0;
-	if (v1 < data.byte(kMapx))
+	if (v1 < _mapX)
 		return 0;
-	v1 -= data.byte(kMapx);
+	v1 -= _mapX;
 	if (v1 >= 11)
 		return 0;
 	*result = (v1 << 4) | v2;
 	return 1;
 }
 
-uint8 DreamBase::getYAd(const uint8 *setData, uint8 *result) {
+uint8 DreamWebEngine::getYAd(const uint8 *setData, uint8 *result) {
 	uint8 v0 = setData[3];
 	uint8 v1 = setData[4];
-	if (v0 < data.byte(kMapy))
+	if (v0 < _mapY)
 		return 0;
-	v0 -= data.byte(kMapy);
+	v0 -= _mapY;
 	if (v0 >= 10)
 		return 0;
 	*result = (v0 << 4) | v1;
 	return 1;
 }
 
-uint8 DreamBase::getMapAd(const uint8 *setData, uint16 *x, uint16 *y) {
+uint8 DreamWebEngine::getMapAd(const uint8 *setData, uint16 *x, uint16 *y) {
 	uint8 xad, yad;
 	if (getXAd(setData, &xad) == 0)
 		return 0;
@@ -100,46 +99,38 @@ uint8 DreamBase::getMapAd(const uint8 *setData, uint16 *x, uint16 *y) {
 	return 1;
 }
 
-void DreamBase::calcFrFrame(const Frame *frameBase, uint16 frameNum, uint8 *width, uint8 *height, uint16 x, uint16 y, ObjPos *objPos) {
-	const Frame *frame = frameBase + frameNum;
-	*width = frame->width;
-	*height = frame->height;
+void DreamWebEngine::calcFrFrame(const Frame &frame, uint8 *width, uint8 *height, uint16 x, uint16 y, ObjPos *objPos) {
+	*width = frame.width;
+	*height = frame.height;
 
-	objPos->xMin = (x + frame->x) & 0xff;
-	objPos->yMin = (y + frame->y) & 0xff;
-	objPos->xMax = objPos->xMin + frame->width;
-	objPos->yMax = objPos->yMin + frame->height;
+	objPos->xMin = (x + frame.x) & 0xff;
+	objPos->yMin = (y + frame.y) & 0xff;
+	objPos->xMax = objPos->xMin + frame.width;
+	objPos->yMax = objPos->yMin + frame.height;
 }
 
-void DreamBase::makeBackOb(SetObject *objData, uint16 x, uint16 y) {
-	if (data.byte(kNewobs) == 0)
+void DreamWebEngine::makeBackOb(SetObject *objData, uint16 x, uint16 y) {
+	if (_vars._newObs == 0)
 		return;
 	uint8 priority = objData->priority;
 	uint8 type = objData->type;
-	Sprite *sprite = makeSprite(x, y, addr_backobject, data.word(kSetframes), 0);
+	Sprite *sprite = makeSprite(x, y, false, &_setFrames);
 
-	uint16 objDataOffset = (uint8 *)objData - getSegment(data.word(kSetdat)).ptr(0, 0);
-	assert(objDataOffset % sizeof(SetObject) == 0);
-	assert(objDataOffset < 128 * sizeof(SetObject));
-	sprite->_objData = objDataOffset;
+	sprite->_objData = objData;
 	if (priority == 255)
 		priority = 0;
 	sprite->priority = priority;
 	sprite->type = type;
-	sprite->b16 = 0;
 	sprite->delay = 0;
 	sprite->animFrame = 0;
 }
 
-void DreamBase::showAllObs() {
-	const unsigned int count = 128;
-
+void DreamWebEngine::showAllObs() {
 	_setList.clear();
 
-	const Frame *frameBase = (const Frame *)getSegment(data.word(kSetframes)).ptr(0, 0);
-	SetObject *setEntries = (SetObject *)getSegment(data.word(kSetdat)).ptr(0, count * sizeof(SetObject));
-	for (size_t i = 0; i < count; ++i) {
-		SetObject *setEntry = setEntries + i;
+	const GraphicsFile &frameBase = _setFrames;
+	for (size_t i = 0; i < 128; ++i) {
+		SetObject *setEntry = &_setDat[i];
 		uint16 x, y;
 		if (getMapAd(setEntry->mapad, &x, &y) == 0)
 			continue;
@@ -148,11 +139,11 @@ void DreamBase::showAllObs() {
 			continue;
 		uint8 width, height;
 		ObjPos objPos;
-		calcFrFrame(frameBase, currentFrame, &width, &height, x, y, &objPos);
+		calcFrFrame(frameBase._frames[currentFrame], &width, &height, x, y, &objPos);
 		setEntry->index = setEntry->frames[0];
 		if ((setEntry->type == 0) && (setEntry->priority != 5) && (setEntry->priority != 6)) {
-			x += data.word(kMapadx);
-			y += data.word(kMapady);
+			x += _mapAdX;
+			y += _mapAdY;
 			showFrame(frameBase, x, y, currentFrame, 0);
 		} else
 			makeBackOb(setEntry, x, y);
@@ -162,64 +153,64 @@ void DreamBase::showAllObs() {
 	}
 }
 
-bool DreamBase::addAlong(const uint8 *mapFlags) {
+static bool addAlong(const MapFlag *mapFlags) {
 	for (size_t i = 0; i < 11; ++i) {
-		if (mapFlags[3 * i] != 0)
+		if (mapFlags[i]._flag != 0)
 			return true;
 	}
 	return false;
 }
 
-bool DreamBase::addLength(const uint8 *mapFlags) {
+static bool addLength(const MapFlag *mapFlags) {
 	for (size_t i = 0; i < 10; ++i) {
-		if (mapFlags[3 * 11 * i] != 0)
+		if (mapFlags[11 * i]._flag != 0)
 			return true;
 	}
 	return false;
 }
 
-void DreamBase::getDimension(uint8 *mapXstart, uint8 *mapYstart, uint8 *mapXsize, uint8 *mapYsize) {
+void DreamWebEngine::getDimension(uint8 *mapXstart, uint8 *mapYstart, uint8 *mapXsize, uint8 *mapYsize) {
 	uint8 yStart = 0;
-	while (! addAlong(_mapFlags + 3 * 11 * yStart))
+	while (! addAlong(_mapFlags + 11 * yStart))
 		++yStart;
 
 	uint8 xStart = 0;
-	while (! addLength(_mapFlags + 3 * xStart))
+	while (! addLength(_mapFlags + xStart))
 		++xStart;
 
 	uint8 yEnd = 10;
-	while (! addAlong(_mapFlags + 3 * 11 * (yEnd - 1)))
+	while (! addAlong(_mapFlags + 11 * (yEnd - 1)))
 		--yEnd;
 
 	uint8 xEnd = 11;
-	while (! addLength(_mapFlags + 3 * (xEnd - 1)))
+	while (! addLength(_mapFlags + (xEnd - 1)))
 		--xEnd;
 
 	*mapXstart = xStart;
 	*mapYstart = yStart;
 	*mapXsize = xEnd - xStart;
 	*mapYsize = yEnd - yStart;
-	data.word(kMapxstart) = xStart << 4;
-	data.word(kMapystart) = yStart << 4;
-	data.byte(kMapxsize) = *mapXsize << 4;
-	data.byte(kMapysize) = *mapYsize << 4;
+	_mapXStart = xStart << 4;
+	_mapYStart = yStart << 4;
+	_mapXSize = *mapXsize << 4;
+	_mapYSize = *mapYsize << 4;
 }
 
-void DreamBase::calcMapAd() {
+void DreamWebEngine::calcMapAd() {
 	uint8 mapXstart, mapYstart;
 	uint8 mapXsize, mapYsize;
 	getDimension(&mapXstart, &mapYstart, &mapXsize, &mapYsize);
-	data.word(kMapadx) = data.word(kMapoffsetx) - 8 * (mapXsize + 2 * mapXstart - 11);
-	data.word(kMapady) = data.word(kMapoffsety) - 8 * (mapYsize + 2 * mapYstart - 10);
+	_mapAdX = _mapOffsetX - 8 * (mapXsize + 2 * mapXstart - 11);
+	_mapAdY = _mapOffsetY - 8 * (mapYsize + 2 * mapYstart - 10);
 }
 
-void DreamBase::showAllFree() {
+void DreamWebEngine::showAllFree() {
 	const unsigned int count = 80;
 
 	_freeList.clear();
 
-	const DynObject *freeObjects = (const DynObject *)getSegment(data.word(kFreedat)).ptr(0, 0);
-	const Frame *frameBase = (const Frame *)getSegment(data.word(kFreeframes)).ptr(0, 0);
+	const DynObject *freeObjects = _freeDat;
+	const GraphicsFile &frameBase = _freeFrames;
 	for (size_t i = 0; i < count; ++i) {
 		uint16 x, y;
 		uint8 mapAd = getMapAd(freeObjects[i].mapad, &x, &y);
@@ -227,10 +218,10 @@ void DreamBase::showAllFree() {
 			uint8 width, height;
 			ObjPos objPos;
 			uint16 currentFrame = 3 * i;
-			calcFrFrame(frameBase, currentFrame, &width, &height, x, y, &objPos);
+			calcFrFrame(frameBase._frames[currentFrame], &width, &height, x, y, &objPos);
 			if ((width != 0) || (height != 0)) {
-				x += data.word(kMapadx);
-				y += data.word(kMapady);
+				x += _mapAdX;
+				y += _mapAdY;
 				assert(currentFrame < 256);
 				showFrame(frameBase, x, y, currentFrame, 0);
 				objPos.index = i;
@@ -240,34 +231,34 @@ void DreamBase::showAllFree() {
 	}
 }
 
-void DreamBase::drawFlags() {
-	uint8 *mapFlags = _mapFlags;
-	const uint8 *mapData = getSegment(data.word(kMapdata)).ptr(kMap + data.byte(kMapy) * kMapwidth + data.byte(kMapx), 0);
-	const uint8 *backdropFlags = getSegment(data.word(kBackdrop)).ptr(kFlags, 0);
+void DreamWebEngine::drawFlags() {
+	MapFlag *mapFlag = _mapFlags;
+	uint16 mapOffset = _mapY * kMapWidth + _mapX;
+	const uint8 *mapData = _mapData + mapOffset;
 
 	for (size_t i = 0; i < 10; ++i) {
 		for (size_t j = 0; j < 11; ++j) {
-			uint8 tile = mapData[i * kMapwidth + j];
-			mapFlags[0] = backdropFlags[2 * tile + 0];
-			mapFlags[1] = backdropFlags[2 * tile + 1];
-			mapFlags[2] = tile;
-			mapFlags += 3;
+			uint8 tile = mapData[i * kMapWidth + j];
+			mapFlag->_flag = _backdropFlags[tile]._flag;
+			mapFlag->_flagEx = _backdropFlags[tile]._flagEx;
+			mapFlag->_type = tile;
+			mapFlag++;
 		}
 	}
 }
 
-void DreamBase::showAllEx() {
+void DreamWebEngine::showAllEx() {
 	const unsigned int count = 100;
 
 	_exList.clear();
 
-	DynObject *objects = (DynObject *)getSegment(data.word(kExtras)).ptr(kExdata, sizeof(DynObject));
-	const Frame *frameBase = (const Frame *)getSegment(data.word(kExtras)).ptr(0, 0);
+	DynObject *objects = _exData;
+	const GraphicsFile &frameBase = _exFrames;
 	for (size_t i = 0; i < count; ++i) {
 		DynObject *object = objects + i;
 		if (object->mapad[0] == 0xff)
 			continue;
-		if (object->currentLocation != data.byte(kReallocation))
+		if (object->currentLocation != _realLocation)
 			continue;
 		uint16 x, y;
 		if (getMapAd(object->mapad, &x, &y) == 0)
@@ -275,14 +266,14 @@ void DreamBase::showAllEx() {
 		uint8 width, height;
 		ObjPos objPos;
 		uint16 currentFrame = 3 * i;
-		calcFrFrame(frameBase, currentFrame, &width, &height, x, y, &objPos);
+		calcFrFrame(frameBase._frames[currentFrame], &width, &height, x, y, &objPos);
 		if ((width != 0) || (height != 0)) {
 			assert(currentFrame < 256);
-			showFrame(frameBase, x + data.word(kMapadx), y + data.word(kMapady), currentFrame, 0);
+			showFrame(frameBase, x + _mapAdX, y + _mapAdY, currentFrame, 0);
 			objPos.index = i;
 			_exList.push_back(objPos);
 		}
 	}
 }
 
-} // End of namespace DreamGen
+} // End of namespace DreamWeb

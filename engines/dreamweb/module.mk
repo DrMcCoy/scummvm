@@ -5,7 +5,6 @@ MODULE_OBJS := \
 	console.o \
 	detection.o \
 	dreamweb.o \
-	dreamgen.o \
 	keypad.o \
 	monitor.o \
 	newplace.o \
@@ -13,6 +12,7 @@ MODULE_OBJS := \
 	pathfind.o \
 	people.o \
 	print.o \
+	rain.o \
 	saveload.o \
 	sound.o \
 	sprite.o \

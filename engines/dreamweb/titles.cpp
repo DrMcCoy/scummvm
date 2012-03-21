@@ -23,174 +23,192 @@
 #include "dreamweb/dreamweb.h"
 #include "engines/util.h"
 
-namespace DreamGen {
+namespace DreamWeb {
 
-void DreamGenContext::endGame() {
-	loadTempText("DREAMWEB.T83");
+void DreamWebEngine::endGame() {
+	loadTempText("T83");
 	monkSpeaking();
+	if (_quitRequested)
+		return;
 	gettingShot();
 	getRidOfTempText();
-	data.byte(kVolumeto) = 7;
-	data.byte(kVolumedirection) = 1;
+	_volumeTo = 7;
+	_volumeDirection = 1;
 	hangOn(200);
 }
 
-void DreamGenContext::monkSpeaking() {
-	// FIXME: This is the CD version only.
-
-	data.byte(kRoomssample) = 35;
+void DreamWebEngine::monkSpeaking() {
+	_roomsSample = 35;
 	loadRoomsSample();
-	loadIntoTemp("DREAMWEB.G15");
+	GraphicsFile graphics;
+	loadGraphicsFile(graphics, "G15");
 	clearWork();
-	showFrame(tempGraphics(), 160, 72, 0, 128);	// show monk
+	showFrame(graphics, 160, 72, 0, 128);	// show monk
 	workToScreen();
-	data.byte(kVolume) = 7;
-	data.byte(kVolumedirection) = (byte)-1;
-	data.byte(kVolumeto) = 5;
+	_volume = 7;
+	_volumeDirection = -1;
+	_volumeTo = hasSpeech() ? 5 : 0;
 	playChannel0(12, 255);
 	fadeScreenUps();
 	hangOn(300);
 
-	for (int i = 40; i <= 48; i++) {
-		loadSpeech('T', 83, 'T', i);
+	// TODO: Subtitles+speech mode
+	if (hasSpeech()) {
+		for (int i = 40; i < 48; i++) {
+			loadSpeech('T', 83, 'T', i);
 
-		playChannel1(50 + 12);
+			playChannel1(50 + 12);
 
-		do {
-			engine->waitForVSync();
-		} while (data.byte(kCh1playing) != 255);
+			do {
+				waitForVSync();
+				if (_quitRequested)
+					return;
+			} while (_channel1Playing != 255);
+		}
+	} else {
+		for (int i = 40; i <= 44; i++) {
+			uint8 printResult = 0;
+			const uint8 *string = getTextInFile1(i);
+
+			do {
+				uint16 y = 140;
+				printResult = printDirect(&string, 36, &y, 239, 239 & 1);
+				workToScreen();
+				clearWork();
+				showFrame(graphics, 160, 72, 0, 128);	// show monk
+				hangOnP(240);
+				if (_quitRequested)
+					return;
+			} while (printResult != 0);
+		}
 	}
 
-	data.byte(kVolumedirection) = 1;
-	data.byte(kVolumeto) = 7;
+	_volumeDirection = 1;
+	_volumeTo = 7;
 	fadeScreenDowns();
 	hangOn(300);
-	getRidOfTemp();
+	graphics.clear();
 }
 
-void DreamGenContext::gettingShot() {
-	data.byte(kNewlocation) = 55;
+void DreamWebEngine::gettingShot() {
+	_newLocation = 55;
 	clearPalette();
 	loadIntroRoom();
 	fadeScreenUps();
-	data.byte(kVolumeto) = 0;
-	data.byte(kVolumedirection) = (byte)-1;
+	_volumeTo = 0;
+	_volumeDirection = -1;
 	runEndSeq();
 	clearBeforeLoad();
 }
 
-void DreamGenContext::bibleQuote() {
+void DreamWebEngine::bibleQuote() {
 	initGraphics(640, 480, true);
 
-	showPCX("DREAMWEB.I00");
+	showPCX("I00");
 	fadeScreenUps();
 
 	hangOne(80);
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) = 0;
+	if (_lastHardKey == 1) {
+		_lastHardKey = 0;
 		return; // "biblequotearly"
 	}
 
 	hangOne(560);
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) = 0;
+	if (_lastHardKey == 1) {
+		_lastHardKey = 0;
 		return; // "biblequotearly"
 	}
 
 	fadeScreenDowns();
 
 	hangOne(200);
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) = 0;
+	if (_lastHardKey == 1) {
+		_lastHardKey = 0;
 		return; // "biblequotearly"
 	}
 
 	cancelCh0();
 
-	data.byte(kLasthardkey) = 0;
+	_lastHardKey = 0;
 }
 
-void DreamGenContext::hangOne(uint16 delay) {
+void DreamWebEngine::hangOne(uint16 delay) {
 	do {
 		vSync();
-		if (data.byte(kLasthardkey) == 1)
+		if (_lastHardKey == 1)
 			return; // "hangonearly"
 	} while	(--delay);
 }
 
-void DreamGenContext::hangOne() {
-	hangOne(cx);
-}
-
-void DreamGenContext::intro() {
-	loadTempText("DREAMWEB.T82");
+void DreamWebEngine::intro() {
+	loadTempText("T82");
 	loadPalFromIFF();
 	setMode();
-	data.byte(kNewlocation) = 50;
+	_newLocation = 50;
 	clearPalette();
 	loadIntroRoom();
-	data.byte(kVolume) = 7;
-	data.byte(kVolumedirection) = (byte)-1;
-	data.byte(kVolumeto) = 4;
+	_volume = 7;
+	_volumeDirection = -1;
+	_volumeTo = hasSpeech() ? 4 : 0;
 	playChannel0(12, 255);
 	fadeScreenUps();
 	runIntroSeq();
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "introearly"
 	}
 
 	clearBeforeLoad();
-	data.byte(kNewlocation) = 52;
+	_newLocation = 52;
 	loadIntroRoom();
 	runIntroSeq();
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "introearly"
 	}
 
 	clearBeforeLoad();
-	data.byte(kNewlocation) = 53;
+	_newLocation = 53;
 	loadIntroRoom();
 	runIntroSeq();
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "introearly"
 	}
 
 	clearBeforeLoad();
 	allPalette();
-	data.byte(kNewlocation) = 54;
+	_newLocation = 54;
 	loadIntroRoom();
 	runIntroSeq();
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "introearly"
 	}
 
 	getRidOfTempText();
 	clearBeforeLoad();
 
-	data.byte(kLasthardkey) =  0;
+	_lastHardKey =  0;
 }
 
-void DreamGenContext::runIntroSeq() {
-	data.byte(kGetback) = 0;
+void DreamWebEngine::runIntroSeq() {
+	_getBack = 0;
 
 	do {
 		vSync();
 
-		if (data.byte(kLasthardkey) == 1)
+		if (_lastHardKey == 1)
 			break;
 
 		spriteUpdate();
 		vSync();
 
-		if (data.byte(kLasthardkey) == 1)
+		if (_lastHardKey == 1)
 			break;
 
 		delEverything();
@@ -200,20 +218,20 @@ void DreamGenContext::runIntroSeq() {
 		useTimedText();
 		vSync();
 
-		if (data.byte(kLasthardkey) == 1)
+		if (_lastHardKey == 1)
 			break;
 
 		dumpMap();
 		dumpTimedText();
 		vSync();
 
-		if (data.byte(kLasthardkey) == 1)
+		if (_lastHardKey == 1)
 			break;
 
-	} while (data.byte(kGetback) != 1);
+	} while (_getBack != 1);
 
 
-	if (data.byte(kLasthardkey) == 1) {
+	if (_lastHardKey == 1) {
 		getRidOfTempText();
 		clearBeforeLoad();
 	}
@@ -224,9 +242,9 @@ void DreamGenContext::runIntroSeq() {
 	//clearBeforeLoad();
 }
 
-void DreamGenContext::runEndSeq() {
+void DreamWebEngine::runEndSeq() {
 	atmospheres();
-	data.byte(kGetback) = 0;
+	_getBack = 0;
 
 	do {
 		vSync();
@@ -241,186 +259,186 @@ void DreamGenContext::runEndSeq() {
 		dumpMap();
 		dumpTimedText();
 		vSync();
-	} while (data.byte(kGetback) != 1);
+	} while (_getBack != 1 && !_quitRequested);
 }
 
-void DreamGenContext::loadIntroRoom() {
-	data.byte(kIntrocount) = 0;
-	data.byte(kLocation) = 255;
+void DreamWebEngine::loadIntroRoom() {
+	_introCount = 0;
+	_vars._location = 255;
 	loadRoom();
-	data.word(kMapoffsetx) = 72;
-	data.word(kMapoffsety) = 16;
+	_mapOffsetX = 72;
+	_mapOffsetY = 16;
 	clearSprites();
-	data.byte(kThroughdoor) = 0;
-	data.byte(kCurrentkey) = '0';
-	data.byte(kMainmode) = 0;
+	_vars._throughDoor = 0;
+	_currentKey = '0';
+	_mainMode = 0;
 	clearWork();
-	data.byte(kNewobs) = 1;
+	_vars._newObs = 1;
 	drawFloor();
 	reelsOnScreen();
 	spriteUpdate();
 	printSprites();
-	workToScreenCPP();
+	workToScreen();
 }
 
-void DreamGenContext::set16ColPalette() {
+void DreamWebEngine::set16ColPalette() {
 }
 
-void DreamGenContext::realCredits() {
-	data.byte(kRoomssample) = 33;
+void DreamWebEngine::realCredits() {
+	_roomsSample = 33;
 	loadRoomsSample();
-	data.byte(kVolume) = 0;
+	_volume = 0;
 
 	initGraphics(640, 480, true);
 	hangOn(35);
 
-	showPCX("DREAMWEB.I01");
+	showPCX("I01");
 	playChannel0(12, 0);
 
 	hangOne(2);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	allPalette();
 	hangOne(80);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	fadeScreenDowns();
 	hangOne(256);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
-	showPCX("DREAMWEB.I02");
+	showPCX("I02");
 	playChannel0(12, 0);
 	hangOne(2);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	allPalette();
 	hangOne(80);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	fadeScreenDowns();
 	hangOne(256);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
-	showPCX("DREAMWEB.I03");
+	showPCX("I03");
 	playChannel0(12, 0);
 	hangOne(2);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	allPalette();
 	hangOne(80);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	fadeScreenDowns();
 	hangOne(256);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
-	showPCX("DREAMWEB.I04");
+	showPCX("I04");
 	playChannel0(12, 0);
 	hangOne(2);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	allPalette();
 	hangOne(80);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	fadeScreenDowns();
 	hangOne(256);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
-	showPCX("DREAMWEB.I05");
+	showPCX("I05");
 	playChannel0(12, 0);
 	hangOne(2);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	allPalette();
 	hangOne(80);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	fadeScreenDowns();
 	hangOne(256);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
-	showPCX("DREAMWEB.I06");
+	showPCX("I06");
 	fadeScreenUps();
 	hangOne(60);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	playChannel0(13, 0);
 	hangOne(350);
 
-	if (data.byte(kLasthardkey) == 1) {
-		data.byte(kLasthardkey) =  0;
+	if (_lastHardKey == 1) {
+		_lastHardKey =  0;
 		return; // "realcreditsearly"
 	}
 
 	fadeScreenDowns();
 	hangOne(256);
 
-	data.byte(kLasthardkey) =  0;
+	_lastHardKey =  0;
 }
 
-} // End of namespace DreamGen
+} // End of namespace DreamWeb

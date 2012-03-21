@@ -49,8 +49,8 @@ bool EventsClass::pollEvent() {
 		_priorFrameTime = milli;
 		++_frameNumber;
 
-		// Update the physical screen with any updates to the screen surface
-		GLOBALS._screenSurface.copyToScreen();
+		// Update screen
+		GLOBALS._screenSurface.updateScreen();
 	}
 
 	if (!g_system->getEventManager()->pollEvent(_event)) return false;
@@ -395,7 +395,7 @@ void EventsClass::delay(int numFrames) {
 		_priorFrameTime = g_system->getMillis();
 	}
 
-	GLOBALS._screenSurface.copyToScreen();
+	GLOBALS._screenSurface.updateScreen();
 	_prevDelayFrame = _frameNumber;
 	_priorFrameTime = g_system->getMillis();
 }

@@ -616,6 +616,7 @@ begin_credits("Credits");
 
 			begin_section("SAGA");
 				add_person("Torbj&ouml;rn Andersson", "eriktorbjorn", "");
+				add_person("Daniel Balsom", "DanielFox", "Original engine reimplementation author (retired)");
 				add_person("Filippos Karapetis", "[md5]", "");
 				add_person("Andrew Kurushin", "ajax16384", "");
 				add_person("Eugene Sandulenko", "sev", "");
@@ -914,6 +915,9 @@ begin_credits("Credits");
 				begin_persons();
 					add_person("Thierry Crozat", "criezy", "Translation Lead");
 				end_persons();
+				begin_section("Basque");
+					add_person("Mikel Iturbe Urretxa", "", "");
+				end_section();
 				begin_section("Catalan");
 					add_person("Jordi Vilalta Prat", "jvprat", "");
 				end_section();
@@ -1000,6 +1004,7 @@ begin_credits("Credits");
 				add_person("Edward Rudd", "urkle", "Fixes for playing MP3 versions of MI1/Loom audio");
 				add_person("Daniel Schepler", "dschepler", "Final MI1 CD music support, initial Ogg Vorbis support");
 				add_person("Andr&eacute; Souza", "luke_br", "SDL-based OpenGL renderer");
+				add_person("Tom Frost", "TomFrost", "WebOS port contributions");
 			end_persons();
 		end_section();
 
@@ -1058,6 +1063,7 @@ begin_credits("Credits");
 
 	begin_section("Special thanks to");
 		begin_persons();
+			add_person("Daniel Balsom", "DanielFox", "For the original Reinherit (SAGA) code");
 			add_person("Sander Buskens", "", "For his work on the initial reversing of Monkey2");
 			add_person("", "Canadacow", "For the original MT-32 emulator");
 			add_person("Kevin Carnes", "", "For Scumm16, the basis of ScummVM's older gfx codecs");

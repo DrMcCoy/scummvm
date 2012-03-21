@@ -28,6 +28,7 @@
 #include "common/util.h"
 #include "common/file.h"
 #include "common/rect.h"
+#include "common/rendermode.h"
 #include "common/stack.h"
 #include "common/system.h"
 
@@ -631,7 +632,7 @@ struct AgiGame {
 	AgiLogic *_curLogic;
 
 	// words
-	Common::Array<AgiWord*> words[26];
+	Common::Array<AgiWord *> words[26];
 
 	// view table
 	VtEntry viewTable[MAX_VIEWTABLE];

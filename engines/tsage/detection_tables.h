@@ -140,7 +140,23 @@ static const tSageGameDescription gameDescriptions[] = {
 		GType_BlueForce,
 		GF_CD | GF_ALT_REGIONS
 	},
-
+#if 0
+	// Blue Force Spanish doesn't yet work
+	// Blue Force Spanish CD
+	{
+		{
+			"blueforce",
+			"CD",
+			AD_ENTRY1s("blue.rlb", "5b2b35c51b62e82d82b0791540bfae2d", 10082565),
+			Common::ES_ESP,
+			Common::kPlatformPC,
+			ADGF_CD | ADGF_TESTING,
+			GUIO2(GUIO_NOSPEECH, GUIO_NOSFX)
+		},
+		GType_BlueForce,
+		GF_CD | GF_ALT_REGIONS
+	},
+#endif
 	// Return to Ringworld
 	{
 		{

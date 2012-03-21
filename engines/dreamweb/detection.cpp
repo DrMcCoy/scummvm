@@ -25,6 +25,8 @@
 #include "common/algorithm.h"
 #include "common/system.h"
 
+#include "engines/advancedDetector.h"
+
 #include "graphics/thumbnail.h"
 
 #include "dreamweb/dreamweb.h"
@@ -133,8 +135,8 @@ SaveStateDescriptor DreamWebMetaEngine::querySaveMetaInfos(const char *target, i
 	Common::InSaveFile *in = g_system->getSavefileManager()->openForLoading(filename.c_str());
 
 	if (in) {
-		DreamGen::FileHeader header;
-		in->read((uint8 *)&header, sizeof(DreamGen::FileHeader));
+		DreamWeb::FileHeader header;
+		in->read((uint8 *)&header, sizeof(DreamWeb::FileHeader));
 
 		Common::String saveName;
 		byte descSize = header.len(0);
@@ -213,6 +215,14 @@ bool DreamWebEngine::canLoadGameStateCurrently() {
 
 bool DreamWebEngine::canSaveGameStateCurrently() {
 	return false;
+}
+
+Common::Language DreamWebEngine::getLanguage() const {
+	return _gameDescription->desc.language;
+}
+
+bool DreamWebEngine::isCD() {
+	return _gameDescription->desc.flags & ADGF_CD;
 }
 
 } // End of namespace DreamWeb
