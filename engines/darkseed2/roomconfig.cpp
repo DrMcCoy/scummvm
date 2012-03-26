@@ -595,11 +595,11 @@ bool RoomConfigSprite::parsePackedIntLine(const Common::String &args, Common::Ar
 		if (*str == ' ') {
 			*squash++ = ' ';
 			while (*str == ' ')
-				*str++;
+				str++;
 		} else if (*str == '(') {
 			*squash++ = *str++;
 			while (*str == ' ')
-				*str++;
+				str++;
 		} else
 			*squash++ = *str++;
 	}
