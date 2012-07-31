@@ -62,7 +62,7 @@ public:
 	uint16 getWidth() const { return _width; }
 	uint16 getHeight() const { return _height; }
 	uint32 getFrameCount() const { return _frameCount; }
-	uint32 getElapsedTime() const;
+	uint32 getTime() const;
 	bool isVideoLoaded() const { return _stream != 0; }
 	const ::Graphics::Surface *decodeNextFrame();
 	::Graphics::PixelFormat getPixelFormat() const;

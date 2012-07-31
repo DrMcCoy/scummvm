@@ -241,7 +241,7 @@ uint32 SegaFILMDecoder::getTimeToNextFrame() const {
 
 	// Convert from the Sega FILM base to 1000
 	uint32 nextFrameStartTime = _nextFrameStartTime * 1000 / _baseFreq;
-	uint32 elapsedTime = getElapsedTime();
+	uint32 elapsedTime = getTime();
 
 	if (nextFrameStartTime <= elapsedTime)
 		return 0;
@@ -249,11 +249,11 @@ uint32 SegaFILMDecoder::getTimeToNextFrame() const {
 	return nextFrameStartTime - elapsedTime;
 }
 
-uint32 SegaFILMDecoder::getElapsedTime() const {
+uint32 SegaFILMDecoder::getTime() const {
 	if (_audioStream)
 		return _mixer->getSoundElapsedTime(_audioStreamHandle);
 
-	return Video::VideoDecoder::getElapsedTime();
+	return Video::VideoDecoder::getTime();
 }
 
 void SegaFILMDecoder::close() {

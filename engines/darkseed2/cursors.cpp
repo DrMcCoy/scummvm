@@ -201,7 +201,7 @@ bool CursorsWindows::load() {
 	return true;
 }
 
-bool CursorsWindows::loadFromResource(Cursor &cursor, const ::Graphics::WinCursor &resource) {
+bool CursorsWindows::loadFromResource(Cursor &cursor, const ::Graphics::Cursor &resource) {
 	// Copy properties
 	cursor.width    = resource.getWidth();
 	cursor.height   = resource.getHeight();
