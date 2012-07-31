@@ -172,9 +172,9 @@ public:
 		_guioptions = GUIO_NOLAUNCHLOAD;
 	}
 
-        virtual const ADGameDescription *fallbackDetect(const FileMap &allFiles, const Common::FSList &fslist) const {
-                return detectGameFilebased(allFiles, DarkSeed2::fileBased);
-        }
+	virtual const ADGameDescription *fallbackDetect(const FileMap &allFiles, const Common::FSList &fslist) const {
+		return detectGameFilebased(allFiles, fslist, DarkSeed2::fileBased);
+	}
 
 	virtual const char *getName() const {
 		return "Dark Seed II Engine";
