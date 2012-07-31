@@ -96,6 +96,45 @@ private:
 	uint32 _totalSamples, _samplesRead;
 };
 
+/**
+ * An AudioStream wrapper that forces audio to be played in mono.
+ * It currently just ignores the right channel if stereo.
+ */
+class ForcedMonoAudioStream : public AudioStream {
+public:
+	ForcedMonoAudioStream(AudioStream *parentStream, DisposeAfterUse::Flag disposeAfterUse = DisposeAfterUse::YES) :
+			_parentStream(parentStream), _disposeAfterUse(disposeAfterUse) {}
+
+	~ForcedMonoAudioStream() {
+		if (_disposeAfterUse == DisposeAfterUse::YES)
+				delete _parentStream;
+	}
+
+	int readBuffer(int16 *buffer, const int numSamples) {
+		if (!_parentStream->isStereo())
+			return _parentStream->readBuffer(buffer, numSamples);
+
+		int16 temp[2];
+		int samples = 0;
+
+		while (samples < numSamples && !endOfData()) {
+			_parentStream->readBuffer(temp, 2);
+			*buffer++ = temp[0];
+			samples++;
+		}
+
+		return samples;
+	}
+
+	bool endOfData() const { return _parentStream->endOfData(); }
+	bool isStereo() const { return false; }
+	int getRate() const { return _parentStream->getRate(); }
+
+private:
+	AudioStream *_parentStream;
+	DisposeAfterUse::Flag _disposeAfterUse;
+};
+
 QuickTimeAudioDecoder::QuickTimeAudioDecoder() : Common::QuickTimeParser() {
 }
 
@@ -299,7 +338,7 @@ bool QuickTimeAudioDecoder::QuickTimeAudioTrack::seek(const Timestamp &where) {
 	_queue = createStream();
 	_samplesQueued = 0;
 
-	if (where > getLength()) {
+	if (where >= getLength()) {
 		// We're done
 		_curEdit = _parentTrack->editCount;
 		return true;
@@ -410,7 +449,7 @@ void QuickTimeAudioDecoder::QuickTimeAudioTrack::skipSamples(const Timestamp &le
 }
 
 void QuickTimeAudioDecoder::QuickTimeAudioTrack::findEdit(const Timestamp &position) {
-	for (_curEdit = 0; _curEdit < _parentTrack->editCount && position < Timestamp(0, _parentTrack->editList[_curEdit].timeOffset, _decoder->_timeScale); _curEdit++)
+	for (_curEdit = 0; _curEdit < _parentTrack->editCount - 1 && position > Timestamp(0, _parentTrack->editList[_curEdit].timeOffset, _decoder->_timeScale); _curEdit++)
 		;
 
 	enterNewEdit(position);
@@ -495,7 +534,13 @@ void QuickTimeAudioDecoder::QuickTimeAudioTrack::enterNewEdit(const Timestamp &p
 }
 
 void QuickTimeAudioDecoder::QuickTimeAudioTrack::queueStream(AudioStream *stream, const Timestamp &length) {
-	_queue->queueAudioStream(stream, DisposeAfterUse::YES);
+	// If the samples are stereo and the container is mono, force the samples
+	// to be mono.
+	if (stream->isStereo() && !isStereo())
+		_queue->queueAudioStream(new ForcedMonoAudioStream(stream, DisposeAfterUse::YES), DisposeAfterUse::YES);
+	else
+		_queue->queueAudioStream(stream, DisposeAfterUse::YES);
+
 	_samplesQueued += length.convertToFramerate(getRate()).totalNumberOfFrames();
 }
 

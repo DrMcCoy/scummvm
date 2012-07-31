@@ -47,7 +47,7 @@
 #include "video/codecs/rpza.h"
 #include "video/codecs/smc.h"
 #include "video/codecs/cdtoons.h"
-
+#include "video/codecs/svq1.h"
 
 namespace Video {
 
@@ -97,7 +97,7 @@ void QuickTimeDecoder::startAudio() {
 	updateAudioBuffer();
 
 	for (uint32 i = 0; i < _audioTracks.size(); i++) {
-		g_system->getMixer()->playStream(Audio::Mixer::kPlainSoundType, &_audioHandles[i], _audioTracks[i], -1, Audio::Mixer::kMaxChannelVolume, 0, DisposeAfterUse::NO);
+		g_system->getMixer()->playStream(Audio::Mixer::kPlainSoundType, &_audioHandles[i], _audioTracks[i], -1, getVolume(), getBalance(), DisposeAfterUse::NO);
 
 		// Pause the audio again if we're still paused
 		if (isPaused())
@@ -152,7 +152,13 @@ const Graphics::Surface *QuickTimeDecoder::decodeNextFrame() {
 	// (needs to be done after we find the next track)
 	updateAudioBuffer();
 
-	if (_scaledSurface) {
+	// We have to initialize the scaled surface
+	if (frame && (_scaleFactorX != 1 || _scaleFactorY != 1)) {
+		if (!_scaledSurface) {
+			_scaledSurface = new Graphics::Surface();
+			_scaledSurface->create(_width, _height, getPixelFormat());
+		}
+
 		scaleSurface(frame, _scaledSurface, _scaleFactorX, _scaleFactorY);
 		return _scaledSurface;
 	}
@@ -179,7 +185,7 @@ bool QuickTimeDecoder::endOfVideo() const {
 	return true;
 }
 
-uint32 QuickTimeDecoder::getElapsedTime() const {
+uint32 QuickTimeDecoder::getTime() const {
 	// Try to base sync off an active audio track
 	for (uint32 i = 0; i < _audioHandles.size(); i++) {
 		if (g_system->getMixer()->isSoundHandleActive(_audioHandles[i])) {
@@ -190,7 +196,7 @@ uint32 QuickTimeDecoder::getElapsedTime() const {
 	}
 
 	// Just use time elapsed since the beginning
-	return SeekableVideoDecoder::getElapsedTime();
+	return SeekableVideoDecoder::getTime();
 }
 
 uint32 QuickTimeDecoder::getTimeToNextFrame() const {
@@ -205,7 +211,7 @@ uint32 QuickTimeDecoder::getTimeToNextFrame() const {
 
 		// TODO: Add support for rate modification
 
-		uint32 elapsedTime = getElapsedTime();
+		uint32 elapsedTime = getTime();
 
 		if (elapsedTime < nextFrameStartTime)
 			return nextFrameStartTime - elapsedTime;
@@ -228,6 +234,18 @@ bool QuickTimeDecoder::loadStream(Common::SeekableReadStream *stream) {
 
 	init();
 	return true;
+}
+
+void QuickTimeDecoder::updateVolume() {
+	for (uint32 i = 0; i < _audioHandles.size(); i++)
+		if (g_system->getMixer()->isSoundHandleActive(_audioHandles[i]))
+			g_system->getMixer()->setChannelVolume(_audioHandles[i], getVolume());
+}
+
+void QuickTimeDecoder::updateBalance() {
+	for (uint32 i = 0; i < _audioHandles.size(); i++)
+		if (g_system->getMixer()->isSoundHandleActive(_audioHandles[i]))
+			g_system->getMixer()->setChannelBalance(_audioHandles[i], getBalance());
 }
 
 void QuickTimeDecoder::init() {
@@ -258,14 +276,10 @@ void QuickTimeDecoder::init() {
 	_nextVideoTrack = findNextVideoTrack();
 
 	if (_nextVideoTrack) {
-		// Initialize the scaled surface
 		if (_scaleFactorX != 1 || _scaleFactorY != 1) {
-			// We have to initialize the scaled surface
-			_scaledSurface = new Graphics::Surface();
-			_scaledSurface->create((_nextVideoTrack->getWidth() / _scaleFactorX).toInt(),
-					(_nextVideoTrack->getHeight() / _scaleFactorY).toInt(), getPixelFormat());
-			_width = _scaledSurface->w;
-			_height = _scaledSurface->h;
+			// We have to take the scale into consideration when setting width/height
+			_width = (_nextVideoTrack->getWidth() / _scaleFactorX).toInt();
+			_height = (_nextVideoTrack->getHeight() / _scaleFactorY).toInt();
 		} else {
 			_width = _nextVideoTrack->getWidth().toInt();
 			_height = _nextVideoTrack->getHeight().toInt();
@@ -404,7 +418,7 @@ void QuickTimeDecoder::freeAllTrackHandlers() {
 	_handlers.clear();
 }
 
-void QuickTimeDecoder::seekToTime(Audio::Timestamp time) {
+void QuickTimeDecoder::seekToTime(const Audio::Timestamp &time) {
 	stopAudio();
 	_audioStartOffset = time;
 
@@ -471,7 +485,7 @@ void QuickTimeDecoder::VideoSampleDesc::initCodec() {
 		break;
 	case MKTAG('S','V','Q','1'):
 		// Sorenson Video 1: Used by some Myst ME videos.
-		warning("Sorenson Video 1 not yet supported");
+		_videoCodec = new SVQ1Decoder(_parentTrack->width, _parentTrack->height);
 		break;
 	case MKTAG('S','V','Q','3'):
 		// Sorenson Video 3: Used by some Myst ME videos.
@@ -527,19 +541,12 @@ void QuickTimeDecoder::AudioTrackHandler::seekToTime(Audio::Timestamp time) {
 }
 
 QuickTimeDecoder::VideoTrackHandler::VideoTrackHandler(QuickTimeDecoder *decoder, Common::QuickTimeParser::Track *parent) : TrackHandler(decoder, parent) {
-	if (_parent->scaleFactorX != 1 || _parent->scaleFactorY != 1) {
-		_scaledSurface = new Graphics::Surface();
-		_scaledSurface->create(getWidth().toInt(), getHeight().toInt(), getPixelFormat());
-	} else {
-		_scaledSurface = 0;
-	}
-
 	enterNewEditList(false);
 
 	_holdNextFrameStartTime = false;
 	_curFrame = -1;
 	_durationOverride = -1;
-
+	_scaledSurface = 0;
 }
 
 QuickTimeDecoder::VideoTrackHandler::~VideoTrackHandler() {
@@ -576,7 +583,12 @@ const Graphics::Surface *QuickTimeDecoder::VideoTrackHandler::decodeNextFrame() 
 			enterNewEditList(true);
 	}
 
-	if (_scaledSurface) {
+	if (frame && (_parent->scaleFactorX != 1 || _parent->scaleFactorY != 1)) {
+		if (!_scaledSurface) {
+			_scaledSurface = new Graphics::Surface();
+			_scaledSurface->create(getWidth().toInt(), getHeight().toInt(), getPixelFormat());
+		}
+
 		_decoder->scaleSurface(frame, _scaledSurface, _parent->scaleFactorX, _parent->scaleFactorY);
 		return _scaledSurface;
 	}

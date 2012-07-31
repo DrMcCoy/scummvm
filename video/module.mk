@@ -19,6 +19,7 @@ MODULE_OBJS := \
 	codecs/qtrle.o \
 	codecs/rpza.o \
 	codecs/smc.o \
+	codecs/svq1.o \
 	codecs/truemotion1.o
 
 ifdef USE_BINK

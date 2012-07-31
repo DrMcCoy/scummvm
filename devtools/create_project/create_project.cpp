@@ -76,14 +76,6 @@ namespace {
 std::string unifyPath(const std::string &path);
 
 /**
- * Returns the last path component.
- *
- * @param path Path string.
- * @return Last path component.
- */
-std::string getLastPathComponent(const std::string &path);
-
-/**
  * Display the help text for the program.
  *
  * @param exe Name of the executable.
@@ -221,7 +213,7 @@ int main(int argc, char *argv[]) {
 
 			msvcVersion = atoi(argv[++i]);
 
-			if (msvcVersion != 8 && msvcVersion != 9 && msvcVersion != 10) {
+			if (msvcVersion != 8 && msvcVersion != 9 && msvcVersion != 10 && msvcVersion != 11) {
 				std::cerr << "ERROR: Unsupported version: \"" << msvcVersion << "\" passed to \"--msvc-version\"!\n";
 				return -1;
 			}
@@ -575,7 +567,9 @@ int main(int argc, char *argv[]) {
 		globalWarnings.push_back("-Wwrite-strings");
 		// The following are not warnings at all... We should consider adding them to
 		// a different list of parameters.
+#if !NEEDS_RTTI
 		globalWarnings.push_back("-fno-rtti");
+#endif
 		globalWarnings.push_back("-fno-exceptions");
 		globalWarnings.push_back("-fcheck-new");
 
@@ -602,14 +596,6 @@ std::string unifyPath(const std::string &path) {
 	std::string result = path;
 	std::replace(result.begin(), result.end(), '\\', '/');
 	return result;
-}
-
-std::string getLastPathComponent(const std::string &path) {
-	std::string::size_type pos = path.find_last_of('/');
-	if (pos == std::string::npos)
-		return path;
-	else
-		return path.substr(pos + 1);
 }
 
 void displayHelp(const char *exe) {
@@ -641,6 +627,7 @@ void displayHelp(const char *exe) {
 	        "                           8 stands for \"Visual Studio 2005\"\n"
 	        "                           9 stands for \"Visual Studio 2008\"\n"
 	        "                           10 stands for \"Visual Studio 2010\"\n"
+	        "                           11 stands for \"Visual Studio 2012\"\n"
 	        "                           The default is \"9\", thus \"Visual Studio 2008\"\n"
 	        " --build-events           Run custom build events as part of the build\n"
 	        "                          (default: false)\n"
@@ -652,14 +639,14 @@ void displayHelp(const char *exe) {
 	        "\n"
 	        "Engines settings:\n"
 	        " --list-engines           list all available engines and their default state\n"
-	        " --enable-engine          enable building of the engine with the name \"engine\"\n"
-	        " --disable-engine         disable building of the engine with the name \"engine\"\n"
+	        " --enable-engine=<name>   enable building of the engine with the name \"name\"\n"
+	        " --disable-engine=<name>  disable building of the engine with the name \"name\"\n"
 	        " --enable-all-engines     enable building of all engines\n"
 	        " --disable-all-engines    disable building of all engines\n"
 	        "\n"
 	        "Optional features settings:\n"
-	        " --enable-name            enable inclusion of the feature \"name\"\n"
-	        " --disable-name           disable inclusion of the feature \"name\"\n"
+	        " --enable-<name>          enable inclusion of the feature \"name\"\n"
+	        " --disable-<name>         disable inclusion of the feature \"name\"\n"
 	        "\n"
 	        " There are the following features available:\n"
 	        "\n";
@@ -691,7 +678,7 @@ bool parseEngine(const std::string &line, EngineDesc &engine);
 } // End of anonymous namespace
 
 EngineDescList parseConfigure(const std::string &srcDir) {
-	std::string configureFile = srcDir + "/configure";
+	std::string configureFile = srcDir + "/engines/configure.engines";
 
 	std::ifstream configure(configureFile.c_str());
 	if (!configure)
@@ -843,6 +830,7 @@ const Feature s_features[] = {
 	{    "flac",        "USE_FLAC", "libFLAC_static",   true, "FLAC support" },
 	{     "png",         "USE_PNG", "libpng",           true, "libpng support" },
 	{  "theora",   "USE_THEORADEC", "libtheora_static", true, "Theora decoding support" },
+	{"freetype",   "USE_FREETYPE2", "freetype",         true, "FreeType support" },
 
 	// Feature flags
 	{        "bink",        "USE_BINK",         "", true, "Bink video support" },
@@ -997,7 +985,7 @@ bool isInList(const std::string &dir, const std::string &fileName, const StringL
 				continue;
 		}
 
-		const std::string lastPathComponent = getLastPathComponent(*i);
+		const std::string lastPathComponent = ProjectProvider::getLastPathComponent(*i);
 		if (extensionName == "o") {
 			return false;
 		} else if (!producesObjectFile(fileName) && extensionName != "h") {
@@ -1212,9 +1200,7 @@ void ProjectProvider::createProject(const BuildSetup &setup) {
 		createModuleList(setup.srcDir + "/gui", setup.defines, in, ex);
 		createModuleList(setup.srcDir + "/audio", setup.defines, in, ex);
 		createModuleList(setup.srcDir + "/audio/softsynth/mt32", setup.defines, in, ex);
-#if HAS_VIDEO_FOLDER
 		createModuleList(setup.srcDir + "/video", setup.defines, in, ex);
-#endif
 
 		// Resource files
 		in.push_back(setup.srcDir + "/icons/" + setup.projectName + ".ico");
@@ -1224,6 +1210,8 @@ void ProjectProvider::createProject(const BuildSetup &setup) {
 		in.push_back(setup.srcDir + "/AUTHORS");
 		in.push_back(setup.srcDir + "/COPYING");
 		in.push_back(setup.srcDir + "/COPYING.LGPL");
+		in.push_back(setup.srcDir + "/COPYING.BSD");
+		in.push_back(setup.srcDir + "/COPYING.FREEFONT");
 		in.push_back(setup.srcDir + "/COPYRIGHT");
 		in.push_back(setup.srcDir + "/NEWS");
 		in.push_back(setup.srcDir + "/README");
@@ -1298,6 +1286,14 @@ std::string ProjectProvider::createUUID() const {
 
 	return uuidString.str();
 #endif
+}
+
+std::string ProjectProvider::getLastPathComponent(const std::string &path) {
+	std::string::size_type pos = path.find_last_of('/');
+	if (pos == std::string::npos)
+		return path;
+	else
+		return path.substr(pos + 1);
 }
 
 void ProjectProvider::addFilesToProject(const std::string &dir, std::ofstream &projectFile,
