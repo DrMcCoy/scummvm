@@ -112,6 +112,9 @@ DarkSeed2Engine::DarkSeed2Engine(OSystem *syst, const ADGameDescription *gameDes
 
 	_engineStartTime = 0;
 	_playTime        = 0;
+
+	const Common::FSNode gameDataDir(ConfMan.get("path"));
+	SearchMan.addSubDirectoryMatching(gameDataDir, "sndtrack"); // Windows MIDI
 }
 
 DarkSeed2Engine::~DarkSeed2Engine() {

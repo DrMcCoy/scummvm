@@ -86,9 +86,7 @@ bool Music::playMID(Resources &resources, const Common::String &mid) {
 
 	debugC(-1, kDebugMusic, "Playing MIDI \"%s\"", mid.c_str());
 
-	Common::String midFile = "sndtrack/";
-
-	midFile += mid;
+	Common::String midFile = mid;
 
 	if      (_midiMode == kMidiModeGM)
 		midFile += "gm";
