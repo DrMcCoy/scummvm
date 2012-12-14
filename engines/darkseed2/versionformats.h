@@ -61,6 +61,12 @@ enum SoundType {
 	kSoundTypeSND = 2  ///< Mac SND sounds.
 };
 
+enum MusicType {
+	kMusicTypeSMF = 0, ///< SMF music
+	kMusicTypeSEQ = 1, ///< Saturn SEQ music
+	kMusicTypeQT  = 2  ///< QuickTime music
+};
+
 class VersionFormats {
 public:
 	VersionFormats();
@@ -87,8 +93,11 @@ public:
 	/** Get the type of file the game uses for walk maps. */
 	WalkMapType getWalkMapType() const;
 
-	/** Get the type of file the game uses for walk maps. */
+	/** Get the type of file the game uses for sound. */
 	SoundType getSoundType() const;
+
+	/** Get the type of file the game uses for music. */
+	MusicType getMusicType() const;
 
 	/** Get the extension used for images by the game. */
 	const char *getImageExtension(ImageType imageType) const;
@@ -96,6 +105,8 @@ public:
 	const char *getWalkMapExtension(WalkMapType walkMapType) const;
 	/** Get the extension used for sounds by the game. */
 	const char *getSoundExtension(SoundType soundType) const;
+	/** Get the extension used for music by the game. */
+	const char *getMusicExtension(MusicType musicType) const;
 	/** Get the extension used for DAT files by the game. */
 	const char *getDATFileExtension() const;
 
@@ -107,6 +118,7 @@ private:
 	static const char *kImageExtensions[];
 	static const char *kWalkMapExtensions[];
 	static const char *kSoundExtensions[];
+	static const char *kMusicExtensions[];
 
 	GameVersion _gameVersion; ///< The game version.
 
@@ -120,6 +132,8 @@ private:
 	WalkMapType _walkMapType; ///< The type of file the game uses for walk maps.
 
 	SoundType _soundType;     ///< The type of sounds the game uses.
+
+	MusicType _musicType;     ///< The type of music the game uses.
 
 	int _hotspotScale;
 

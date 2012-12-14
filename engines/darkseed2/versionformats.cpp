@@ -34,6 +34,7 @@ namespace DarkSeed2 {
 const char *VersionFormats::kImageExtensions[]   = {"BMP", "RGB", "BDP", "256", "", "", ""};
 const char *VersionFormats::kWalkMapExtensions[] = {"BMP", "MAP", ""};
 const char *VersionFormats::kSoundExtensions[]   = {"WAV", "AIF", ""};
+const char *VersionFormats::kMusicExtensions[]   = {"MID", "SEQ", ""};
 
 VersionFormats::VersionFormats() {
 	_gameVersion = kGameVersionWindows;
@@ -71,6 +72,7 @@ void VersionFormats::setGameVersion(GameVersion gameVersion) {
 		_invItemImageType = kImageTypeBMP;
 		_walkMapType      = kWalkMapTypeBMP;
 		_soundType        = kSoundTypeWAV;
+		_musicType        = kMusicTypeSMF;
 
 		_hotspotScale = 1;
 
@@ -84,6 +86,7 @@ void VersionFormats::setGameVersion(GameVersion gameVersion) {
 		_invItemImageType = kImageTypeRGB;
 		_walkMapType      = kWalkMapTypeMAP;
 		_soundType        = kSoundTypeAIF;
+		_musicType        = kMusicTypeSEQ;
 
 		_hotspotScale = 2;
 
@@ -97,6 +100,7 @@ void VersionFormats::setGameVersion(GameVersion gameVersion) {
 		_invItemImageType = kImageTypePICT;
 		_walkMapType      = kWalkMapTypeMac;
 		_soundType        = kSoundTypeSND;
+		_musicType        = kMusicTypeQT;
 
 		_hotspotScale = 1;
 
@@ -145,6 +149,10 @@ SoundType VersionFormats::getSoundType() const {
 	return _soundType;
 }
 
+MusicType VersionFormats::getMusicType() const {
+	return _musicType;
+}
+
 const char *VersionFormats::getImageExtension(ImageType imageType) const {
 	assert((imageType >= 0) && (imageType < ARRAYSIZE(kImageExtensions)));
 
@@ -161,6 +169,12 @@ const char *VersionFormats::getSoundExtension(SoundType soundType) const {
 	assert((soundType >= 0) && (soundType < ARRAYSIZE(kSoundExtensions)));
 
 	return kSoundExtensions[soundType];
+}
+
+const char *VersionFormats::getMusicExtension(MusicType musicType) const {
+	assert((musicType >= 0) && (musicType < ARRAYSIZE(kMusicExtensions)));
+
+	return kMusicExtensions[musicType];
 }
 
 const char *VersionFormats::getDATFileExtension() const {
