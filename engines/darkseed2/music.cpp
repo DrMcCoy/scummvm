@@ -55,6 +55,7 @@ Music::~Music() {
 	stop();
 
 	_midiDriver->close();
+	_midiParser->setMidiDriver(0);
 	delete _midiParser;
 }
 
