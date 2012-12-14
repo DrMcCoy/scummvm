@@ -37,11 +37,8 @@
 namespace DarkSeed2 {
 
 Music::Music(Audio::Mixer &mixer, MidiDriver &driver) : _mixer(&mixer), _midiDriver(&driver) {
-	_midiParser = MidiParser::createParser_SMF();
+	_midiParser = 0;
 	_midiDriver->open();
-	_midiParser->setMidiDriver(_midiDriver);
-	_midiParser->setTimerRate(_midiDriver->getBaseTempo());
-	_midiParser->property(MidiParser::mpAutoLoop, 1);
 
 	_midiMode = kMidiModeGM;
 	_midiData = 0;
@@ -55,8 +52,33 @@ Music::~Music() {
 	stop();
 
 	_midiDriver->close();
-	_midiParser->setMidiDriver(0);
-	delete _midiParser;
+
+	if (_midiParser) {
+		_midiParser->setMidiDriver(0);
+		delete _midiParser;
+	}
+}
+
+void Music::init(MusicType musicType) {
+	_musicType = musicType;
+
+	switch (_musicType) {
+	case kMusicTypeSMF:
+		_midiParser = MidiParser::createParser_SMF();
+		break;
+	case kMusicTypeSEQ:
+		warning("Unhandled Saturn SEQ files");
+		break;
+	case kMusicTypeQT:
+		_midiParser = MidiParser::createParser_QT();
+		break;
+	}
+
+	if (_midiParser) {
+		_midiParser->setMidiDriver(_midiDriver);
+		_midiParser->setTimerRate(_midiDriver->getBaseTempo());
+		_midiParser->property(MidiParser::mpAutoLoop, 1);
+	}
 }
 
 void Music::setMidiMode(MidiMode midiMode) {
@@ -64,6 +86,11 @@ void Music::setMidiMode(MidiMode midiMode) {
 }
 
 bool Music::playMID(Common::SeekableReadStream &mid) {
+	if (!_midiParser) {
+		// Unsupported MIDI format
+		return false;
+	}
+
 	_midiData = new byte[mid.size()];
 	mid.read(_midiData, mid.size());
 
@@ -73,6 +100,11 @@ bool Music::playMID(Common::SeekableReadStream &mid) {
 }
 
 bool Music::playMID(Resources &resources, const Common::String &mid) {
+	if (!_midiParser) {
+		// Unsupported MIDI format
+		return false;
+	}
+
 	if (mid.empty()) {
 		// No file specified, stop playback
 
@@ -88,12 +120,15 @@ bool Music::playMID(Resources &resources, const Common::String &mid) {
 
 	Common::String midFile = mid;
 
-	if      (_midiMode == kMidiModeGM)
-		midFile += "gm";
-	else if (_midiMode == kMidiModeFM)
-		midFile += "fm";
+	if (_musicType == kMusicTypeSMF) {
+		if      (_midiMode == kMidiModeGM)
+			midFile += "gm";
+		else if (_midiMode == kMidiModeFM)
+			midFile += "fm";
+	}
 
-	midFile = Resources::addExtension(midFile, "MID");
+	midFile = Resources::addExtension(midFile,
+			resources.getVersionFormats().getMusicExtension(_musicType));
 
 	if (!resources.hasResource(midFile))
 		return false;
@@ -113,7 +148,10 @@ void Music::stop() {
 	debugC(-1, kDebugMusic, "Stopping music");
 
 	_name.clear();
-	_midiParser->unloadMusic();
+
+	if (_midiParser)
+		_midiParser->unloadMusic();
+
 	delete[] _midiData; _midiData = 0;
 }
 

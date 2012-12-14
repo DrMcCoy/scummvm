@@ -33,6 +33,7 @@
 
 #include "darkseed2/darkseed2.h"
 #include "darkseed2/saveable.h"
+#include "darkseed2/versionformats.h"
 
 namespace Common {
 	class SeekableReadStream;
@@ -59,6 +60,9 @@ public:
 	Music(Audio::Mixer &mixer, MidiDriver &driver);
 	~Music();
 
+	/** Set the music type */
+	void init(MusicType musicType);
+
 	/** Set the MIDI mode. */
 	void setMidiMode(MidiMode midiMode);
 
@@ -81,6 +85,8 @@ private:
 
 	Common::String _name; ///< The currently playing music.
 	MidiMode _midiMode;   ///< The current MIDI mode.
+
+	MusicType _musicType;
 
 	bool _mute; ///< Muted?
 

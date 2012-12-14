@@ -287,6 +287,7 @@ bool DarkSeed2Engine::init(int32 width, int32 height) {
 	}
 
 	_sound->init(_resources->getVersionFormats().getSoundType());
+	_music->init(_resources->getVersionFormats().getMusicType());
 
 	if (!_cursors->load()) {
 		warning("DarkSeed2Engine::init(): Couldn't load cursors");
