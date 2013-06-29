@@ -124,7 +124,8 @@ private:
 	uint32 writeCompressed(const void *dataPtr, uint32 dataSize);
 	uint32 readCompressed(void *dataPtr, uint32 dataSize);
 
-	void writeBuffer(uint8 value, bool onlyValue);
+	void writeBuffer(uint8 value, bool onlyValue = true);
+	uint8 readBuffer();
 
 private:
 	bool _eos;
@@ -152,8 +153,8 @@ public:
 	uint32 init(GameId id, bool resetHeaders);
 
 	// Save & Load
-	void loadGame(GameId id);
-	void loadGame(GameId id, uint32 index);
+	void loadLastGame();
+	void loadGame(uint32 index);
 	void saveGame(SavegameType type, EntityIndex entity, uint32 value);
 
 	void loadVolumeBrightness();

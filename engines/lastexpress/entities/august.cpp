@@ -3248,8 +3248,9 @@ IMPLEMENT_FUNCTION(63, August, function63)
 		break;
 
 	case kAction1:
-		if (getEntities()->isInSalon(kEntityAlexei))
+		if (getEntities()->isInSalon(kEntityAlexei)) {
 			RESET_ENTITY_STATE(kEntityAlexei, Alexei, setup_function44);
+		}
 
 		getData()->inventoryItem = kItemNone;
 
@@ -3530,7 +3531,7 @@ IMPLEMENT_FUNCTION(69, August, unhookCars)
 			getScenes()->loadSceneFromPosition(kCarRestaurant, 85, 1);
 			getSavePoints()->pushAll(kEntityAugust, kActionProceedChapter5);
 
-			RESET_ENTITY_STATE(kEntityVerges, Verges, setup_function42)
+			RESET_ENTITY_STATE(kEntityVerges, Verges, setup_end)
 		}
 		break;
 	}

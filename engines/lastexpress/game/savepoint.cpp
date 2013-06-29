@@ -202,7 +202,7 @@ void SavePoints::callAndProcess() {
 // Misc
 //////////////////////////////////////////////////////////////////////////
 bool SavePoints::updateEntityFromData(const SavePoint &savepoint) {
-	for (int i = 0; i < (int)_data.size(); i++) {
+	for (uint i = 0; i < _data.size(); i++) {
 
 		// Not a data savepoint!
 		if (!_data[i].entity1)
@@ -210,7 +210,7 @@ bool SavePoints::updateEntityFromData(const SavePoint &savepoint) {
 
 		// Found our data!
 		if (_data[i].entity1 == savepoint.entity1 && _data[i].action == savepoint.action) {
-			debugC(8, kLastExpressDebugLogic, "Update entity from data: entity1=%s, action=%s, param=%d", ENTITY_NAME(_data[i].entity1), ACTION_NAME(_data[i].action), _data[i].param);
+			debugC(8, kLastExpressDebugLogic, "Update entity from data: entity1=%s, action=%s, param=%u", ENTITY_NAME(_data[i].entity1), ACTION_NAME(_data[i].action), _data[i].param);
 
 			// the SavePoint param value is the index of the entity call parameter to update
 			getEntities()->get(_data[i].entity1)->getParamData()->updateParameters(_data[i].param);
@@ -242,7 +242,15 @@ void SavePoints::saveLoadWithSerializer(Common::Serializer &s) {
 	}
 
 	// Skip uninitialized data if any
-	s.skip((_savePointsMaxSize - dataSize) * 16);
+	// (we are using a compressed stream, so we cannot seek on load)
+	uint32 unusedDataSize = (_savePointsMaxSize - dataSize) * 16;
+	if (s.isLoading()) {
+		byte *empty = (byte *)malloc(unusedDataSize);
+		s.syncBytes(empty, unusedDataSize);
+		free(empty);
+	} else {
+		s.skip(unusedDataSize);
+	}
 
 	// Number of savepoints
 	uint32 numSavepoints = _savepoints.size();

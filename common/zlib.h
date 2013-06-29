@@ -77,6 +77,25 @@ bool uncompress(byte *dst, unsigned long *dstLen, const byte *src, unsigned long
  */
 bool inflateZlibHeaderless(byte *dst, uint dstLen, const byte *src, uint srcLen, const byte *dict = 0, uint dictLen = 0);
 
+/**
+ * Wrapper around zlib's inflate functions. This function will call the
+ * necessary inflate functions to uncompress data compressed for InstallShield
+ * cabinet files.
+ *
+ * Decompresses the src buffer into the dst buffer.
+ * srcLen is the byte length of the source buffer, dstLen is the byte
+ * length of the output buffer.
+ * It decompress as much data as possible, up to dstLen bytes.
+ *
+ * @param dst       the buffer to store into.
+ * @param dstLen    the size of the destination buffer.
+ * @param src       the data to be decompressed.
+ * @param dstLen    the size of the compressed data.
+ *
+ * @return true on success (Z_OK or Z_STREAM_END), false otherwise.
+ */
+bool inflateZlibInstallShield(byte *dst, uint dstLen, const byte *src, uint srcLen);
+
 #endif
 
 /**
@@ -84,7 +103,9 @@ bool inflateZlibHeaderless(byte *dst, uint dstLen, const byte *src, uint srcLen,
  * provides transparent on-the-fly decompression. Assumes the data it
  * retrieves from the wrapped stream to be either uncompressed or in gzip
  * format. In the former case, the original stream is returned unmodified
- * (and in particular, not wrapped).
+ * (and in particular, not wrapped). In the latter case the stream is
+ * returned wrapped, unless there is no ZLIB support, then NULL is returned
+ * and the old stream is destroyed.
  *
  * Certain GZip-formats don't supply an easily readable length, if you
  * still need the length carried along with the stream, and you know
@@ -95,7 +116,7 @@ bool inflateZlibHeaderless(byte *dst, uint dstLen, const byte *src, uint srcLen,
  * returned).
  *
  * @param toBeWrapped	the stream to be wrapped (if it is in gzip-format)
- * @param knownSize		a supplied length of the compressed data (if not available directly) 
+ * @param knownSize		a supplied length of the compressed data (if not available directly)
  */
 SeekableReadStream *wrapCompressedReadStream(SeekableReadStream *toBeWrapped, uint32 knownSize = 0);
 
@@ -110,6 +131,6 @@ SeekableReadStream *wrapCompressedReadStream(SeekableReadStream *toBeWrapped, ui
  */
 WriteStream *wrapCompressedWriteStream(WriteStream *toBeWrapped);
 
-}	// End of namespace Common
+} // End of namespace Common
 
 #endif

@@ -36,6 +36,7 @@ const SciWorkaroundEntry arithmeticWorkarounds[] = {
 	{ GID_ECOQUEST2,      100,    0,  0,               "Rain", "points",      0xcc6,    0, { WORKAROUND_FAKE,   0 } }, // op_or: when giving the papers to the customs officer, gets called against a pointer instead of a number - bug #3034464
 	{ GID_ECOQUEST2,      100,    0,  0,               "Rain", "points",      0xce0,    0, { WORKAROUND_FAKE,   0 } }, // Same as above, for the Spanish version - bug #3313962
 	{ GID_FANMADE,        516,  983,  0,             "Wander", "setTarget",      -1,    0, { WORKAROUND_FAKE,   0 } }, // op_mul: The Legend of the Lost Jewel Demo (fan made): called with object as second parameter when attacked by insects - bug #3038913
+	{ GID_GK1,            800,64992,  0,                "Fwd", "doit",           -1,    0, { WORKAROUND_FAKE,   1 } }, // op_gt: when Mosely finds Gabriel and Grace near the end of the game, compares the Grooper object with 7
 	{ GID_ICEMAN,         199,  977,  0,            "Grooper", "doit",           -1,    0, { WORKAROUND_FAKE,   0 } }, // op_add: While dancing with the girl
 	{ GID_MOTHERGOOSE256,  -1,  999,  0,              "Event", "new",            -1,    0, { WORKAROUND_FAKE,   0 } }, // op_and: constantly during the game (SCI1 version)
 	{ GID_MOTHERGOOSE256,  -1,    4,  0,              "rm004", "doit",           -1,    0, { WORKAROUND_FAKE,   0 } }, // op_or: when going north and reaching the castle (rooms 4 and 37) - bug #3038228
@@ -43,15 +44,15 @@ const SciWorkaroundEntry arithmeticWorkarounds[] = {
 	{ GID_PHANTASMAGORIA, 902,    0,  0,                   "", "export 7",       -1,    0, { WORKAROUND_FAKE,   0 } }, // op_shr: when starting a chapter in Phantasmagoria
 	{ GID_QFG1VGA,        301,  928,  0,              "Blink", "init",           -1,    0, { WORKAROUND_FAKE,   0 } }, // op_div: when entering the inn, gets called with 1 parameter, but 2nd parameter is used for div which happens to be an object
 	{ GID_QFG2,           200,  200,  0,              "astro", "messages",       -1,    0, { WORKAROUND_FAKE,   0 } }, // op_lsi: when getting asked for your name by the astrologer bug #3039879
-	{ GID_GK1,            800,64992,  0,                "Fwd", "doit",           -1,    0, { WORKAROUND_FAKE,   1 } }, // op_gt: when Mosely finds Gabriel and Grace near the end of the game, compares the Grooper object with 7
+	{ GID_QFG4,           710,64941,  0,          "RandCycle", "doit",           -1,    0, { WORKAROUND_FAKE,   1 } }, // op_gt: when the tentacle appears in the third room of the caves
 	SCI_WORKAROUNDENTRY_TERMINATOR
 };
 
 //    gameID,           room,script,lvl,          object-name, method-name,    call,index,  workaround
 const SciWorkaroundEntry uninitializedReadWorkarounds[] = {
 	{ GID_CASTLEBRAIN,   280,   280,  0,         "programmer", "dispatchEvent",  -1,    0, { WORKAROUND_FAKE, 0xf } }, // pressing 'q' on the computer screen in the robot room, and closing the help dialog that pops up (bug #3039656). Moves the cursor to the view with the ID returned (in this case, the robot hand)
-	{ GID_CNICK_KQ,      200,     0,  1,          "Character", "say",            -1,   -1, { WORKAROUND_FAKE,   0 } }, // checkers, like in hoyle 3 - temps 504 and 505
-	{ GID_CNICK_KQ,       -1,   700,  0,           "gcWindow", "open",           -1,   -1, { WORKAROUND_FAKE,   0 } }, // when entering control menu, like in hoyle 3
+	{ GID_CNICK_KQ,       -1,     0,  1,          "Character", "say",            -1,   -1, { WORKAROUND_FAKE,   0 } }, // checkers/backgammon, like in hoyle 3 - temps 504 and 505 - bug #3606025
+	{ GID_CNICK_KQ,       -1,   700,  0,           "gcWindow", "open",           -1,   -1, { WORKAROUND_FAKE,   0 } }, // when entering the control menu, like in hoyle 3
 	{ GID_CNICK_LONGBOW,   0,     0,  0,          "RH Budget", "init",           -1,    1, { WORKAROUND_FAKE,   0 } }, // when starting the game
 	{ GID_ECOQUEST,       -1,    -1,  0,                 NULL, "doVerb",         -1,    0, { WORKAROUND_FAKE,   0 } }, // almost clicking anywhere triggers this in almost all rooms
 	{ GID_FANMADE,       516,   979,  0,                   "", "export 0",       -1,   20, { WORKAROUND_FAKE,   0 } }, // Happens in Grotesteing after the logos
@@ -139,7 +140,7 @@ const SciWorkaroundEntry uninitializedReadWorkarounds[] = {
 	{ GID_QFG2,          260,   260,  0,            "jabbarS", "changeState",0x2d22,   -1, { WORKAROUND_FAKE,   0 } }, // During the thief's first mission (in the house), just before Jabbar is about to enter the house (where you have to hide in the wardrobe), bug #3040469, temps 1 and 2
 	{ GID_QFG2,          500,   500,  0,   "lightNextCandleS", "changeState",    -1,   -1, { WORKAROUND_FAKE,   0 } }, // Inside the last room, while Ad Avis performs the ritual to summon the genie - bug #3148418
 	{ GID_QFG2,           -1,   700,  0,                 NULL, "showSign",       -1,   10, { WORKAROUND_FAKE,   0 } }, // Occurs sometimes when reading a sign in Raseir, Shapeir et al - bugs #3272735, #3275413
-	{ GID_QFG3,          510,   510,  0,         "awardPrize", "changeState",    -1,    0, { WORKAROUND_FAKE,   0 } }, // Simbani warrior challenge, after throwing the spears and retrieving the ring - bug #3049435
+	{ GID_QFG3,          510,   510,  0,         "awardPrize", "changeState",    -1,    0, { WORKAROUND_FAKE,   1 } }, // Simbani warrior challenge, after throwing the spears and retrieving the ring - bug #3049435. Must be non-zero, otherwise the prize is awarded twice - bug #3575570.
 	{ GID_QFG3,          140,   140,  0,              "rm140", "init",       0x1008,    0, { WORKAROUND_FAKE,   0 } }, // when importing a character and selecting the previous profession - bug #3040460
 	{ GID_QFG3,          330,   330, -1,             "Teller", "doChild",        -1,   -1, { WORKAROUND_FAKE,   0 } }, // when talking to King Rajah about "Rajah" (bug #3036390, temp 1) or "Tarna" (temp 0), or when clicking on yourself and saying "Greet" (bug #3039774, temp 1)
 	{ GID_QFG3,          700,   700, -1,      "monsterIsDead", "changeState",    -1,    0, { WORKAROUND_FAKE,   0 } }, // in the jungle, after winning any fight, bug #3040624
@@ -150,6 +151,8 @@ const SciWorkaroundEntry uninitializedReadWorkarounds[] = {
 	{ GID_QFG4,           -1,    15, -1,     "charInitScreen", "dispatchEvent",  -1,    5, { WORKAROUND_FAKE,   0 } }, // floppy version, when viewing the character screen
 	{ GID_QFG4,           -1, 64917, -1,       "controlPlane", "setBitmap",      -1,    3, { WORKAROUND_FAKE,   0 } }, // floppy version, when entering the game menu
 	{ GID_QFG4,           -1, 64917, -1,              "Plane", "setBitmap",      -1,    3, { WORKAROUND_FAKE,   0 } }, // floppy version, happens sometimes in fight scenes
+	{ GID_QFG4,          520, 64950,  0,             "fLake2", "handleEvent",    -1,    0, { WORKAROUND_FAKE,   0 } }, // CD version, at the lake, when meeting the Rusalka and attempting to leave
+	{ GID_QFG4,          800, 64950,  0,               "View", "handleEvent",    -1,    0, { WORKAROUND_FAKE,   0 } }, // CD version, in the room with the spider pillar, when climbing on the pillar
 	{ GID_RAMA,           12, 64950, -1,   "InterfaceFeature", "handleEvent",    -1,    0, { WORKAROUND_FAKE,   0 } }, // Demo, right when it starts
 	{ GID_RAMA,           12, 64950, -1,      "hiliteOptText", "handleEvent",    -1,    0, { WORKAROUND_FAKE,   0 } }, // Demo, right when it starts
 	{ GID_RAMA,           12, 64950, -1,               "View", "handleEvent",    -1,    0, { WORKAROUND_FAKE,   0 } }, // Demo, right when it starts
@@ -242,12 +245,11 @@ const SciWorkaroundEntry kDisposeScript_workarounds[] = {
 
 //    gameID,           room,script,lvl,          object-name, method-name,    call,index,                workaround
 const SciWorkaroundEntry kDoSoundFade_workarounds[] = {
-	{ GID_CAMELOT,        -1,   989,  0,            "rmMusic", "fade",           -1,    0, { WORKAROUND_IGNORE,    0 } }, // gets called frequently with a NULL reference (i.e. 0:0) - bug #3035149
-	{ GID_KQ1,            -1,   989,  0,          "gameSound", "fade",           -1,    0, { WORKAROUND_IGNORE,    0 } }, // gets called in several scenes (e.g. graham cracker) with 0:0
-	{ GID_KQ4,            -1,   989,  0,            "mySound", "",               -1,    0, { WORKAROUND_IGNORE,    0 } }, // gets called in the demo when trying to open the non-existent menu with 0:0 - bug #3036942
 	{ GID_KQ5,           213,   989,  0,       "globalSound3", "fade",           -1,    0, { WORKAROUND_STILLCALL, 0 } }, // english floppy: when bandits leave the secret temple, parameter 4 is an object - bug #3037594
 	{ GID_KQ6,           105,   989,  0,        "globalSound", "fade",           -1,    0, { WORKAROUND_STILLCALL, 0 } }, // floppy: during intro, parameter 4 is an object
 	{ GID_KQ6,           460,   989,  0,       "globalSound2", "fade",           -1,    0, { WORKAROUND_STILLCALL, 0 } }, // after pulling the black widow's web on the isle of wonder, parameter 4 is an object - bug #3034567
+	{ GID_QFG4,           -1, 64989,  0,           "longSong", "fade",           -1,    0, { WORKAROUND_STILLCALL, 0 } }, // CD version: many places, parameter 4 is an object (longSong)
+	{ GID_SQ5,           800,   989,  0,          "sq5Music1", "fade",           -1,    0, { WORKAROUND_STILLCALL, 0 } }, // when cutting the wrong part of Goliath with the laser - bug #3614145
 	SCI_WORKAROUNDENTRY_TERMINATOR
 };
 
@@ -398,7 +400,7 @@ const SciWorkaroundEntry kUnLoad_workarounds[] = {
 	{ GID_LSL6,          740,   740,  0,        "showCartoon", "changeState",    -1,    0, { WORKAROUND_IGNORE, 0 } }, // during ending, 4 additional parameters are passed by accident
 	{ GID_LSL6HIRES,     130,   130,  0,    "recruitLarryScr", "changeState",    -1,    0, { WORKAROUND_IGNORE, 0 } }, // during intro, a 3rd parameter is passed by accident
 	{ GID_SQ1,            43,   303,  0,            "slotGuy", "dispose",        -1,    0, { WORKAROUND_IGNORE, 0 } }, // when leaving ulence flats bar, parameter 1 is not passed - script error
-	{ GID_QFG4,          770,   110,  0,            "dreamer", "dispose",        -1,    0, { WORKAROUND_IGNORE, 0 } }, // during the dream sequence, a 3rd parameter is passed by accident
+	{ GID_QFG4,           -1,   110,  0,            "dreamer", "dispose",        -1,    0, { WORKAROUND_IGNORE, 0 } }, // during the dream sequence, a 3rd parameter is passed by accident
 	SCI_WORKAROUNDENTRY_TERMINATOR
 };
 

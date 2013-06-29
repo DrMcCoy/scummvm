@@ -375,6 +375,27 @@ void GfxPalette::setRemappingPercent(byte color, byte percent) {
 	_remappingType[color] = kRemappingByPercent;
 }
 
+void GfxPalette::setRemappingPercentGray(byte color, byte percent) {
+	_remapOn = true;
+
+	// We need to defer the setup of the remapping table every time the screen
+	// palette is changed, so that kernelFindColor() can find the correct
+	// colors. Set it once here, in case the palette stays the same and update
+	// it on each palette change by copySysPaletteToScreen().
+	_remappingPercentToSet = percent;
+
+	// Note: This is not what the original does, but the results are the same visually
+	for (int i = 0; i < 256; i++) {
+		byte rComponent = (byte)(_sysPalette.colors[i].r * _remappingPercentToSet * 0.30 / 100);
+		byte gComponent = (byte)(_sysPalette.colors[i].g * _remappingPercentToSet * 0.59 / 100);
+		byte bComponent = (byte)(_sysPalette.colors[i].b * _remappingPercentToSet * 0.11 / 100);
+		byte luminosity = rComponent + gComponent + bComponent;
+		_remappingByPercent[i] = kernelFindColor(luminosity, luminosity, luminosity);
+	}
+
+	_remappingType[color] = kRemappingByPercent;
+}
+
 void GfxPalette::setRemappingRange(byte color, byte from, byte to, byte base) {
 	_remapOn = true;
 
@@ -701,11 +722,6 @@ void GfxPalette::kernelRestore(reg_t memoryHandle) {
 }
 
 void GfxPalette::kernelAssertPalette(GuiResourceId resourceId) {
-	// Sometimes invalid viewIds are asked for, ignore those (e.g. qfg1vga)
-	//if (!_resMan->testResource(ResourceId(kResourceTypeView, resourceId)))
-	//	return;
-	// maybe we took the wrong parameter before, if this causes invalid view again, enable to commented out code again
-
 	GfxView *view = g_sci->_gfxCache->getView(resourceId);
 	Palette *viewPalette = view->getPalette();
 	if (viewPalette) {
@@ -835,7 +851,7 @@ int16 GfxPalette::kernelPalVaryReverse(int16 ticks, uint16 stepStop, int16 direc
 
 	if (!_palVaryTicks) {
 		_palVaryDirection = _palVaryStepStop - _palVaryStep;
-		// ffs. see palVaryInit right above, we fix the code here as well
+		// see palVaryInit above, we fix the code here as well
 		//  just in case
 		palVaryProcess(1, true);
 	} else {

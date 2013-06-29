@@ -35,6 +35,7 @@
 #include "common/scummsys.h"
 #include "common/stream.h"
 #include "common/rational.h"
+#include "common/types.h"
 
 namespace Common {
 	class MacResManager;
@@ -119,7 +120,8 @@ protected:
 	enum CodecType {
 		CODEC_TYPE_MOV_OTHER,
 		CODEC_TYPE_VIDEO,
-		CODEC_TYPE_AUDIO
+		CODEC_TYPE_AUDIO,
+		CODEC_TYPE_MIDI
 	};
 
 	struct Track {
@@ -160,14 +162,14 @@ protected:
 		byte objectTypeMP4;
 	};
 
-	virtual SampleDesc *readSampleDesc(Track *track, uint32 format) = 0;
+	virtual SampleDesc *readSampleDesc(Track *track, uint32 format, uint32 descSize) = 0;
 
 	uint32 _timeScale;
 	uint32 _duration;
 	Rational _scaleFactorX;
 	Rational _scaleFactorY;
 	Array<Track *> _tracks;
-	
+
 	void init();
 
 private:

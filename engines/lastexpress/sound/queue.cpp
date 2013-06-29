@@ -67,6 +67,8 @@ void SoundQueue::handleTimer() {
 
 	for (Common::List<SoundEntry *>::iterator i = _soundList.begin(); i != _soundList.end(); ++i) {
 		SoundEntry *entry = (*i);
+		if (entry == NULL)
+			error("[SoundQueue::handleTimer] Invalid entry found in sound queue");
 
 		// When the entry has stopped playing, we remove his buffer
 		if (entry->isFinished()) {
@@ -123,6 +125,8 @@ void SoundQueue::updateQueue() {
 
 	for (Common::List<SoundEntry *>::iterator it = _soundList.begin(); it != _soundList.end(); ++it) {
 		SoundEntry *entry = *it;
+		if (entry == NULL)
+			error("[SoundQueue::updateQueue] Invalid entry found in sound queue");
 
 		// Original removes the entry data from the cache and sets the archive as not loaded
 		// and if the sound data buffer is not full, loads a new entry to be played based on
@@ -179,6 +183,8 @@ void SoundQueue::clearQueue() {
 
 	for (Common::List<SoundEntry *>::iterator i = _soundList.begin(); i != _soundList.end(); ++i) {
 		SoundEntry *entry = (*i);
+		if (entry == NULL)
+			error("[SoundQueue::clearQueue] Invalid entry found in sound queue");
 
 		// Delete entry
 		entry->close();
@@ -372,7 +378,15 @@ void SoundQueue::saveLoadWithSerializer(Common::Serializer &s) {
 			(*i)->saveLoadWithSerializer(s);
 	} else {
 		warning("[Sound::saveLoadWithSerializer] Loading not implemented");
-		s.skip(numEntries * 64);
+
+		uint32 unusedDataSize = numEntries * 64;
+		if (s.isLoading()) {
+			byte *empty = (byte *)malloc(unusedDataSize);
+			s.syncBytes(empty, unusedDataSize);
+			free(empty);
+		} else {
+			s.skip(unusedDataSize);
+		}
 	}
 }
 
