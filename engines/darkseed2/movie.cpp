@@ -64,7 +64,7 @@ Movie::~Movie() {
 }
 
 bool Movie::isPlaying() const {
-	return _decoder && _decoder->isVideoLoaded();
+	return _decoder && _decoder->isVideoLoaded() && _decoder->isPlaying();
 }
 
 Video::VideoDecoder *Movie::createDecoder(const Common::String &file) const {
@@ -142,6 +142,8 @@ bool Movie::play(const Common::String &file, int32 x, int32 y) {
 	_cursors->setVisible(false);
 
 	_fileName = file;
+
+	_decoder->start();
 
 	return true;
 }
