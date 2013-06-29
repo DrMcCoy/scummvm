@@ -88,6 +88,8 @@ protected:
 	uint32 _frameCount;
 	Codec *_codec;
 	uint16 _width, _height;
+
+	int32 _curFrame;
 };
 
 } // End of namespace Video
