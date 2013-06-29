@@ -80,7 +80,7 @@ Video::VideoDecoder *Movie::createDecoder(const Common::String &file) const {
 	case Common::kPlatformSaturn:
 		// The Sega Saturn port uses Sega FILM videos
 		realFile = Resources::addExtension(file, "CPK");
-		decoder = new Video::SegaFILMDecoder(_mixer, Audio::Mixer::kSFXSoundType);
+		decoder = new Video::SegaFILMDecoder();
 		break;
 	case Common::kPlatformMacintosh:
 		// The Macintosh port uses QuickTime videos

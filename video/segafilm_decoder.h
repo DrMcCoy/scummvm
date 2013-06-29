@@ -18,78 +18,89 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * $URL$
- * $Id$
- *
  */
 
 #ifndef VIDEO_SEGAFILM_DECODER_H
 #define VIDEO_SEGAFILM_DECODER_H
 
-#include "common/system.h"
-#include "common/events.h"
-#include "common/file.h"
-#include "common/endian.h"
-
-#include "audio/audiostream.h"
-#include "audio/mixer.h"
-
 #include "video/video_decoder.h"
-#include "video/codecs/cinepak.h"
+
+namespace Audio {
+class QueuingAudioStream;
+}
 
 namespace Common {
-	class SeekableReadStream;
+class SeekableReadStream;
 }
 
 namespace Video {
 
-struct SampleTableEntry {
-	uint32 offset;
-	uint32 length;
-	uint32 sampleInfo1;
-	uint32 sampleInfo2;
-};
+class Codec;
 
 class SegaFILMDecoder : public VideoDecoder {
 public:
-	SegaFILMDecoder(Audio::Mixer *mixer,
-			Audio::Mixer::SoundType soundType = Audio::Mixer::kPlainSoundType);
+	SegaFILMDecoder();
 	~SegaFILMDecoder();
 
 	bool loadStream(Common::SeekableReadStream *stream);
 	void close();
 
-	uint16 getWidth() const { return _width; }
-	uint16 getHeight() const { return _height; }
-	uint32 getFrameCount() const { return _frameCount; }
-	uint32 getTime() const;
-	bool isVideoLoaded() const { return _stream != 0; }
-	const ::Graphics::Surface *decodeNextFrame();
-	::Graphics::PixelFormat getPixelFormat() const;
-	uint32 getTimeToNextFrame() const;
-
 protected:
-	Audio::Mixer *_mixer;
-	Audio::Mixer::SoundType _soundType;
+	void readNextPacket();
+
+private:
+	class SegaFILMVideoTrack : public VideoTrack {
+	public:
+		SegaFILMVideoTrack(uint32 width, uint32 height, uint32 codecTag, byte bitsPerPixel, uint32 frameCount, uint32 timeScale);
+		~SegaFILMVideoTrack();
+
+		uint16 getWidth() const { return _width; }
+		uint16 getHeight() const { return _height; }
+		Graphics::PixelFormat getPixelFormat() const;
+		int getCurFrame() const { return _curFrame; }
+		int getFrameCount() const { return _frameCount; }
+		uint32 getNextFrameStartTime() const { return _nextFrameStartTime * 1000 / _timeScale; }
+		const Graphics::Surface *decodeNextFrame() { return _surface; }
+
+		void decodeFrame(Common::SeekableReadStream *stream, uint32 duration);
+
+	private:
+		const Graphics::Surface *_surface;
+		uint32 _timeScale;
+		uint32 _nextFrameStartTime;
+
+		uint32 _frameCount;
+		Codec *_codec;
+		uint16 _width, _height;
+		int _curFrame;
+	};
+
+	class SegaFILMAudioTrack : public AudioTrack {
+	public:
+		SegaFILMAudioTrack(uint audioFrequency, uint audioFlags);
+		~SegaFILMAudioTrack();
+
+		void queueAudio(Common::SeekableReadStream *stream, uint32 length);
+
+	protected:
+		Audio::AudioStream *getAudioStream() const;
+
+	private:
+		Audio::QueuingAudioStream *_audioStream;
+		uint16 _audioFlags;
+	};
 
 	Common::SeekableReadStream *_stream;
 
-	Audio::QueuingAudioStream *_audioStream;
-	Audio::SoundHandle _audioStreamHandle;
-	uint16 _audioFlags;
+	struct SampleTableEntry {
+		uint32 offset;
+		uint32 length;
+		uint32 sampleInfo1;
+		uint32 sampleInfo2;
+	};
 
-	uint32 _sampleCount;
 	uint32 _sampleTablePosition;
 	SampleTableEntry *_sampleTable;
-
-	uint32 _baseFreq;
-	uint32 _nextFrameStartTime;
-
-	uint32 _frameCount;
-	Codec *_codec;
-	uint16 _width, _height;
-
-	int32 _curFrame;
 };
 
 } // End of namespace Video
