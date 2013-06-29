@@ -75,7 +75,7 @@ Video::VideoDecoder *Movie::createDecoder(const Common::String &file) const {
 	case Common::kPlatformWindows:
 		// The Windows port uses AVI videos
 		realFile = Resources::addExtension(file, "AVI");
-		decoder = new Video::AviDecoder(_mixer, Audio::Mixer::kSFXSoundType);
+		decoder = new Video::AVIDecoder(Audio::Mixer::kSFXSoundType);
 		break;
 	case Common::kPlatformSaturn:
 		// The Sega Saturn port uses Sega FILM videos
