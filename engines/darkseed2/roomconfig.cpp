@@ -40,7 +40,7 @@ namespace DarkSeed2 {
 
 template<>
 void SaveLoad::sync<RoomConfigSprite::Frame>(Common::Serializer &serializer, RoomConfigSprite::Frame &var) {
-	uint32 scale = (uint32) var.scale;
+	uint32 scale = (uint32)var.scale;
 
 	sync(serializer, var.frame);
 	sync(serializer, scale);
@@ -381,7 +381,7 @@ bool RoomConfigSprite::updateStatus() {
 	startWait(100);
 
 	// Looping
-	if ((_loopEnd > 0) && (_loopStart > 0) && (_curPos > ((uint32) _loopEnd)))
+	if ((_loopEnd > 0) && (_loopStart > 0) && (_curPos > ((uint32)_loopEnd)))
 		if (conditionsMet(_loopCond))
 			_curPos = _loopStart;
 
@@ -1055,7 +1055,7 @@ bool RoomConfigManager::saveLoad(Common::Serializer &serializer, Resources &reso
 
 	if (serializer.isSaving()) {
 		for (Common::List<RoomConfig *>::iterator conf = _configs.begin(); conf != _configs.end(); ++conf) {
-			byte type = (byte) (*conf)->getType();
+			byte type = (byte)(*conf)->getType();
 			SaveLoad::sync(serializer, type);
 			if (!(*conf)->doSaveLoad(serializer, resources))
 				return false;

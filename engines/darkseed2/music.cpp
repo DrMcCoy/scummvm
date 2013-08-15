@@ -156,7 +156,7 @@ void Music::stop() {
 }
 
 bool Music::saveLoad(Common::Serializer &serializer, Resources &resources) {
-	byte midiMode = (byte) _midiMode;
+	byte midiMode = (byte)_midiMode;
 
 	SaveLoad::sync(serializer, midiMode);
 	SaveLoad::sync(serializer, _name);

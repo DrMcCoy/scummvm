@@ -348,7 +348,7 @@ void Saturn2Byte::drawChar(uint32 c, ::Graphics::Surface &surface, int32 x, int3
 
 	const byte *charOffset = _fontData + filePos;
 
-	byte *img = (byte *) surface.getBasePtr(x, y);
+	byte *img = (byte *)surface.getBasePtr(x, y);
 	for (int dY = 0; dY < 16; dY++) {
 		byte *imgRow = img;
 
@@ -360,7 +360,7 @@ void Saturn2Byte::drawChar(uint32 c, ::Graphics::Surface &surface, int32 x, int3
 					if (surface.format.bytesPerPixel == 1)
 						*imgRow = color;
 					else if (surface.format.bytesPerPixel == 2)
-						*((uint16 *) imgRow) = color;
+						*((uint16 *)imgRow) = color;
 				}
 				charData <<= 1;
 			}
@@ -397,7 +397,7 @@ const byte *ScummVMLatin1::nextChar(const byte *str) const {
 }
 
 uint32 ScummVMLatin1::getStringLength(const TextLine &line) const {
-	return strlen((const char *) line.getText());
+	return strlen((const char *)line.getText());
 }
 
 bool ScummVMLatin1::validBreakSpace(const byte *textStart, const byte *curPosition) const {

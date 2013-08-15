@@ -307,7 +307,7 @@ const ScriptChunk::Action &ScriptChunk::getAction() const {
 ScriptAction ScriptChunk::parseScriptAction(const Common::String &action) {
 	for (int i = 0; i < kScriptActionNone; i++)
 		if (action.equalsIgnoreCase(scriptAction[i]))
-			return (ScriptAction) i;
+			return (ScriptAction)i;
 
 	return kScriptActionNone;
 }

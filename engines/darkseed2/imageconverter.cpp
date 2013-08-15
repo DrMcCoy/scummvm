@@ -76,12 +76,12 @@ void ImageConverter::convert8bit(::Graphics::Surface &trueColor,
 	// For now, we only support 8bit->16bit conversion
 	assert(trueColor.format.bytesPerPixel == 2);
 
-	uint16 *dst = (uint16 *) trueColor.getPixels();
-	const byte *src = (const byte *) paletted.getPixels();
+	uint16 *dst = (uint16 *)trueColor.getPixels();
+	const byte *src = (const byte *)paletted.getPixels();
 
 	for (int32 y = 0; y < paletted.h; y++)
 		for (int32 x = 0; x < paletted.w; x++, dst++, src++)
-			*dst = (uint16) getColor(*src, palette);
+			*dst = (uint16)getColor(*src, palette);
 }
 
 void ImageConverter::convert8bit(::Graphics::Surface &trueColor,
@@ -106,36 +106,36 @@ void ImageConverter::convert8bitSystem(::Graphics::Surface &trueColor,
 	// For now, we only support 8bit->16bit conversion
 	assert(trueColor.format.bytesPerPixel == 2);
 
-	uint16 *dst = (uint16 *) trueColor.getPixels();
-	const byte *src = (const byte *) paletted.getPixels();
+	uint16 *dst = (uint16 *)trueColor.getPixels();
+	const byte *src = (const byte *)paletted.getPixels();
 
 	for (int32 y = 0; y < paletted.h; y++)
 		for (int32 x = 0; x < paletted.w; x++, dst++, src++)
-			*dst = (uint16) getColorSystem(*src);
+			*dst = (uint16)getColorSystem(*src);
 }
 
 uint32 ImageConverter::readColor(const byte *img) const {
 	if (_format.bytesPerPixel == 2)
-		return *((const uint16 *) img);
+		return *((const uint16 *)img);
 
 	return 0;
 }
 
 void ImageConverter::writeColor(byte *img, uint32 color) const {
 	if (_format.bytesPerPixel == 2)
-		*((uint16 *) img) = (uint16) color;
+		*((uint16 *)img) = (uint16)color;
 }
 
 void ImageConverter::swapColor(byte *img1, byte *img2) const {
 	if (_format.bytesPerPixel == 2)
-		SWAP(*((uint16 *) img1), *((uint16 *) img2));
+		SWAP(*((uint16 *)img1), *((uint16 *)img2));
 }
 
 void ImageConverter::mixTrueColor(byte *dst, const byte *src) {
 	assert(_format.bytesPerPixel == 2);
 
-	uint32 c1 = *((const uint16 *) dst);
-	uint32 c2 = *((const uint16 *) src);
+	uint32 c1 = *((const uint16 *)dst);
+	uint32 c2 = *((const uint16 *)src);
 
 	uint8 r1, g1, b1, r2, g2, b2;
 	_format.colorToRGB(c1, r1, g1, b1);
@@ -146,7 +146,7 @@ void ImageConverter::mixTrueColor(byte *dst, const byte *src) {
 	const uint8  b3 = (b1 + b2) / 2;
 	const uint32 c3 = _format.RGBToColor(r3, g3, b3);
 
-	*((uint16 *) dst) = c3;
+	*((uint16 *)dst) = c3;
 }
 
 uint32 ImageConverter::convertColor(uint8 c, const Palette &palette) const {

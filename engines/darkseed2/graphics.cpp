@@ -353,7 +353,7 @@ void Graphics::dirtyRectsAdd(const Common::Rect &rect) {
 		return;
 
 	if ((rect.left == 0) && (rect.top == 0) &&
-	    (rect.right >= ((int) _screenWidth)) && (rect.bottom >= ((int) _screenHeight))) {
+	    (rect.right >= ((int)_screenWidth)) && (rect.bottom >= ((int)_screenHeight))) {
 
 		dirtyAll();
 		return;
@@ -386,7 +386,7 @@ bool Graphics::dirtyRectsApply() {
 
 		const ::Graphics::Surface &surface = _screen.getTrueColor();
 
-		g_system->copyRectToScreen((const byte *) surface.getPixels(), surface.pitch, 0, 0, surface.w, surface.h);
+		g_system->copyRectToScreen((const byte *)surface.getPixels(), surface.pitch, 0, 0, surface.w, surface.h);
 
 		_dirtyAll = false;
 		return true;
@@ -410,7 +410,7 @@ bool Graphics::dirtyRectsApply() {
 			continue;
 
 		const ::Graphics::Surface &surface = _screen.getTrueColor();
-		const byte *data = (const byte *) surface.getBasePtr(it->left, it->top);
+		const byte *data = (const byte *)surface.getBasePtr(it->left, it->top);
 
 		g_system->copyRectToScreen(data, surface.pitch, it->left, it->top, it->width(), it->height());
 	}

@@ -310,7 +310,7 @@ frac_t Animation::calculateScaleVal(int frame, int32 height) {
 	if (frame < 0)
 		frame = _curFrame;
 
-	if (((uint) frame) >= _frames.size())
+	if (((uint)frame) >= _frames.size())
 		return FRAC_ONE;
 
 	return _frames[frame]->calculateScaleVal(height);

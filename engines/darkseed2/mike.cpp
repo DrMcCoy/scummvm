@@ -342,19 +342,19 @@ void Mike::advanceTurn() {
 	// Always turn the shortest way round
 	if (_turnTo > _direction) {
 		if ((_turnTo - _direction) < (_direction + (kDirNone - 1 - _turnTo))) {
-			_direction = (Direction) ((_direction + 1) % kDirNone);
+			_direction = (Direction)((_direction + 1) % kDirNone);
 		} else {
-			_direction = (Direction) (_direction - 1);
+			_direction = (Direction)(_direction - 1);
 			if ((_direction < 0) || (_direction >= kDirNone))
-				_direction = (Direction) (kDirNone - 1);
+				_direction = (Direction)(kDirNone - 1);
 		}
 	} else {
 		if ((_direction - _turnTo) < (_turnTo + (kDirNone - 1 - _direction))) {
-			_direction = (Direction) (_direction - 1);
+			_direction = (Direction)(_direction - 1);
 			if ((_direction < 0) || (_direction >= kDirNone))
-				_direction = (Direction) (kDirNone - 1);
+				_direction = (Direction)(kDirNone - 1);
 		} else {
-			_direction = (Direction) ((_direction + 1) % kDirNone);
+			_direction = (Direction)((_direction + 1) % kDirNone);
 		}
 	}
 
@@ -616,14 +616,14 @@ bool Mike::saveLoad(Common::Serializer &serializer, Resources &resources) {
 
 	SaveLoad::syncTimestamp(serializer, _waitUntil);
 
-	_direction       = (Direction) direction;
-	_targetDirection = (Direction) targetDirection;
-	_turnTo          = (Direction) turnTo;
+	_direction       = (Direction)direction;
+	_targetDirection = (Direction)targetDirection;
+	_turnTo          = (Direction)turnTo;
 
 	_scale = (frac_t) scale;
 
-	_state     = (State) state;
-	_animState = (AnimState) animState;
+	_state     = (State)state;
+	_animState = (AnimState)animState;
 
 	return true;
 }

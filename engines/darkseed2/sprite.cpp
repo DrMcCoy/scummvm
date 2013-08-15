@@ -231,7 +231,7 @@ void Sprite::createTransparencyMap() {
 	if (!exists())
 		return;
 
-	const byte *img = (const byte *) _surfacePaletted.getPixels();
+	const byte *img = (const byte *)_surfacePaletted.getPixels();
 	uint8 *map = _transparencyMap;
 
 	for (int32 y = 0; y < _surfacePaletted.h; y++)
@@ -243,7 +243,7 @@ void Sprite::updateTransparencyMap() {
 	if (!exists())
 		return;
 
-	const byte *img = (const byte *) _surfaceTrueColor.getPixels();
+	const byte *img = (const byte *)_surfaceTrueColor.getPixels();
 	uint8 *map = _transparencyMap;
 
 	uint32 colorTransp = ImgConv.convertColor(0, _palette);
@@ -343,8 +343,8 @@ bool Sprite::loadFromBMP(Common::SeekableReadStream &bmp) {
 	if (bmp.readUint32LE() != 40)
 		return false;
 
-	int32 width  = (int32) bmp.readUint32LE();
-	int32 height = (int32) bmp.readUint32LE();
+	int32 width  = (int32)bmp.readUint32LE();
+	int32 height = (int32)bmp.readUint32LE();
 
 	// Sanity checks
 	assert((width > 0) && (height > 0) && (width <= 0x7FFF) && (height <= 0x7FFF));
@@ -368,12 +368,12 @@ bool Sprite::loadFromBMP(Common::SeekableReadStream &bmp) {
 	uint32 bmpDataSize = bmp.readUint32LE();
 
 	// Sprite's feet position
-	_feetX = (int32) MIN<uint16>(ABS(((int16) bmp.readUint16LE())), width  - 1);
-	_feetY = (int32) MIN<uint16>(ABS(((int16) bmp.readUint16LE())), height - 1);
+	_feetX = (int32)MIN<uint16>(ABS(((int16)bmp.readUint16LE())), width  - 1);
+	_feetY = (int32)MIN<uint16>(ABS(((int16)bmp.readUint16LE())), height - 1);
 
 	// Default coordinates
-	_defaultX = (int32) bmp.readUint16LE();
-	_defaultY = (int32) bmp.readUint16LE();
+	_defaultX = (int32)bmp.readUint16LE();
+	_defaultY = (int32)bmp.readUint16LE();
 
 	uint32 numPalColors = bmp.readUint32LE();
 	if (numPalColors == 0)
@@ -429,14 +429,14 @@ bool Sprite::loadFromRGB(Common::SeekableReadStream &rgb) {
 	// TODO: Are those correct for RGB files?
 
 	// Sprite's feet position
-	_feetX = (int32) MIN<uint16>(ABS(((int16) rgb.readUint16BE())), width  - 1);
-	_feetY = (int32) MIN<uint16>(ABS(((int16) rgb.readUint16BE())), height - 1);
+	_feetX = (int32)MIN<uint16>(ABS(((int16)rgb.readUint16BE())), width  - 1);
+	_feetY = (int32)MIN<uint16>(ABS(((int16)rgb.readUint16BE())), height - 1);
 
 	// Default coordinates
-	_defaultX = (int32) rgb.readUint16BE();
-	_defaultY = (int32) rgb.readUint16BE();
+	_defaultX = (int32)rgb.readUint16BE();
+	_defaultY = (int32)rgb.readUint16BE();
 
-	byte *img = (byte *) _surfaceTrueColor.getPixels();
+	byte *img = (byte *)_surfaceTrueColor.getPixels();
 	uint8 *transp = _transparencyMap;
 	for (int32 y = 0; y < height; y++) {
 		for (int32 x = 0; x < width; x++) {
@@ -459,7 +459,7 @@ bool Sprite::loadFromBDP(Common::SeekableReadStream &bdp) {
 
 	create(320, 240);
 
-	byte *img = (byte *) _surfaceTrueColor.getPixels();
+	byte *img = (byte *)_surfaceTrueColor.getPixels();
 	for (int32 y = 0; y < 320; y++) {
 		for (int32 x = 0; x < 240; x++) {
 			ImgConv.writeColor(img, readColor555(bdp));
@@ -480,7 +480,7 @@ bool Sprite::loadFrom256(Common::SeekableReadStream &f256, int32 width, int32 he
 
 	create(width, height);
 
-	byte *img = (byte *) _surfacePaletted.getPixels();
+	byte *img = (byte *)_surfacePaletted.getPixels();
 	for (int32 y = 0; y < width; y++) {
 		for (int32 x = 0; x < height; x++) {
 			*img++ = f256.readByte();
@@ -506,7 +506,7 @@ bool Sprite::loadFromSaturnCursor(Common::SeekableReadStream &cursor) {
 	_feetX = cursor.readUint16BE();
 	_feetY = cursor.readUint16BE();
 
-	byte *img = (byte *) _surfaceTrueColor.getPixels();
+	byte *img = (byte *)_surfaceTrueColor.getPixels();
 	for (int32 y = 0; y < 16; y++) {
 		for (int32 x = 0; x < 16; x++) {
 			const uint8  p = cursor.readByte();
@@ -755,8 +755,8 @@ void Sprite::flipHorizontally() {
 	int32 height    = _surfacePaletted.h;
 	int32 halfWidth = width / 2;
 
-	byte  *dataPal    = (byte *) _surfacePaletted.getPixels();
-	byte  *dataTrue   = (byte *) _surfaceTrueColor.getPixels();
+	byte  *dataPal    = (byte *)_surfacePaletted.getPixels();
+	byte  *dataTrue   = (byte *)_surfaceTrueColor.getPixels();
 	uint8 *dataTransp =          _transparencyMap;
 
 	for (int32 i = 0; i < height; i++) {
@@ -798,8 +798,8 @@ void Sprite::flipVertically() {
 	int32 height     = _surfacePaletted.h;
 	int32 halfHeight = height / 2;
 
-	byte  *dataPal    = (byte *) _surfacePaletted.getPixels();
-	byte  *dataTrue   = (byte *) _surfaceTrueColor.getPixels();
+	byte  *dataPal    = (byte *)_surfacePaletted.getPixels();
+	byte  *dataTrue   = (byte *)_surfaceTrueColor.getPixels();
 	uint8 *dataTransp =          _transparencyMap;
 
 	byte  *dataPalStart    = dataPal;
@@ -869,8 +869,8 @@ void Sprite::blit(const Sprite &from, const Common::Rect &area, int32 x, int32 y
 	const int32 fromTop   = fracToInt(fromArea.top  * from._scaleInverse);
 	const int32 fromLeft  = fracToInt(fromArea.left * from._scaleInverse);
 
-	const byte *src = (const byte *) from._surfaceTrueColor.getBasePtr(fromLeft, fromTop);
-	      byte *dst = (      byte *)      _surfaceTrueColor.getBasePtr(x, y);
+	const byte *src = (const byte *)from._surfaceTrueColor.getBasePtr(fromLeft, fromTop);
+	      byte *dst = (      byte *)     _surfaceTrueColor.getBasePtr(x, y);
 
 	const uint8 *srcT = from._transparencyMap + fromTop * from._surfaceTrueColor.w + fromLeft;
 	      uint8 *dstT =      _transparencyMap +       y *      _surfaceTrueColor.w + x;
@@ -934,7 +934,7 @@ void Sprite::fillImage(byte cP, uint32 cT) {
 	memset(_surfacePaletted.getPixels(), cP,
 			_surfacePaletted.w * _surfacePaletted.h * _surfacePaletted.format.bytesPerPixel);
 
-	byte *trueColor = (byte *) _surfaceTrueColor.getPixels();
+	byte *trueColor = (byte *)_surfaceTrueColor.getPixels();
 	for (int32 y = 0; y < _surfaceTrueColor.h; y++) {
 		for (int32 x = 0; x < _surfaceTrueColor.w; x++) {
 			if (_surfaceTrueColor.format.bytesPerPixel == 2)
@@ -1006,7 +1006,7 @@ bool Sprite::readBMPDataComp0(Common::SeekableReadStream &bmp, uint32 dataSize) 
 	int32 width  = _surfacePaletted.w;
 	int32 height = _surfacePaletted.h;
 
-	byte *data = (byte *) _surfacePaletted.getBasePtr(0, height - 1);
+	byte *data = (byte *)_surfacePaletted.getBasePtr(0, height - 1);
 
 	int extraDataLength = (width % 4) ? 4 - (width % 4) : 0;
 	for (int32 i = 0; i < height; i++) {
@@ -1026,7 +1026,7 @@ bool Sprite::readBMPDataComp2(Common::SeekableReadStream &bmp, uint32 dataSize) 
 	int32 width  = _surfacePaletted.w;
 	int32 height = _surfacePaletted.h;
 
-	byte *data = (byte *) _surfacePaletted.getBasePtr(0, height - 1);
+	byte *data = (byte *)_surfacePaletted.getBasePtr(0, height - 1);
 
 	for (int32 i = 0; i < height; i++) {
 		byte *rowData = data;
@@ -1067,7 +1067,7 @@ void Sprite::setScale(frac_t scale) {
 bool Sprite::saveLoad(Common::Serializer &serializer, Resources &resources) {
 	assert(!_fromCursor);
 
-	uint32 scale = (uint32) _scale;
+	uint32 scale = (uint32)_scale;
 
 	SaveLoad::sync(serializer, _fileName);
 	SaveLoad::sync(serializer, _flippedHorizontally);

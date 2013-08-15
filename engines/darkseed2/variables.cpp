@@ -110,7 +110,7 @@ bool Variables::loadFromIDX(Common::SeekableReadStream &idx) {
 		if (value.empty())
 			continue;
 
-		_variables.setVal(varName, (uint8) atoi(value.c_str()));
+		_variables.setVal(varName, (uint8)atoi(value.c_str()));
 	}
 
 	_lastChanged = g_system->getMillis();

@@ -518,7 +518,7 @@ void Events::cycleCursorMode() {
 		_itemMode = false;
 	}
 
-	_cursorMode = (CursorMode) ((((int) _cursorMode) + 1) % kCursorModeNone);
+	_cursorMode = (CursorMode) ((((int)_cursorMode) + 1) % kCursorModeNone);
 	setCursor();
 }
 
@@ -540,9 +540,9 @@ void Events::setCursor(CursorMode cursor, bool active) {
 		return;
 
 	if (active)
-		setCursor(*_cursors[(int) cursor].active);
+		setCursor(*_cursors[(int)cursor].active);
 	else
-		setCursor(*_cursors[(int) cursor].inactive);
+		setCursor(*_cursors[(int)cursor].inactive);
 }
 
 void Events::setCursor(const Cursors::Cursor &cursor) {
@@ -685,9 +685,9 @@ bool Events::saveLoad(Common::Serializer &serializer, Resources &resources) {
 	_itemName.clear();
 	_itemCursorName.clear();
 
-	byte state      = (byte) _state;
-	byte cursorMode = (byte) _cursorMode;
-	byte itemVerb   = (byte) _itemVerb;
+	byte state      = (byte)_state;
+	byte cursorMode = (byte)_cursorMode;
+	byte itemVerb   = (byte)_itemVerb;
 
 	if (serializer.isSaving()) {
 		if (_lastObject)
@@ -711,9 +711,9 @@ bool Events::saveLoad(Common::Serializer &serializer, Resources &resources) {
 	SaveLoad::sync(serializer, _lastRoom);
 	SaveLoad::sync(serializer, _nextRoom);
 
-	_state      = (State) state;
-	_cursorMode = (CursorMode) cursorMode;
-	_itemVerb   = (ObjectVerb) itemVerb;
+	_state      = (State)state;
+	_cursorMode = (CursorMode)cursorMode;
+	_itemVerb   = (ObjectVerb)itemVerb;
 
 	return true;
 }

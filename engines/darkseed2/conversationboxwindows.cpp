@@ -343,7 +343,7 @@ int ConversationBoxWindows::getTextArea(int32 x, int32 y) {
 ConversationBoxWindows::ScrollAction ConversationBoxWindows::getScrollAction(int32 x, int32 y) {
 	for (int i = 0; i < 2; i++)
 		if (_scrollAreas[i].contains(x, y))
-			return (ScrollAction) i;
+			return (ScrollAction)i;
 
 	return kScrollActionNone;
 }

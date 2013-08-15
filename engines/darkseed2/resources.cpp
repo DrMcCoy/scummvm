@@ -952,7 +952,7 @@ bool Resources::readIndexResources(Common::File &indexFile, uint16 resCount) {
 		// File name
 		indexFile.read(buffer, 12);
 		buffer[12] = '\0';
-		Common::String resFile = (const char *) buffer;
+		Common::String resFile = (const char *)buffer;
 
 		if (archive >= _archives.size()) {
 			warning("Resources::readIndexResources(): Glue number out "

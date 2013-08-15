@@ -43,7 +43,7 @@ namespace DarkSeed2 {
 
 template<>
 void SaveLoad::sync<ScriptInterpreter::Script>(Common::Serializer &serializer, ScriptInterpreter::Script &script) {
-	byte waitingFor = (byte) script.waitingFor;
+	byte waitingFor = (byte)script.waitingFor;
 
 	SaveLoad::sync(serializer, script.signature);
 

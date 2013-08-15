@@ -253,7 +253,7 @@ void TalkManager::updateStatus() {
 	_sound->updateStatus();
 
 	if (_waitTextUntil >= 0) {
-		if (g_system->getMillis() >= ((uint32) _waitTextUntil)) {
+		if (g_system->getMillis() >= ((uint32)_waitTextUntil)) {
 			// Waited long enough, end talking
 
 			endTalk();
