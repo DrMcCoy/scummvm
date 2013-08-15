@@ -70,9 +70,9 @@ public:
 			byte b = stream->readByte();
 
 			if (_surface->format.bytesPerPixel == 2)
-				*((uint16 *)_surface->pixels + i) = _surface->format.RGBToColor(r, g, b);
+				*((uint16 *)_surface->getPixels() + i) = _surface->format.RGBToColor(r, g, b);
 			else
-				*((uint32 *)_surface->pixels + i) = _surface->format.RGBToColor(r, g, b);
+				*((uint32 *)_surface->getPixels() + i) = _surface->format.RGBToColor(r, g, b);
 		}
 
 		return _surface;

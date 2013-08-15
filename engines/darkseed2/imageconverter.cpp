@@ -62,7 +62,7 @@ void ImageConverter::setPixelFormat(const ::Graphics::PixelFormat &format) {
 void ImageConverter::convert8bit(::Graphics::Surface &trueColor,
 		const ::Graphics::Surface &paletted, const Palette &palette) const {
 
-	assert(trueColor.pixels && paletted.pixels);
+	assert(trueColor.getPixels() && paletted.getPixels());
 	assert(trueColor.w == paletted.w);
 	assert(trueColor.h == paletted.h);
 
@@ -76,8 +76,8 @@ void ImageConverter::convert8bit(::Graphics::Surface &trueColor,
 	// For now, we only support 8bit->16bit conversion
 	assert(trueColor.format.bytesPerPixel == 2);
 
-	uint16 *dst = (uint16 *) trueColor.pixels;
-	const byte *src = (const byte *) paletted.pixels;
+	uint16 *dst = (uint16 *) trueColor.getPixels();
+	const byte *src = (const byte *) paletted.getPixels();
 
 	for (int32 y = 0; y < paletted.h; y++)
 		for (int32 x = 0; x < paletted.w; x++, dst++, src++)
@@ -96,7 +96,7 @@ void ImageConverter::convert8bit(::Graphics::Surface &trueColor,
 void ImageConverter::convert8bitSystem(::Graphics::Surface &trueColor,
 		const ::Graphics::Surface &paletted) const {
 
-	assert(trueColor.pixels && paletted.pixels);
+	assert(trueColor.getPixels() && paletted.getPixels());
 	assert(trueColor.w == paletted.w);
 	assert(trueColor.h == paletted.h);
 
@@ -106,8 +106,8 @@ void ImageConverter::convert8bitSystem(::Graphics::Surface &trueColor,
 	// For now, we only support 8bit->16bit conversion
 	assert(trueColor.format.bytesPerPixel == 2);
 
-	uint16 *dst = (uint16 *) trueColor.pixels;
-	const byte *src = (const byte *) paletted.pixels;
+	uint16 *dst = (uint16 *) trueColor.getPixels();
+	const byte *src = (const byte *) paletted.getPixels();
 
 	for (int32 y = 0; y < paletted.h; y++)
 		for (int32 x = 0; x < paletted.w; x++, dst++, src++)

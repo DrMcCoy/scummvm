@@ -386,7 +386,7 @@ bool Graphics::dirtyRectsApply() {
 
 		const ::Graphics::Surface &surface = _screen.getTrueColor();
 
-		g_system->copyRectToScreen((const byte *) surface.pixels, surface.pitch, 0, 0, surface.w, surface.h);
+		g_system->copyRectToScreen((const byte *) surface.getPixels(), surface.pitch, 0, 0, surface.w, surface.h);
 
 		_dirtyAll = false;
 		return true;

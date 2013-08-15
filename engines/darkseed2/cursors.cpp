@@ -143,7 +143,7 @@ bool Cursors::setCursor(const Common::String &cursor) {
 bool Cursors::setCursor(const Cursors::Cursor &cursor) {
 	_currentCursor = cursor.name;
 
-	CursorMan.replaceCursor((const byte *) cursor.sprite->getTrueColor().pixels,
+	CursorMan.replaceCursor((const byte *) cursor.sprite->getTrueColor().getPixels(),
 			cursor.width, cursor.height, cursor.hotspotX, cursor.hotspotY, ImgConv.getColor(0, 0, 255), false,
 			&ImgConv.getPixelFormat());
 
