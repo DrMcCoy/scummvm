@@ -116,7 +116,7 @@ void ImageConverter::convert8bitSystem(::Graphics::Surface &trueColor,
 
 uint32 ImageConverter::readColor(const byte *img) const {
 	if (_format.bytesPerPixel == 2)
-		return *((uint16 *) img);
+		return *((const uint16 *) img);
 
 	return 0;
 }
@@ -134,8 +134,8 @@ void ImageConverter::swapColor(byte *img1, byte *img2) const {
 void ImageConverter::mixTrueColor(byte *dst, const byte *src) {
 	assert(_format.bytesPerPixel == 2);
 
-	uint32 c1 = *((uint16 *) dst);
-	uint32 c2 = *((uint16 *) src);
+	uint32 c1 = *((const uint16 *) dst);
+	uint32 c2 = *((const uint16 *) src);
 
 	uint8 r1, g1, b1, r2, g2, b2;
 	_format.colorToRGB(c1, r1, g1, b1);

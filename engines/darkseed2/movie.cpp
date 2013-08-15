@@ -160,7 +160,7 @@ void Movie::updateStatus() {
 	const ::Graphics::Surface *frame = _decoder->decodeNextFrame();
 
 	if (frame)
-		_screen.copyFrom((byte *)frame->getPixels(), frame->format.bytesPerPixel, false);
+		_screen.copyFrom((const byte *)frame->getPixels(), frame->format.bytesPerPixel, false);
 
 	if (_decoder->hasDirtyPalette()) {
 		Palette newPalette;
