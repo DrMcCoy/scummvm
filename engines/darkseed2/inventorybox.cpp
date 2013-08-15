@@ -92,7 +92,7 @@ int32 InventoryBox::getHeight() const {
 }
 
 void InventoryBox::fillInBoxProperties(GameVersion gameVersion) {
-	switch(gameVersion) {
+	switch (gameVersion) {
 	case kGameVersionWindows:
 	case kGameVersionMac:
 		_boxProps.width =  640;
