@@ -32,5 +32,10 @@ MODULE_OBJS += \
 	theora_decoder.o
 endif
 
+ifdef USE_MPEG2
+MODULE_OBJS += \
+	codecs/mpeg.o
+endif
+
 # Include common rules
 include $(srcdir)/rules.mk

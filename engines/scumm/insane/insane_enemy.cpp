@@ -1519,8 +1519,6 @@ void Insane::chooseEnemyWeaponAnim(int32 buttons) {
 		case INV_BOOT:
 		case INV_HAND:
 		case INV_DUST:
-			_actor[1].act[2].state = 0;
-			switchEnemyWeapon();
 		default:
 			switchEnemyWeapon();
 		}
@@ -2437,6 +2435,7 @@ void Insane::actor12Reaction(int32 buttons) {
 		smlayer_setActorFacing(1, 2, 6, 180);
 		smlayer_setActorLayer(1, 2, 25);
 		_actor[1].act[2].state = 103;
+		break;
 	case 103:
 		_actor[1].kicking = false;
 

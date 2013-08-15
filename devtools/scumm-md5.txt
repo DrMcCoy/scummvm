@@ -626,7 +626,8 @@ jungle	Let's Explore the Jungle with Buzzy
 	8801fb4a1200b347f7a38523339526dd	-1	en	Windows	-	-	-	Kirben
 
 moonbase	Moonbase Commander
-	cf400d20769fb70eb21766582f4924f7	-1	en	Windows	-	-	-	Kirben
+	cf400d20769fb70eb21766582f4924f7	-1	en	Windows	1.0	1.0	-	Kirben
+	e1c9998826ce7fa8bde5cc3a5023edec	-1	en	Windows	1.1	1.1	-	fuzzie
 	ef71a322b6530ac45b1a070f7c0795f7	-1	en	Windows	Demo	Demo	-	Kirben
 
 pajama	Pajama Sam 1: No Need to Hide When It's Dark Outside
@@ -654,6 +655,7 @@ pajama2	Pajama Sam 2: Thunder and Lightning Aren't so Frightening
 	e5563c8358443c4352fcddf7402a5e0a	-1	fr	Windows	HE 98.5	-	-	gist974
 	c6907d44f1166941d982864cd42cdc89	-1	de	All	HE 99	-	-	nachbarnebenan
 	f8be685007a8b425ba2a455da732f59f	-1	fr	Mac	HE 99	-	-	alamaz
+	7477bc23d0383516c5e310cd8771dcc9	-1	fr	Windows	HE 99	-	-	Strangerke
 	32709cbeeb3044b34129950860a83f14	-1	ru	Windows	HE 99	-	-	sev
 	1af4eb581a33d808707d66d50e084dca	-1	he	Windows	HE 99	-	-	Matan Bareket
 

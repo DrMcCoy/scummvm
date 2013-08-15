@@ -92,7 +92,7 @@ bool HopkinsEngine::canLoadGameStateCurrently() {
  * Returns true if it is currently okay to save the game
  */
 bool HopkinsEngine::canSaveGameStateCurrently() {
-	return !_globals->_exitId && !_globals->_cityMapEnabledFl && _events->_mouseFl 
+	return !_globals->_exitId && !_globals->_cityMapEnabledFl && _events->_mouseFl
 		&& _globals->_curRoomNum != 0 && !isUnderwaterSubScene();
 }
 
@@ -111,8 +111,6 @@ Common::Error HopkinsEngine::saveGameState(int slot, const Common::String &desc)
 }
 
 Common::Error HopkinsEngine::run() {
-	_saveLoad->initSaves();
-
 	_globals->setConfig();
 	_fileIO->initCensorship();
 	initializeSystem();

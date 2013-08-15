@@ -42,15 +42,17 @@ static const PlainGameDescriptor wintermuteGames[] = {
 	{"dreamscape",      "Dreamscape"},
 	{"ghostsheet",      "Ghost in the Sheet"},
 	{"hamlet",          "Hamlet or the last game without MMORPS features, shaders and product placement"},
-	{"jamesperis",		"James Peris: No License Nor Control"},
+	{"jamesperis",      "James Peris: No License Nor Control"},
 	{"julia",           "J.U.L.I.A."},
 	{"mirage",          "Mirage"},
 	{"pigeons",         "Pigeons in the Park"},
 	{"reversion1",      "Reversion: The Escape"},
 	{"reversion2",      "Reversion: The Meeting"},
 	{"rosemary",        "Rosemary"},
+	{"shinestar",       "The Shine of a Star"},
 	{"thebox",          "The Box"},
-	{"tradestory",		"The Trader of Stories"},
+	{"tib",             "Fairy Tales About Toshechka and Boshechka"},
+	{"tradestory",      "The Trader of Stories"},
 	{"twc",             "the white chamber"},
 	{"wintermute",      "Wintermute engine game"},
 	{0, 0}
@@ -137,6 +139,17 @@ static const ADGameDescription gameDescriptions[] = {
 		Common::EN_ANY,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Carol Reed 7 - Blue Madonna (Demo)
+	{
+		"carolreed7",
+		"Demo",
+		AD_ENTRY1s("data.dcp", "0372ad0c775266f6355e9e8ae397a2f1", 103719442),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE |
+		ADGF_DEMO,
 		GUIO0()
 	},
 	// Carol Reed 7 - Blue Madonna
@@ -292,12 +305,43 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_UNSTABLE,
 		GUIO0()
 	},
-	// James Peris: No License Nor Control
+	// James Peris: No License Nor Control (English)
+	{
+		"jamesperis",
+		"",
+		AD_ENTRY1s("data.dcp", "a420961e170cb7d168a0d2bae2fe5218", 225294032),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// James Peris: No License Nor Control (Spanish)
+	{
+		"jamesperis",
+		"",
+		AD_ENTRY1s("data.dcp", "a420961e170cb7d168a0d2bae2fe5218", 225294032),
+		Common::ES_ESP,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// James Peris: No License Nor Control (Demo) (English)
 	{
 		"jamesperis",
 		"Demo",
 		AD_ENTRY1s("data.dcp", "edb9f9c7a08993c1e28f4e477b5f9830", 116113507),
-		Common::UNK_LANG, // No solution in place to select language
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE |
+		ADGF_DEMO,
+		GUIO0()
+	},
+	// James Peris: No License Nor Control (Demo) (Spanish)
+	{
+		"jamesperis",
+		"Demo",
+		AD_ENTRY1s("data.dcp", "edb9f9c7a08993c1e28f4e477b5f9830", 116113507),
+		Common::ES_ESP,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE |
 		ADGF_DEMO,
@@ -581,12 +625,32 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_UNSTABLE,
 		GUIO0()
 	},
+	// The Shine of a Star
+	{
+		"shinestar",
+		"",
+		AD_ENTRY1s("data.dcp", "f05abe9e2427a5e4f73648fa09c4ba8e", 94113060),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
 	// The Box
 	{
 		"thebox",
 		"",
 		AD_ENTRY1s("data.dcp", "ec5f0c7e8174e307701447b53afe7e2f", 108372483),
 		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Fairy Tales About Toshechka and Boshechka
+	{
+		"tib",
+		"",
+		AD_ENTRY1s("data.dcp", "87d296ef3f46570ed18f000d3885db77", 340264526),
+		Common::RU_RUS,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE,
 		GUIO0()
