@@ -598,6 +598,7 @@ catalog	Humongous Interactive Catalog
 	a56e8d9d4281c53c3f63c9bd22a59e21	10978342	en	All	HE CUP	Preview	George Kormendi
 	74da3494fbe1a7d20213b0afe0954755	10841544	fr	All	HE CUP	Preview	-	George Kormendi
 	4c4820518e16e1a0e3616a3b021a04f3	10927456	de	All	HE CUP	Preview	-	Kirben
+	288fb75b24389733c29fa107fe8d44e8	10795148	us	All	HE CUP	Preview	-	Kirben
 
 airport	Let's Explore the Airport with Buzzy
 	d6334a5a9b61afe18c368540fdf522ca	-1	en	Mac	-	-	-	Joachim Eberhard
@@ -775,6 +776,7 @@ puttzoo	Putt-Putt Saves the Zoo
 	3a3e592b074f595489f7f11e150c398d	-1	us	Windows	HE 99	Updated	-	Adrian
 	c5cc7cba02a2fbd539c4439e775b0536	43470	de	Windows	HE 99	Updated	-	Lightkey
 	5c9cecbd2952ccec14c9ecebf5822a34	-1	en	iOS	HE 100	-	-	clone2727
+	7b4ee071eecadc2d8cd0c3509110825c	-1	en	Windows	HE 100	Remastered	-	Kirben
 
 	3486ede0f904789267d4bcc5537a46d4	14337	en	Mac	-	Demo	-	khalek
 	d220d154aafbfa12bd6f3ab1b2dae420	-1	de	Mac	-	Demo	-	Joachim Eberhard

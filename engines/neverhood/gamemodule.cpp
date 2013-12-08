@@ -216,7 +216,7 @@ void GameModule::initRadioPuzzle() {
 		setGlobalVar(V_RADIO_ROOM_LEFT_DOOR, 1);
 		setGlobalVar(V_RADIO_ROOM_RIGHT_DOOR, 0);
 		setSubVar(VA_IS_PUZZLE_INIT, 0x08C80800, 1);
-  	}
+	}
 }
 
 void GameModule::initTestTubes1Puzzle() {
@@ -411,7 +411,9 @@ void GameModule::checkRequests() {
 	}
 	if (_restoreGameRequested) {
 		_restoreGameRequested = false;
+		_vm->_audioResourceMan->stopAllMusic();
 		_vm->_audioResourceMan->stopAllSounds();
+		_vm->_soundMan->stopAllMusic();
 		_vm->_soundMan->stopAllSounds();
 		delete _childObject;
 		delete _prevChildObject;

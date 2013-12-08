@@ -63,6 +63,7 @@ MortevielleEngine::MortevielleEngine(OSystem *system, const MortevielleGameDescr
 	_mouseClick = false;
 	_inMainGameLoop = false;
 	_quitGame = false;
+	_pauseStartTime = -1;
 
 	_roomPresenceLuc = false;
 	_roomPresenceIda = false;
@@ -92,8 +93,6 @@ MortevielleEngine::MortevielleEngine(OSystem *system, const MortevielleGameDescr
 	_uptodatePresence = false;
 
 	_textColor = 0;
-	_currGraphicalDevice = -1;
-	_newGraphicalDevice = -1;
 	_place = -1;
 
 	_x26KeyCount = -1;
@@ -167,6 +166,25 @@ Common::String MortevielleEngine::generateSaveFilename(const Common::String &tar
 }
 
 /**
+ * Pause the game.
+ */
+void MortevielleEngine::pauseEngineIntern(bool pause) {
+	Engine::pauseEngineIntern(pause);
+	if (pause) {
+		if (_pauseStartTime == -1)
+			_pauseStartTime = readclock();
+	} else {
+		if (_pauseStartTime != -1) {
+			int pauseEndTime = readclock();
+			_currentTime += (pauseEndTime - _pauseStartTime);
+			if (_uptodatePresence)
+				_startTime += (pauseEndTime - _pauseStartTime);
+		}
+		_pauseStartTime = -1;
+	}
+}
+
+/**
  * Initialize the game state
  */
 Common::ErrorCode MortevielleEngine::initialize() {
@@ -179,10 +197,6 @@ Common::ErrorCode MortevielleEngine::initialize() {
 
 	// Set up an intermediate screen surface
 	_screenSurface.create(SCREEN_WIDTH, SCREEN_HEIGHT, Graphics::PixelFormat::createFormatCLUT8());
-
-	// Set the screen mode
-	_currGraphicalDevice = MODE_EGA;
-	_resolutionScaler = 2;
 
 	_txxFileFl = false;
 	// Load texts from TXX files
@@ -204,8 +218,6 @@ Common::ErrorCode MortevielleEngine::initialize() {
 	// Setup the mouse cursor
 	initMouse();
 
-	_currGraphicalDevice = MODE_EGA;
-	_newGraphicalDevice = _currGraphicalDevice;
 	loadPalette();
 	loadCFIPH();
 	loadCFIEC();
@@ -220,10 +232,7 @@ Common::ErrorCode MortevielleEngine::initialize() {
 
 	testKeyboard();
 	showConfigScreen();
-	_newGraphicalDevice = _currGraphicalDevice;
 	testKeyboard();
-	if (_newGraphicalDevice != _currGraphicalDevice)
-		_currGraphicalDevice = _newGraphicalDevice;
 	clearScreen();
 
 	_soundManager.loadNoise();
@@ -358,10 +367,16 @@ Common::Error MortevielleEngine::run() {
 	if (loadSlot == 0)
 		// Show the game introduction
 		showIntroduction();
+	else {
+		_caff = 51;
+		_text.taffich();
+	}
 
 	// Either load the initial game state savegame, or the specified savegame number
 	adzon();
-	_savegameManager.loadSavegame(generateSaveFilename(loadSlot));
+	resetVariables();
+	if (loadSlot != 0)
+		_savegameManager.loadSavegame(generateSaveFilename(loadSlot));
 
 	// Run the main game loop
 	mainGame();

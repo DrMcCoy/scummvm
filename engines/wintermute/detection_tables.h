@@ -40,16 +40,23 @@ static const PlainGameDescriptor wintermuteGames[] = {
 	{"dreaming",        "Des Reves Elastiques Avec Mille Insectes Nommes Georges"},
 	{"dirtysplit",      "Dirty Split"},
 	{"dreamscape",      "Dreamscape"},
+	{"escapemansion",   "Escape from the Mansion"},
 	{"ghostsheet",      "Ghost in the Sheet"},
 	{"hamlet",          "Hamlet or the last game without MMORPS features, shaders and product placement"},
+	{"helga",           "Helga Deep In Trouble"},
 	{"jamesperis",      "James Peris: No License Nor Control"},
+	{"looky",           "Looky"},
 	{"julia",           "J.U.L.I.A."},
 	{"mirage",          "Mirage"},
+	{"paintaria",       "Paintaria"},
 	{"pigeons",         "Pigeons in the Park"},
 	{"reversion1",      "Reversion: The Escape"},
 	{"reversion2",      "Reversion: The Meeting"},
 	{"rosemary",        "Rosemary"},
+	{"shaban",          "Shaban"},
 	{"shinestar",       "The Shine of a Star"},
+	{"spaceinvaders",   "Space Invaders"},
+	{"spacemadness",    "Space Madness"},
 	{"thebox",          "The Box"},
 	{"tib",             "Fairy Tales About Toshechka and Boshechka"},
 	{"tradestory",      "The Trader of Stories"},
@@ -202,6 +209,22 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_TESTING,
 		GUIO0()
 	},
+	// Dead City (Czech)
+	{
+		"deadcity",
+		"",
+		{
+			// The Czech data are in data.dcp, so in this case we'll have to
+			// just detect the english version twice, to give the user a choice.
+			{"english.dcp", 0, "c591046d6de7e381d76f70e0787b2b1f", 415935},
+			{"data.dcp", 0, "7ebfd50d1a22370ed7b079bcaa631d62", 9070205},
+			AD_LISTEND
+		},
+		Common::CZ_CZE,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
 	// Dead City (English)
 	{
 		"deadcity",
@@ -284,6 +307,26 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_UNSTABLE,
 		GUIO0()
 	},
+	// Escape from the Mansion
+	{
+		"escapemansion",
+		"Beta 1",
+		AD_ENTRY1s("data.dcp",  "d8e348b2312cc36a929cad75f12e0b3a", 21452380),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Escape from the Mansion
+	{
+		"escapemansion",
+		"Beta 2",
+		AD_ENTRY1s("data.dcp",  "ded5fa6c5f2afdaf2cafb53e52cd3dd8", 21455763),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
 	// Ghosts in the Sheet
 	{
 		"ghostsheet",
@@ -303,6 +346,21 @@ static const ADGameDescription gameDescriptions[] = {
 		Common::EN_ANY,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Helga Deep In Trouble (Demo) (English)
+	{
+		"helga",
+		"Demo",
+		{
+			{"english.dcp", 0, "b3a93e678f0ef97200f691cd1724643f", 135864},
+			{"data.dcp", 0, "45134ed93bc391edf148b79cdcbf2a09", 154266028},
+			AD_LISTEND
+		},
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE |
+		ADGF_DEMO,
 		GUIO0()
 	},
 	// James Peris: No License Nor Control (English)
@@ -379,11 +437,65 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_DEMO,
 		GUIO0()
 	},
+	// Looky Demo (English)
+	{
+		"looky",
+		"Demo",
+		{
+			{"english.dcp", 0, "1388e1dd320f4d553dea3b0316812f9d", 1358442},
+			{"data.dcp", 0, "7074bcd7bc7ad7eb04c271aafb964c32", 13815660},
+			AD_LISTEND
+		},
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE |
+		ADGF_DEMO,
+		GUIO0()
+	},
+	// Looky Demo (German)
+	{
+		"looky",
+		"Demo",
+		{
+			{"german.dcp", 0, "606c048426dfbe94442b59fd34a5c76e", 14339496},
+			{"data.dcp", 0, "7074bcd7bc7ad7eb04c271aafb964c32", 13815660},
+			AD_LISTEND
+		},
+		Common::DE_DEU,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE |
+		ADGF_DEMO,
+		GUIO0()
+	},
+	// Looky (German)
+	{
+		"looky",
+		"",
+		{
+			{"german.dcp", 0, "bf4c2b8c26342342441a6d64934ab832", 107027865},
+			{"data.dcp", 0, "50de0beaa5ad621aa9f020df901d1e74", 1342214},
+			AD_LISTEND
+		},
+		Common::DE_DEU,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
 	// Mirage
 	{
 		"mirage",
 		"",
 		AD_ENTRY1s("data.dcp", "d230b0b99c0aa77b9ecd094d8ee5573b", 17844056),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Paintaria
+	{
+		"paintaria",
+		"",
+		AD_ENTRY1s("data.dcp", "354c08440c98150ff0d4008dd2865880", 48326040),
 		Common::EN_ANY,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE,
@@ -577,6 +689,118 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_UNSTABLE,
 		GUIO0()
 	},
+	// Reversion: The Escape Version 1.3.2369 (Chinese)
+	{
+		"reversion1",
+		"Version 1.3.2369",
+		{
+			{"xlanguage_nz.dcp", 0, "7146dfa43ffdf0886e034fffe2c8a0c0", 13722261},
+			{"data.dcp", 0, "aecb5deeea7b0baa871fbd0cef35a648", 254219204},
+			AD_LISTEND
+		},
+		Common::ZH_CNA,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Reversion: The Escape Version 1.3.2369 (English)
+	{
+		"reversion1",
+		"Version 1.3.2369",
+		{
+			{"xlanguage_en.dcp", 0, "64b6fa7eedc09c231f6ce046e77fee05", 11339619},
+			{"data.dcp", 0, "aecb5deeea7b0baa871fbd0cef35a648", 254219204},
+			AD_LISTEND
+		},
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Reversion: The Escape Version 1.3.2369 (French)
+	{
+		"reversion1",
+		"Version 1.3.2369",
+		{
+			{"xlanguage_fr.dcp", 0, "d561d562224afea809153a1fd9fdb0c0", 11963210},
+			{"data.dcp", 0, "aecb5deeea7b0baa871fbd0cef35a648", 254219204},
+			AD_LISTEND
+		},
+		Common::FR_FRA,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Reversion: The Escape Version 1.3.2369 (German)
+	{
+		"reversion1",
+		"Version 1.3.2369",
+		{
+			{"xlanguage_de.dcp", 0, "4e3f614c36bd6bae74b8cc83e663a8f0", 14040310},
+			{"data.dcp", 0, "aecb5deeea7b0baa871fbd0cef35a648", 254219204},
+			AD_LISTEND
+		},
+		Common::DE_DEU,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Reversion: The Escape Version 1.3.2369 (Italian)
+	{
+		"reversion1",
+		"Version 1.3.2369",
+		{
+			{"xlanguage_it.dcp", 0, "10d09b7fe61946f09dd91d5e8d090f94", 11913752},
+			{"data.dcp", 0, "aecb5deeea7b0baa871fbd0cef35a648", 254219204},
+			AD_LISTEND
+		},
+		Common::IT_ITA,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Reversion: The Escape Version 1.3.2369 (Latvian)
+	{
+		"reversion1",
+		"Version 1.3.2369",
+		{
+			{"xlanguage_lv.dcp", 0, "704359ab5040b0dab6545064d7aa6eb9", 11414925},
+			{"data.dcp", 0, "aecb5deeea7b0baa871fbd0cef35a648", 254219204},
+			AD_LISTEND
+		},
+		Common::LV_LAT,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Reversion: The Escape Version 1.3.2369 (Polish)
+	{
+		"reversion1",
+		"Version 1.3.2369",
+		{
+			{"xlanguage_pl.dcp", 0, "c4ad33f57e1e998169552d521c1d6638", 11532215},
+			{"data.dcp", 0, "aecb5deeea7b0baa871fbd0cef35a648", 254219204},
+			AD_LISTEND
+		},
+		Common::PL_POL,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Reversion: The Escape Version 1.3.2369 (Portuguese)
+	{
+		"reversion1",
+		"Version 1.3.2369",
+		{
+			{"xlanguage_pt.dcp", 0, "886886b6b14aadac844078de856799a6", 10620797},
+			{"data.dcp", 0, "aecb5deeea7b0baa871fbd0cef35a648", 254219204},
+			AD_LISTEND
+		},
+		Common::PT_BRA,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
 	// Reversion: The Meeting (Chinese)
 	{
 		"reversion2",
@@ -625,11 +849,42 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_UNSTABLE,
 		GUIO0()
 	},
+	// Shaban
+	{
+		"shaban",
+		"",
+		AD_ENTRY1s("data.dcp",  "35f702ca9baabc5c620e0be230195c8a", 755388466),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
 	// The Shine of a Star
 	{
 		"shinestar",
 		"",
 		AD_ENTRY1s("data.dcp", "f05abe9e2427a5e4f73648fa09c4ba8e", 94113060),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Space Invaders (Demo)
+	{
+		"spaceinvaders",
+		"Demo",
+		AD_ENTRY1s("data.dcp", "3f27adefdf72f2c1601cf555c80a509f", 1308361),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE |
+		ADGF_DEMO,
+		GUIO0()
+	},
+	// Space Madness
+	{
+		"spacemadness",
+		"1.0.2",
+		AD_ENTRY1s("data.dcp",  "b9b83135dc7a9e1b4b5f50195dbeb630", 39546622),
 		Common::EN_ANY,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE,

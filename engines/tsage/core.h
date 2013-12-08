@@ -466,6 +466,10 @@ enum AnimateMode {ANIM_MODE_NONE = 0, ANIM_MODE_1 = 1, ANIM_MODE_2 = 2, ANIM_MOD
 		ANIM_MODE_9 = 9
 };
 
+// Actor effect enumeration used in Return to Ringworld 2
+enum Effect { EFFECT_NONE = 0, EFFECT_SHADED = 1, EFFECT_3 = 3,
+	EFFECT_SHADOW_MAP = 5, EFFECT_SHADED2 = 6 };
+
 class SceneObject;
 
 class Visage {
@@ -511,7 +515,8 @@ public:
 enum ObjectFlags {OBJFLAG_FIXED_PRIORITY = 1, OBJFLAG_NO_UPDATES = 2, OBJFLAG_ZOOMED = 4,
 	OBJFLAG_SUPPRESS_DISPATCH = 8, OBJFLAG_HIDE = 0x100, OBJFLAG_HIDING = 0x200, OBJFLAG_REMOVE = 0x400,
 	OBJFLAG_CLONED = 0x800, OBJFLAG_CHECK_REGION = 0x1000, OBJFLAG_PANE_0 = 0x4000, OBJFLAG_PANE_1 = 0x8000,
-	OBJFLAG_PANES = OBJFLAG_PANE_0 | OBJFLAG_PANE_1
+	OBJFLAG_PANES = OBJFLAG_PANE_0 | OBJFLAG_PANE_1,
+	OBJFLAG_FLIP_CENTROID_X = 0x10000, OBJFLAG_FLIP_CENTROID_Y = 0x20000
 };
 
 class SceneObject : public SceneHotspot {
@@ -544,13 +549,13 @@ public:
 	EventHandler *_mover;
 	Common::Point _moveDiff;
 	int _moveRate;
-	Common::Point _field8A;
+	Common::Point _actorDestPos;
 	Action *_endAction;
 	uint32 _regionBitList;
 
 	// Ringworld 2 specific fields
-	byte *_field9C;
-	int _shade, _shade2;
+	byte *_shadowMap;
+	int _shade, _oldShade;
 	int _effect;
 	SceneObject *_linkedActor;
 public:
@@ -575,7 +580,6 @@ public:
 	int getRegionIndex();
 	int checkRegion(const Common::Point &pt);
 	void animate(AnimateMode animMode, ...);
-	SceneObject *clone() const;
 	void checkAngle(const SceneObject *obj);
 	void checkAngle(const Common::Point &pt);
 	void hide();
@@ -602,6 +606,7 @@ public:
 	virtual void changeAngle(int angle);
 	// New methods introduced by Ringworld 2
 	virtual void copy(SceneObject *src);
+	virtual SceneObject *clone() const;
 
 	void setup(int visage, int stripFrameNum, int frameNum, int posX, int posY, int priority);
 	void setup(int visage, int stripFrameNum, int frameNum);
@@ -612,7 +617,9 @@ public:
 	virtual Common::String getClassName() { return "BackgroundSceneObject"; }
 	virtual void postInit(SceneObjectList *OwnerList = NULL);
 	virtual void draw();
-	void setup2(int visage, int stripFrameNum, int frameNum, int posX, int posY, int priority, int32 arg10);
+	virtual SceneObject *clone() const;
+
+	void setup2(int visage, int stripFrameNum, int frameNum, int posX, int posY, int priority, int effect);
 	static void copySceneToBackground();
 };
 
