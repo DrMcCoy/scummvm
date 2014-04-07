@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -64,7 +64,7 @@ void Timer::addTimer(int32 duration, byte action, byte reason) {
  * @remarks	Originally called 'one_tick'
  */
 void Timer::updateTimer() {
-	if (_vm->_menu->isActive())
+	if (_vm->_dropdown->isActive())
 		return;
 
 	for (int i = 0; i < 7; i++) {
@@ -327,16 +327,17 @@ void Timer::hangAround2() {
 	_vm->_animation->_sprites[0]->remove();
 	spr->remove(); // Get rid of Robin Hood and Friar Tuck.
 
-	addTimer(1, kProcAfterTheShootemup, kReasonHangingAround);
-	// Immediately call the following proc (when you have a chance).
+	addTimer(1, kProcAfterTheShootemup, kReasonHangingAround); // Immediately call the following proc (when you have a chance).
 
 	_vm->_tiedUp = false;
 
-	// _vm->_enid->backToBootstrap(1); Call the shoot-'em-up. TODO: Replace it with proper ScummVM-friendly function(s)! Do not remove until then!
+	// We don't need the ShootEmUp during the whole game, it's only playable once.
+	ShootEmUp *shootemup = new ShootEmUp(_vm);
+	_shootEmUpScore = shootemup->run();
+	delete shootemup;
 }
 
 void Timer::afterTheShootemup() {
-	// Only placed this here to replace the minigame. TODO: Remove it when the shoot em' up is implemented!
 	_vm->flipRoom(_vm->_room, 1);
 
 	_vm->_animation->_sprites[0]->init(0, true); // Avalot.
@@ -345,27 +346,17 @@ void Timer::afterTheShootemup() {
 	_vm->_objects[kObjectCrossbow - 1] = true;
 	_vm->refreshObjectList();
 
-	// Same as the added line above: TODO: Remove it later!!!
-	_vm->_dialogs->displayText(Common::String("P.S.: There should have been the mini-game called \"shoot em' up\", " \
-		"but I haven't implemented it yet: you get the crossbow automatically.") + kControlNewLine + kControlNewLine + "Peter (uruk)");
+	byte gain = (_shootEmUpScore + 5) / 10; // Rounding up.
 
-#if 0
-	byte shootscore, gain;
-
-	shootscore = mem[storage_seg * storage_ofs];
-	gain = (shootscore + 5) / 10; // Rounding up.
-
-	display(string("\6Your score was ") + strf(shootscore) + '.' + "\r\rYou gain (" +
-		strf(shootscore) + " 0xF6 10) = " + strf(gain) + " points.");
+	_vm->_dialogs->displayText(kControlItalic + Common::String("Your score was ") + Common::String::format("%d", _shootEmUpScore) + '.' + kControlNewLine + kControlNewLine + "You gain (" +
+		Common::String::format("%d", _shootEmUpScore) + " " + 0xF6 + " 10) = " + Common::String::format("%d", gain) + " points.");
 
 	if (gain > 20) {
-		display("But we won't let you have more than 20 points!");
-		points(20);
+		_vm->_dialogs->displayText("But we won't let you have more than 20 points!");
+		_vm->incScore(20);
 	} else
-		points(gain);
-#endif
+		_vm->incScore(gain);
 
-	warning("STUB: Timer::after_the_shootemup()");
 
 	_vm->_dialogs->displayScrollChain('Q', 70);
 }
@@ -492,7 +483,7 @@ void Timer::buyDrinks() {
 	_vm->_malagauche = 0;
 
 	_vm->_dialogs->displayScrollChain('D', _vm->_drinking); // Display message about it.
-	_vm->_pingo->wobble(); // Do the special effects.
+	_vm->_animation->wobble(); // Do the special effects.
 	_vm->_dialogs->displayScrollChain('D', 1); // That'll be thruppence.
 	if (_vm->decreaseMoney(3)) // Pay 3d.
 		_vm->_dialogs->displayScrollChain('D', 3); // Tell 'em you paid up.
@@ -632,17 +623,39 @@ void Timer::arkataShouts() {
 	addTimer(160, kProcArkataShouts, kReasonArkataShouts);
 }
 
+/**
+ * @remarks Contains the content of the function 'winning_pic', originally located in PINGO.
+ */
 void Timer::winning() {
 	_vm->_dialogs->displayScrollChain('Q', 79);
-	_vm->_pingo->winningPic();
 
-	warning("STUB: Timer::winning()");
-#if 0
-	do {
-		_vm->checkclick();
-	} while (!(_vm->mrelease == 0));
-#endif
-	// TODO: To be implemented with Pingo::winningPic().
+	// This was originally located in winning_pic:
+	CursorMan.showMouse(false);
+	_vm->_graphics->saveScreen();
+	_vm->fadeOut();
+	_vm->_graphics->drawWinningPic();
+	_vm->_graphics->refreshScreen();
+	_vm->fadeIn();
+
+	// Waiting for a keypress or a left mouseclick:
+	Common::Event event;
+	bool escape = false;
+	while (!_vm->shouldQuit() && !escape) {
+		_vm->_graphics->refreshScreen();
+		while (_vm->getEvent(event)) {
+			if ((event.type == Common::EVENT_LBUTTONUP) || (event.type == Common::EVENT_KEYDOWN)) {
+				escape = true;
+				break;
+			}
+		}
+	}
+
+	_vm->fadeOut();
+	_vm->_graphics->restoreScreen();
+	_vm->_graphics->removeBackup();
+	_vm->fadeIn();
+	CursorMan.showMouse(true);
+	// winning_pic's end.
 
 	_vm->callVerb(kVerbCodeScore);
 	_vm->_dialogs->displayText(" T H E    E N D ");
@@ -688,6 +701,8 @@ void Timer::resetVariables() {
 		_times[i]._action = 0;
 		_times[i]._reason = 0;
 	}
+
+	_shootEmUpScore = 0;
 }
 
 } // End of namespace Avalanche.

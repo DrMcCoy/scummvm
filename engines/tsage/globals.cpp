@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -63,18 +63,41 @@ Globals::Globals() : _dialogCenter(160, 140), _gfxManagerInstance(_screenSurface
 	reset();
 	_stripNum = 0;
 	_gfxEdgeAdjust = 3;
+	_gfxFontNumber = 0;
 
-	if (g_vm->getFeatures() & GF_DEMO) {
-		_gfxFontNumber = 0;
-		_gfxColors.background = 6;
-		_gfxColors.foreground = 0;
-		_fontColors.background = 255;
-		_fontColors.foreground = 6;
-		_dialogCenter.y = 80;
-		// Workaround in order to use later version of the engine
-		_color1 = _gfxColors.foreground;
-		_color2 = _gfxColors.foreground;
-		_color3 = _gfxColors.foreground;
+	if (g_vm->getGameID() == GType_Ringworld) {
+		if (g_vm->getFeatures() & GF_DEMO) {
+			_gfxFontNumber = 0;
+			_gfxColors.background = 6;
+			_gfxColors.foreground = 0;
+			_fontColors.background = 255;
+			_fontColors.foreground = 6;
+			_dialogCenter.y = 80;
+			// Workaround in order to use later version of the engine
+			_color1 = _gfxColors.foreground;
+			_color2 = _gfxColors.foreground;
+			_color3 = _gfxColors.foreground;
+		} else if (g_vm->getFeatures() & GF_CD) {
+			_gfxFontNumber = 50;
+			_gfxColors.background = 53;
+			_gfxColors.foreground = 0;
+			_fontColors.background = 51;
+			_fontColors.foreground = 54;
+			_color1 = 18;
+			_color2 = 18;
+			_color3 = 18;
+		} else {
+		// Floppy version
+			_gfxFontNumber = 50;
+			_gfxColors.background = 53;
+			_gfxColors.foreground = 18;
+			_fontColors.background = 51;
+			_fontColors.foreground = 54;
+			// Workaround in order to use later version of the engine
+			_color1 = _gfxColors.foreground;
+			_color2 = _gfxColors.foreground;
+			_color3 = _gfxColors.foreground;
+		}
 	} else if (g_vm->getGameID() == GType_BlueForce) {
 		// Blue Force
 		_gfxFontNumber = 0;
@@ -94,26 +117,6 @@ Globals::Globals() : _dialogCenter(160, 140), _gfxManagerInstance(_screenSurface
 		_color2 = 15;
 		_color3 = 4;
 		_dialogCenter.y = 100;
-	} else if ((g_vm->getGameID() == GType_Ringworld) &&  (g_vm->getFeatures() & GF_CD)) {
-		_gfxFontNumber = 50;
-		_gfxColors.background = 53;
-		_gfxColors.foreground = 0;
-		_fontColors.background = 51;
-		_fontColors.foreground = 54;
-		_color1 = 18;
-		_color2 = 18;
-		_color3 = 18;
-	} else {
-		// Ringworld
-		_gfxFontNumber = 50;
-		_gfxColors.background = 53;
-		_gfxColors.foreground = 18;
-		_fontColors.background = 51;
-		_fontColors.foreground = 54;
-		// Workaround in order to use later version of the engine
-		_color1 = _gfxColors.foreground;
-		_color2 = _gfxColors.foreground;
-		_color3 = _gfxColors.foreground;
 	}
 	_screenSurface.setScreenSurface();
 	_gfxManagers.push_back(&_gfxManagerInstance);
@@ -443,7 +446,7 @@ Ringworld2Globals::Ringworld2Globals() {
 	_scene180Mode = -1;
 	_v57709 = 0;
 	_v5780C = 0;
-	_v5780E = 0;
+	_mouseCursorId = 0;
 	_v57810 = 0;
 
 	_fadePaletteFlag = false;
@@ -557,7 +560,7 @@ void Ringworld2Globals::reset() {
 	_scene180Mode = -1;
 	_v57709 = 0;
 	_v5780C = 0;
-	_v5780E = 0;
+	_mouseCursorId = 0;
 	_v57810 = 0;
 	_s1550PlayerArea[R2_QUINN] = Common::Point(27, 4);
 	_s1550PlayerArea[R2_SEEKER] = Common::Point(27, 4);
@@ -611,7 +614,7 @@ void Ringworld2Globals::synchronize(Serializer &s) {
 	s.syncAsSint16LE(_scene180Mode);
 	s.syncAsSint16LE(_v57709);
 	s.syncAsSint16LE(_v5780C);
-	s.syncAsSint16LE(_v5780E);
+	s.syncAsSint16LE(_mouseCursorId);
 	s.syncAsSint16LE(_v57810);
 
 	s.syncAsByte(_s1550PlayerArea[R2_QUINN].x);

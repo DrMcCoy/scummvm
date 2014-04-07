@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -132,6 +132,8 @@ class Movement : public GameObject {
 
   public:
 	Movement();
+	virtual ~Movement();
+
 	Movement(Movement *src, StaticANIObject *ani);
 	Movement(Movement *src, int *flag1, int flag2, StaticANIObject *ani);
 
@@ -153,14 +155,16 @@ class Movement : public GameObject {
 	DynamicPhase *getDynamicPhaseByIndex(int idx);
 
 	int calcDuration();
+	int countPhasesWithFlag(int maxidx, int flag);
 
 	void removeFirstPhase();
-	bool gotoNextFrame(int callback1, void (*callback2)(int *));
+	bool gotoNextFrame(void (*_callback1)(int, Common::Point *point, int, int), void (*callback2)(int *));
 	bool gotoPrevFrame();
 	void gotoFirstFrame();
 	void gotoLastFrame();
 
 	void loadPixelData();
+	void freePixelData();
 
 	void draw(bool flipFlag, int angle);
 };
@@ -174,7 +178,7 @@ class StaticANIObject : public GameObject {
 	int16 _field_32;
 	int _field_34;
 	int _initialCounter;
-	int _callback1;
+	void (*_callback1)(int, Common::Point *point, int, int);
 	void (*_callback2)(int *);
 	PtrList _movements;
 	PtrList _staticsList;
@@ -186,11 +190,12 @@ class StaticANIObject : public GameObject {
 	int _counter;
 	int _someDynamicPhaseIndex;
 
-  public:
+public:
 	int16 _sceneId;
 
-  public:
+public:
 	StaticANIObject();
+	virtual ~StaticANIObject();
 	StaticANIObject(StaticANIObject *src);
 
 	virtual bool load(MfcArchive &file);
@@ -212,11 +217,15 @@ class StaticANIObject : public GameObject {
 
 	void deleteFromGlobalMessageQueue();
 	void queueMessageQueue(MessageQueue *msg);
+	void restartMessageQueue(MessageQueue *msg);
 	MessageQueue *getMessageQueue();
 	bool trySetMessageQueue(int msgNum, int qId);
+	void startMQIfIdle(int qId, int flag);
 
 	void initMovements();
 	void loadMovementsPixelData();
+	void freeMovementsPixelData();
+	void preloadMovements(MovTable *mt);
 
 	void setSomeDynamicPhaseIndex(int val) { _someDynamicPhaseIndex = val; }
 	void adjustSomeXY();
@@ -240,6 +249,7 @@ class StaticANIObject : public GameObject {
 
 	void updateStepPos();
 	void stopAnim_maybe();
+	Common::Point *calcNextStep(Common::Point *point);
 
 	MessageQueue *changeStatics1(int msgNum);
 	void changeStatics2(int objId);
@@ -250,6 +260,9 @@ class StaticANIObject : public GameObject {
 struct MovTable {
 	int count;
 	int16 *movs;
+
+	MovTable() { count = 0; movs = 0; }
+	~MovTable() { free(movs); }
 };
 
 } // End of namespace Fullpipe

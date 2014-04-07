@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -24,6 +24,7 @@
 
 #include "fullpipe/constants.h"
 #include "fullpipe/gameloader.h"
+#include "fullpipe/motion.h"
 #include "fullpipe/scenes.h"
 #include "fullpipe/modal.h"
 #include "fullpipe/statics.h"
@@ -31,13 +32,13 @@
 namespace Fullpipe {
 
 int sceneIntro_updateCursor() {
-	g_fullpipe->_cursorId = 0;
+	g_fp->_cursorId = 0;
 
 	return 0;
 }
 
 void sceneIntro_initScene(Scene *sc) {
-	g_fullpipe->_gameLoader->loadScene(SC_INTRO2);
+	g_fp->_gameLoader->loadScene(SC_INTRO2);
 
 	g_vars->sceneIntro_aniin1man = sc->getStaticANIObject1ById(ANI_IN1MAN, -1);
 	g_vars->sceneIntro_needSleep = true;
@@ -45,19 +46,19 @@ void sceneIntro_initScene(Scene *sc) {
 	g_vars->sceneIntro_playing = true;
 	g_vars->sceneIntro_needBlackout = false;
 
-	if (g_fullpipe->_recordEvents || g_fullpipe->_inputArFlag)
+	if (g_fp->_recordEvents || g_fp->_inputArFlag)
 		g_vars->sceneIntro_skipIntro = false;
 
-	g_fullpipe->_modalObject = new ModalIntro;
+	g_fp->_modalObject = new ModalIntro;
 }
 
 void sceneHandlerIntro_part1() {
-	g_fullpipe->_currentScene = g_fullpipe->accessScene(SC_INTRO1);
+	g_fp->_currentScene = g_fp->accessScene(SC_INTRO1);
 	chainQueue(QU_INTR_FINISH, 0);
 }
 
 void sceneHandlerIntro_part2() {
-	g_fullpipe->_currentScene = g_fullpipe->accessScene(SC_INTRO2);
+	g_fp->_currentScene = g_fp->accessScene(SC_INTRO2);
 	chainQueue(QU_IN2_DO, 0);
 }
 
@@ -101,7 +102,7 @@ int sceneHandlerIntro(ExCommand *ex) {
 		chainQueue(QU_INTR_GETUPMAN, 0);
 	}
 
-	g_fullpipe->startSceneTrack();
+	g_fp->startSceneTrack();
 
 	return 0;
 }

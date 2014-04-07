@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -1623,7 +1623,7 @@ void Scene50::Action1::signal() {
 		scene->_stripManager.start(63, this);
 		break;
 	case 2:
-		if (scene->_stripManager._field2E8 != 107) {
+		if (scene->_stripManager._currObj44Id != 107) {
 			g_globals->_player.enableControl();
 			remove();
 		} else {
@@ -1789,7 +1789,7 @@ Scene50::Scene50() :
 		_background(0, CURSOR_LOOK, 50, 3, LIST_END),
 		_item1(0, OBJECT_SCANNER, 50, 15, CURSOR_USE, 50, 16, CURSOR_LOOK, 50, 3, LIST_END),
 		_entrance(0, CURSOR_LOOK, 50, 7, LIST_END),
-		// The original was using dialog 50/3 for CURSOR_LOOK, which is too generic. 
+		// The original was using dialog 50/3 for CURSOR_LOOK, which is too generic.
 		_bulwark(8, OBJECT_STUNNER, 50, 14, OBJECT_SCANNER, 50, 13, CURSOR_LOOK, 30, 0, LIST_END),
 		_tree(9, OBJECT_SCANNER, 40, 39, OBJECT_STUNNER, 40, 40, CURSOR_USE, 40, 41, CURSOR_LOOK, 50, 5, LIST_END),
 		_flagstones(10, OBJECT_SCANNER, 50, 17, OBJECT_STUNNER, 50, 18, CURSOR_LOOK, 50, 6, CURSOR_USE, 30, 8, LIST_END) {
@@ -2498,7 +2498,7 @@ void Scene90::Action1::signal() {
 	case 5:
 		scene->_soundHandler2.play(58);
 
-		if (scene->_stripManager._field2E8 == 220)
+		if (scene->_stripManager._currObj44Id == 220)
 			scene->_stripManager.start(91, this, scene);
 		else {
 			scene->_stripManager.start(g_globals->getFlag(104) ? 93 : 92, this, scene);
@@ -2714,7 +2714,7 @@ void Scene90::signal() {
 		g_globals->_player.enableControl();
 		break;
 	case 97:
-		_stripManager._field2E8 = 0;
+		_stripManager._currObj44Id = 0;
 		_action1.setActionIndex(5);
 		_action1.setDelay(1);
 		break;
@@ -2939,7 +2939,7 @@ void Scene6100::Action3::signal() {
 	case 4:
 		g_globals->setFlag(76);
 		g_globals->_sceneManager.changeScene(
-			(scene->_stripManager._field2E8 == 135) ? 6100 : 2320);
+			(scene->_stripManager._currObj44Id == 135) ? 6100 : 2320);
 		remove();
 		break;
 	}

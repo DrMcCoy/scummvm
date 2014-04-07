@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -33,13 +33,14 @@
 #include "fullpipe/behavior.h"
 #include "fullpipe/modal.h"
 #include "fullpipe/input.h"
+#include "fullpipe/motion.h"
 #include "fullpipe/scenes.h"
 #include "fullpipe/floaters.h"
 #include "fullpipe/console.h"
 
 namespace Fullpipe {
 
-FullpipeEngine *g_fullpipe = 0;
+FullpipeEngine *g_fp = 0;
 Vars *g_vars = 0;
 
 FullpipeEngine::FullpipeEngine(OSystem *syst, const ADGameDescription *gameDesc) : Engine(syst), _gameDescription(gameDesc) {
@@ -81,6 +82,13 @@ FullpipeEngine::FullpipeEngine(OSystem *syst, const ADGameDescription *gameDesc)
 
 	_modalObject = 0;
 
+	_liftEnterMQ = 0;
+	_liftExitMQ = 0;
+	_lift = 0;
+	_lastLiftButton = 0;
+	_liftX = 0;
+	_liftY = 0;
+
 	_gameContinue = true;
 	_needRestart = false;
 	_flgPlayIntro = true;
@@ -93,13 +101,17 @@ FullpipeEngine::FullpipeEngine(OSystem *syst, const ADGameDescription *gameDesc)
 	_isProcessingMessages = false;
 
 	_musicAllowed = -1;
+	_musicGameVar = 0;
 
 	_aniMan = 0;
 	_aniMan2 = 0;
 	_currentScene = 0;
+	_loaderScene = 0;
 	_scene2 = 0;
+	_scene3 = 0;
 	_movTable = 0;
 	_floaters = 0;
+	_mgm = 0;
 
 	_globalMessageQueueList = 0;
 	_messageHandlers = 0;
@@ -146,9 +158,16 @@ FullpipeEngine::FullpipeEngine(OSystem *syst, const ADGameDescription *gameDesc)
 	_objectAtCursor = 0;
 	_objectIdAtCursor = 0;
 
+	_arcadeOverlay = 0;
+	_arcadeOverlayHelper = 0;
+	_arcadeOverlayX = 0;
+	_arcadeOverlayY = 0;
+	_arcadeOverlayMidX = 0;
+	_arcadeOverlayMidY = 0;
+
 	_isSaveAllowed = true;
 
-	g_fullpipe = this;
+	g_fp = this;
 	g_vars = new Vars;
 }
 
@@ -168,6 +187,7 @@ void FullpipeEngine::initialize() {
 	_sceneRect.bottom = 599;
 
 	_floaters = new Floaters;
+	_mgm = new MGM;
 }
 
 Common::Error FullpipeEngine::run() {
@@ -436,21 +456,6 @@ void FullpipeEngine::setObjectState(const char *name, int state) {
 	}
 
 	var->setSubVarAsInt(name, state);
-}
-
-void FullpipeEngine::updateMapPiece(int mapId, int update) {
-	for (int i = 0; i < 200; i++) {
-		int hiWord = (_mapTable[i] >> 16) & 0xffff;
-
-		if (hiWord == mapId) {
-			_mapTable[i] |= update;
-			return;
-		}
-		if (!hiWord) {
-			_mapTable[i] = (mapId << 16) | update;
-			return;
-		}
-	}
 }
 
 void FullpipeEngine::disableSaves(ExCommand *ex) {

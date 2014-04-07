@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -40,6 +40,48 @@ bool MotionController::load(MfcArchive &file) {
 	debug(5, "MotionController::load()");
 
 	return true;
+}
+
+void MotionController::enableLinks(const char *linkName, bool enable) {
+	warning("STUB: MotionController::enableLinks()");
+}
+
+MovGraphLink *MotionController::getLinkByName(const char *name) {
+	if (_objtype == kObjTypeMctlCompound) {
+		MctlCompound *obj = (MctlCompound *)this;
+
+		for (uint i = 0;  i < obj->getMotionControllerCount(); i++) {
+			MotionController *con = obj->getMotionController(i);
+
+			if (con->_objtype == kObjTypeMovGraph) {
+				MovGraph *gr = (MovGraph *)con;
+
+				for (ObList::iterator l = gr->_links.begin(); l != gr->_links.end(); ++l) {
+					assert(((CObject *)*l)->_objtype == kObjTypeMovGraphLink);
+
+					MovGraphLink *lnk = (MovGraphLink *)*l;
+
+					if (!strcmp(lnk->_name, name))
+						return lnk;
+				}
+			}
+		}
+	}
+
+	if (_objtype == kObjTypeMovGraph) {
+		MovGraph *gr = (MovGraph *)this;
+
+		for (ObList::iterator l = gr->_links.begin(); l != gr->_links.end(); ++l) {
+			assert(((CObject *)*l)->_objtype == kObjTypeMovGraphLink);
+
+			MovGraphLink *lnk = (MovGraphLink *)*l;
+
+			if (!strcmp(lnk->_name, name))
+				return lnk;
+		}
+	}
+
+	return 0;
 }
 
 bool MctlCompound::load(MfcArchive &file) {
@@ -168,9 +210,9 @@ MessageQueue *MctlCompound::doWalkTo(StaticANIObject *subj, int xpos, int ypos, 
 
 	if (mq) {
 		for (uint i = 0; i < closestP->_messageQueueObj->getCount(); i++) {
-			ex = new ExCommand(closestP->_messageQueueObj->getExCommandByIndex(i));
+			ex = closestP->_messageQueueObj->getExCommandByIndex(i)->createClone();
 			ex->_excFlags |= 2;
-			mq->_exCommands.push_back(ex);
+			mq->addExCommandToEnd(ex);
 		}
 
 		ex = new ExCommand(subj->_id, 51, 0, xpos, ypos, 0, 1, 0, 0, 0);
@@ -179,17 +221,22 @@ MessageQueue *MctlCompound::doWalkTo(StaticANIObject *subj, int xpos, int ypos, 
 		ex->_keyCode = subj->_okeyCode;
 		ex->_excFlags |= 2;
 
-		mq->_exCommands.push_back(ex);
+		mq->addExCommandToEnd(ex);
 	}
 
 	return mq;
 }
 
+MctlCompoundArrayItem::~MctlCompoundArrayItem() {
+	delete _movGraphReactObj;
+	delete _motionControllerObj;
+}
+
 MctlLadder::MctlLadder() {
-	_ladder_field_18 = 0;
-	_objId = 0;
-	_ladder_field_1C = 0;
-	_ladder_field_10 = 0;
+	_width = 0;
+	_ladderX = 0;
+	_height = 0;
+	_ladderY = 0;
 	_ladder_field_14 = 0;
 
 	_ladder_field_20 = 0;
@@ -201,15 +248,28 @@ MctlLadder::~MctlLadder() {
 }
 
 int MctlLadder::collisionDetection(StaticANIObject *man) {
-	warning("STUB: MctlLaddercollisionDetection()");
+	if (findObjectPos(man) < 0)
+		return 0;
 
-	return 0;
+	double delta;
+
+	if ((double)(man->_oy - _ladderY) / (double)_height < 0.0)
+		delta = -0.5;
+	else
+		delta = 0.5;
+
+	int res = (int)((double)(man->_oy - _ladderY) / (double)_height + delta);
+
+	if (res < 0)
+		return 0;
+
+	return res;
 }
 
 void MctlLadder::addObject(StaticANIObject *obj) {
 	if (findObjectPos(obj) < 0) {
 		MctlLadderMovement *movement = new MctlLadderMovement;
-		
+
 		if (initMovement(obj, movement)) {
 			_mgm.addItem(obj->_id);
 			_movements.push_back(movement);
@@ -230,7 +290,7 @@ int MctlLadder::findObjectPos(StaticANIObject *obj) {
 }
 
 bool MctlLadder::initMovement(StaticANIObject *ani, MctlLadderMovement *movement) {
-	GameVar *v = g_fullpipe->getGameLoaderGameVar()->getSubVarByName(ani->getName());
+	GameVar *v = g_fp->getGameLoaderGameVar()->getSubVarByName(ani->getName());
 
 	if (!v)
 		return false;
@@ -285,7 +345,12 @@ void MctlLadder::freeItems() {
 }
 
 MessageQueue *MctlLadder::method34(StaticANIObject *subj, int xpos, int ypos, int fuzzyMatch, int staticsId) {
-	warning("STUB: MctlLadder::method34()");
+	MessageQueue *mq = doWalkTo(subj, xpos, ypos, fuzzyMatch, staticsId);
+
+	if (mq) {
+		if (mq->chain(subj))
+			return mq;
+	}
 
 	return 0;
 }
@@ -296,10 +361,59 @@ MessageQueue *MctlLadder::doWalkTo(StaticANIObject *subj, int xpos, int ypos, in
 	return 0;
 }
 
+MessageQueue *MctlLadder::controllerWalkTo(StaticANIObject *ani, int off) {
+	return doWalkTo(ani, _ladderX + off * _width, _ladderY + off * _height, 1, 0);
+}
+
 MctlConnectionPoint *MctlCompound::findClosestConnectionPoint(int ox, int oy, int destIndex, int connectionX, int connectionY, int sourceIndex, int *minDistancePtr) {
 	warning("STUB: MctlCompound::findClosestConnectionPoint()");
 
 	return 0;
+}
+
+void MctlCompound::replaceNodeX(int from, int to) {
+	warning("STUB: MctlCompound::replaceNodeX()");
+}
+
+MctlConnectionPoint::MctlConnectionPoint() {
+	_connectionX = 0;
+	_connectionY = 0;
+	_field_C = 0;
+	_field_10 = 0;
+	_field_14 = 0;
+	_field_16 = 0;
+	_messageQueueObj = 0;
+	_motionControllerObj = 0;
+}
+
+MctlConnectionPoint::~MctlConnectionPoint() {
+	delete _messageQueueObj;
+}
+
+MovInfo1::MovInfo1(MovInfo1 *src) {
+	index = src->index;
+	pt1 = src->pt1;
+	pt2 = src->pt2;
+	distance1 = src->distance1;
+	distance2 = src->distance2;
+	subIndex = src->subIndex;
+	item1Index = src->item1Index;
+	items = src->items;
+	itemsCount = src->itemsCount;
+	flags = src->flags;
+}
+
+void MovInfo1::clear() {
+	index = 0;
+	pt1.x = pt1.y = 0;
+	pt2.x = pt2.y = 0;
+	distance1 = 0;
+	distance2 = 0;
+	subIndex = 0;
+	item1Index = 0;
+	items.clear();
+	itemsCount = 0;
+	flags = 0;
 }
 
 bool MctlCompoundArray::load(MfcArchive &file) {
@@ -349,6 +463,10 @@ MovGraph::MovGraph() {
 	_objtype = kObjTypeMovGraph;
 }
 
+MovGraph::~MovGraph() {
+	warning("STUB: MovGraph::~MovGraph()");
+}
+
 bool MovGraph::load(MfcArchive &file) {
 	debug(5, "MovGraph::load()");
 
@@ -391,10 +509,9 @@ int MovGraph::method28() {
 	return 0;
 }
 
-int MovGraph::method2C() {
-	warning("STUB: MovGraph::method2C()");
-
-	return 0;
+int MovGraph::method2C(StaticANIObject *obj, int x, int y) {
+	obj->setOXY(x, y);
+	return method3C(obj, 1);
 }
 
 MessageQueue *MovGraph::method34(StaticANIObject *subj, int xpos, int ypos, int fuzzyMatch, int staticsId) {
@@ -409,7 +526,7 @@ int MovGraph::changeCallback() {
 	return 0;
 }
 
-int MovGraph::method3C() {
+int MovGraph::method3C(StaticANIObject *ani, int flag) {
 	warning("STUB: MovGraph::method3C()");
 
 	return 0;
@@ -462,8 +579,8 @@ double MovGraph::calcDistance(Common::Point *point, MovGraphLink *link, int fuzz
 			return -1.0;
 		}
 	} else {
-		point->x = n1x + (dist2x * distm / link->_distance);
-		point->y = n1y + (dist2y * distm / link->_distance);
+		point->x = (int)(n1x + (dist2x * distm / link->_distance));
+		point->y = (int)(n1y + (dist2y * distm / link->_distance));
 	}
 
 	return res;
@@ -516,7 +633,7 @@ bool MovGraph2::initDirections(StaticANIObject *obj, MovGraph2Item *item) {
 	item->_obj = obj;
 	item->_objectId = obj->_id;
 
-	GameVar *var = g_fullpipe->getGameLoaderGameVar()->getSubVarByName(obj->_objectName);
+	GameVar *var = g_fp->getGameLoaderGameVar()->getSubVarByName(obj->_objectName);
 	if (!var)
 		return false;
 
@@ -769,15 +886,13 @@ void MovGraph2::buildMovInfo1SubItems(MovInfo1 *movinfo, Common::Array<MovGraphL
 }
 
 MessageQueue *MovGraph2::buildMovInfo1MessageQueue(MovInfo1 *movInfo) {
-	MovInfo1 movinfo;
-
-	memcpy(&movinfo, movInfo, sizeof(movinfo));
+	MovInfo1 movinfo(movInfo);
 
 	int curX = movInfo->pt1.x;
 	int curY = movInfo->pt1.y;
 	int curDistance = movInfo->distance1;
 
-	MessageQueue *mq = new MessageQueue(g_fullpipe->_globalMessageQueueList->compact());
+	MessageQueue *mq = new MessageQueue(g_fp->_globalMessageQueueList->compact());
 
 	for (int i = 0; i < movInfo->itemsCount - 1; i++) {
 		if (movInfo->items[i + 1]->subIndex != 10) {
@@ -785,10 +900,10 @@ MessageQueue *MovGraph2::buildMovInfo1MessageQueue(MovInfo1 *movInfo) {
 
 			if (i >= movInfo->itemsCount - 2 || movInfo->items[i + 2]->subIndex != 10) {
 				movinfo.flags = 0;
-				mg2i = &_items2[movInfo->field_0]->_subItems[movInfo->items[i]->subIndex]._turnS[movInfo->items[i + 1]->subIndex];
+				mg2i = &_items2[movInfo->index]->_subItems[movInfo->items[i]->subIndex]._turnS[movInfo->items[i + 1]->subIndex];
 			} else {
 				movinfo.flags = 2;
-				mg2i = &_items2[movInfo->field_0]->_subItems[movInfo->items[i]->subIndex]._turn[movInfo->items[i + 1]->subIndex];
+				mg2i = &_items2[movInfo->index]->_subItems[movInfo->items[i]->subIndex]._turn[movInfo->items[i + 1]->subIndex];
 			}
 			if (i < movInfo->itemsCount - 2
 				|| (movInfo->items[i]->x == movInfo->items[i + 1]->x
@@ -798,13 +913,13 @@ MessageQueue *MovGraph2::buildMovInfo1MessageQueue(MovInfo1 *movInfo) {
 				 || movInfo->items[i + 1]->x == -1
 				 || movInfo->items[i + 1]->y == -1) {
 
-				ExCommand *ex = new ExCommand(_items2[movInfo->field_0]->_objectId, 1, mg2i->_movementId, 0, 0, 0, 1, 0, 0, 0);
+				ExCommand *ex = new ExCommand(_items2[movInfo->index]->_objectId, 1, mg2i->_movementId, 0, 0, 0, 1, 0, 0, 0);
 
 				ex->_excFlags |= 2;
-				ex->_keyCode = _items2[movInfo->field_0]->_obj->_okeyCode;
+				ex->_keyCode = _items2[movInfo->index]->_obj->_okeyCode;
 				ex->_field_24 = 1;
 				ex->_field_14 = -1;
-				mq->_exCommands.push_back(ex);
+				mq->addExCommandToEnd(ex);
 
 				curX += mg2i->_mx;
 				curY += mg2i->_my;
@@ -813,7 +928,7 @@ MessageQueue *MovGraph2::buildMovInfo1MessageQueue(MovInfo1 *movInfo) {
 
 				memset(&mgminfo, 0, sizeof(mgminfo));
 
-				mgminfo.ani = _items2[movInfo->field_0]->_obj;
+				mgminfo.ani = _items2[movInfo->index]->_obj;
 				mgminfo.staticsId2 = mg2i->_mov->_staticsObj2->_staticsId;
 				mgminfo.x1 = movInfo->items[i + 1]->x;
 				mgminfo.y1 = movInfo->items[i + 1]->y;
@@ -856,13 +971,13 @@ MessageQueue *MovGraph2::buildMovInfo1MessageQueue(MovInfo1 *movInfo) {
 					 || movInfo->items[i + 2]->subIndex == movInfo->items[i + 3]->subIndex) {
 					movinfo.flags &= 3;
 				} else {
-					MG2I *m = &_items2[movInfo->field_0]->_subItems[movInfo->items[i + 2]->subIndex]._turnS[movInfo->items[i + 3]->subIndex];
+					MG2I *m = &_items2[movInfo->index]->_subItems[movInfo->items[i + 2]->subIndex]._turnS[movInfo->items[i + 3]->subIndex];
 					movinfo.pt2.x -= m->_mx;
 					movinfo.pt2.y -= m->_my;
 					movinfo.flags &= 3;
 				}
 			} else {
-				MG2I *m = &_items2[movInfo->field_0]->_subItems[movInfo->items[i + 2]->subIndex]._turn[movInfo->items[i + 3]->subIndex];
+				MG2I *m = &_items2[movInfo->index]->_subItems[movInfo->items[i + 2]->subIndex]._turn[movInfo->items[i + 3]->subIndex];
 
 				if (movinfo.item1Index && movinfo.item1Index != 1) {
 					movinfo.pt2.y -= m->_my;
@@ -1013,7 +1128,7 @@ MessageQueue *MovGraph2::doWalkTo(StaticANIObject *obj, int xpos, int ypos, int 
 	}
 
 	if (obj->_ox == xpos && obj->_oy == ypos) {
-		g_fullpipe->_globalMessageQueueList->compact();
+		g_fp->_globalMessageQueueList->compact();
 
 		MessageQueue *mq = new MessageQueue();
 
@@ -1033,20 +1148,20 @@ MessageQueue *MovGraph2::doWalkTo(StaticANIObject *obj, int xpos, int ypos, int 
 			ex->_keyCode = picAniInfo.field_8;
 			ex->_excFlags |= 2;
 
-			mq->_exCommands.push_back(ex);
+			mq->addExCommandToEnd(ex);
 		} else {
 			ExCommand *ex = new ExCommand(picAniInfo.objectId, 22, obj->_statics->_staticsId, 0, 0, 0, 1, 0, 0, 0);
 
 			ex->_keyCode = picAniInfo.field_8;
 			ex->_excFlags |= 3;
-			mq->_exCommands.push_back(ex);
+			mq->addExCommandToEnd(ex);
 
 			ex = new ExCommand(picAniInfo.objectId, 5, -1, obj->_ox, obj->_oy, 0, 1, 0, 0, 0);
 
 			ex->_field_14 = -1;
 			ex->_keyCode = picAniInfo.field_8;
 			ex->_excFlags |= 3;
-			mq->_exCommands.push_back(ex);
+			mq->addExCommandToEnd(ex);
 		}
 
 		obj->setPicAniInfo(&picAniInfo);
@@ -1090,7 +1205,7 @@ MessageQueue *MovGraph2::doWalkTo(StaticANIObject *obj, int xpos, int ypos, int 
 	if (minPath < 0.0 || ((linkInfoSource.node != linkInfoDest.node || !linkInfoSource.node) && !tempLinkList.size()))
 		return 0;
 
-	memset(&movInfo1, 0, sizeof(movInfo1));
+	movInfo1.clear();
 
 	movInfo1.subIndex = idxsub;
 	movInfo1.pt1.x = obj->_ox;
@@ -1121,7 +1236,7 @@ MessageQueue *MovGraph2::doWalkTo(StaticANIObject *obj, int xpos, int ypos, int 
 		double dst1 = sqrt((double)((ypos - nod->_y) * (ypos - nod->_y) + (xpos - nod->_x) * (xpos - nod->_x)));
 		int dst = linkInfoDest.link->_movGraphNode2->_distance - nod->_distance;
 
-		movInfo1.distance2 = nod->_distance + (dst1 * (double)dst / linkInfoDest.link->_distance);
+		movInfo1.distance2 = (int)(nod->_distance + (dst1 * (double)dst / linkInfoDest.link->_distance));
 
 		calcDistance(&movInfo1.pt2, linkInfoDest.link, 1);
 
@@ -1268,10 +1383,205 @@ int MovGraph2::findLink(Common::Array<MovGraphLink *> *linkList, int idx, Common
 		return node3->_x >= node2->_x;
 }
 
-MessageQueue *MovGraph2::genMovement(MovInfo1 *movinfo) {
-	warning("STUB: MovGraph2::genMovement()");
+MessageQueue *MovGraph2::genMovement(MovInfo1 *info) {
+	int mx1 = 0;
+	int my1 = 0;
 
-	return 0;
+	if (!(info->flags & 2)) {
+		mx1 = _items2[info->index]->_subItems[info->subIndex]._walk[0]._mx;
+		my1 = _items2[info->index]->_subItems[info->subIndex]._walk[0]._my;
+	}
+
+	int mx2 = 0;
+	int my2 = 0;
+
+	if (!(info->flags & 4)) {
+		mx2 = _items2[info->index]->_subItems[info->subIndex]._walk[2]._mx;
+		my2 = _items2[info->index]->_subItems[info->subIndex]._walk[2]._my;
+	}
+
+	Common::Point point;
+
+	int y = info->pt2.y - info->pt1.y - my2 - my1;
+	int x = info->pt2.x - info->pt1.x - mx2 - mx1;
+	int a2;
+	int mgmLen;
+
+	_mgm.calcLength(&point, _items2[info->index]->_subItems[info->subIndex]._walk[1]._mov, x, y, &mgmLen, &a2, info->flags & 1);
+
+	int x1 = point.x;
+	int y1 = point.y;
+
+	if (!(info->flags & 1)) {
+		if (info->subIndex == 1 || info->subIndex == 0) {
+			a2 = -1;
+			x1 = mgmLen * _items2[info->index]->_subItems[info->subIndex]._walk[1]._mx;
+			x = x1;
+			info->pt2.x = x1 + info->pt1.x + mx1 + mx2;
+		}
+	}
+
+	if (!(info->flags & 1)) {
+		if (info->subIndex == 2 || info->subIndex == 3) {
+			a2 = -1;
+			y1 = mgmLen * _items2[info->index]->_subItems[info->subIndex]._walk[1]._my;
+			y = y1;
+			info->pt2.y = y1 + info->pt1.y + my1 + my2;
+		}
+	}
+
+	int cntX = 0;
+	int cntY = 0;
+
+	if (!(info->flags & 2)) {
+		cntX = _items2[info->index]->_subItems[info->subIndex]._walk[0]._mov->countPhasesWithFlag(-1, 1);
+		cntY = _items2[info->index]->_subItems[info->subIndex]._walk[0]._mov->countPhasesWithFlag(-1, 2);
+	}
+
+	if (mgmLen > 1) {
+		cntX += (mgmLen - 1) * _items2[info->index]->_subItems[info->subIndex]._walk[1]._mov->countPhasesWithFlag(-1, 1);
+		cntY += (mgmLen - 1) * _items2[info->index]->_subItems[info->subIndex]._walk[1]._mov->countPhasesWithFlag(-1, 2);
+	}
+
+	if (mgmLen > 0) {
+		cntX += _items2[info->index]->_subItems[info->subIndex]._walk[1]._mov->countPhasesWithFlag(a2, 1);
+		cntY += _items2[info->index]->_subItems[info->subIndex]._walk[1]._mov->countPhasesWithFlag(a2, 2);
+	}
+
+	if (!(info->flags & 4)) {
+		cntX += _items2[info->index]->_subItems[info->subIndex]._walk[2]._mov->countPhasesWithFlag(-1, 1);
+		cntY += _items2[info->index]->_subItems[info->subIndex]._walk[2]._mov->countPhasesWithFlag(-1, 2);
+	}
+
+	int dx1 = x - x1;
+	int dy1 = y - y1;
+
+	if (cntX)
+		x1 = (int)((double)dx1 / (double)cntX);
+	else
+		x1 = 0;
+
+	if (cntY)
+		y1 = (int)((double)dy1 / (double)cntY);
+	else
+		y1 = 0;
+
+	int v34 = dx1 - cntX * x1;
+	int v35 = dy1 - cntY * y1;
+	Common::Point x2;
+	Common::Point y2(v34, v35);
+
+	if (v34)
+		x2.x = v34 / abs(v34);
+	else
+		x2.x = 0;
+
+	if (v35)
+		x2.y = v35 / abs(v35);
+	else
+		x2.y = 0;
+
+	MessageQueue *mq = new MessageQueue(g_fp->_globalMessageQueueList->compact());
+	ExCommand *ex;
+
+	if (info->flags & 2) {
+		ex = new ExCommand(
+							_items2[info->index]->_objectId,
+							5,
+							_items2[info->index]->_subItems[info->subIndex]._walk[1]._movementId,
+							info->pt1.x,
+							info->pt1.y,
+							0,
+							1,
+							0,
+							0,
+							0);
+
+		ex->_field_14 = info->distance1;
+
+		ex->_keyCode = _items2[info->index]->_obj->_okeyCode;
+		ex->_field_24 = 1;
+		ex->_excFlags |= 2;
+	} else {
+		ex = new ExCommand(
+							 _items2[info->index]->_objectId,
+							 5,
+							 _items2[info->index]->_subItems[info->subIndex]._walk[0]._movementId,
+							 info->pt1.x,
+							 info->pt1.y,
+							 0,
+							 1,
+							 0,
+							 0,
+							 0);
+
+		ex->_field_14 = info->distance1;
+
+		ex->_keyCode = _items2[info->index]->_obj->_okeyCode;
+		ex->_field_24 = 1;
+		ex->_excFlags |= 2;
+		mq->addExCommandToEnd(ex);
+
+		ex = _mgm.buildExCommand2(
+								  _items2[info->index]->_subItems[info->subIndex]._walk[0]._mov,
+								  _items2[info->index]->_objectId,
+								  x1,
+								  y1,
+								  &x2,
+								  &y2,
+								  -1);
+		ex->_parId = mq->_id;
+		ex->_keyCode = _items2[info->index]->_obj->_okeyCode;
+	}
+
+	mq->addExCommandToEnd(ex);
+
+	for (int i = 0; i < mgmLen; ++i) {
+		int par;
+
+		if (i == mgmLen - 1)
+			par = a2;
+		else
+			par = -1;
+
+		ex = _mgm.buildExCommand2(
+								  _items2[info->index]->_subItems[info->subIndex]._walk[1]._mov,
+								  _items2[info->index]->_objectId,
+								  x1,
+								  y1,
+								  &x2,
+								  &y2,
+								  par);
+		ex->_parId = mq->_id;
+		ex->_keyCode = _items2[info->index]->_obj->_okeyCode;
+		mq->addExCommandToEnd(ex);
+	}
+
+	if (!(info->flags & 4)) {
+		ex = _mgm.buildExCommand2(
+								  _items2[info->index]->_subItems[info->subIndex]._walk[2]._mov,
+								  _items2[info->index]->_objectId,
+								  x1,
+								  y1,
+								  &x2,
+								  &y2,
+								  -1);
+		ex->_parId = mq->_id;
+		ex->_keyCode = _items2[info->index]->_obj->_okeyCode;
+
+		mq->addExCommandToEnd(ex);
+	}
+
+    ex = new ExCommand(_items2[info->index]->_objectId, 5, -1, info->pt2.x, info->pt2.y, 0, 1, 0, 0, 0);
+	ex->_field_14 = info->distance2;
+
+	ex->_keyCode = _items2[info->index]->_obj->_okeyCode;
+	ex->_field_24 = 0;
+	ex->_excFlags |= 2;
+
+	mq->addExCommandToEnd(ex);
+
+	return mq;
 }
 
 MovGraphLink *MovGraph2::findLink1(int x, int y, int idx, int fuzzyMatch) {
@@ -1383,7 +1693,7 @@ double MovGraph2::findMinPath(LinkInfo *linkInfoSource, LinkInfo *linkInfoDest, 
 		} else if (linkInfoSource->link) {
 			linkInfoWorkSource.node = linkInfoSource->link->_movGraphNode1;
 			linkInfoWorkSource.link = 0;
-			
+
 			Common::Array<MovGraphLink *> tmpList;
 
 			double newDistance = findMinPath(&linkInfoWorkSource, linkInfoDest, &tmpList);
@@ -1399,9 +1709,9 @@ double MovGraph2::findMinPath(LinkInfo *linkInfoSource, LinkInfo *linkInfoDest, 
 
 			linkInfoWorkSource.link = 0;
 			linkInfoWorkSource.node = linkInfoSource->link->_movGraphNode2;
-			
+
 			tmpList.clear();
-			
+
 			newDistance = findMinPath(&linkInfoWorkSource, linkInfoDest, &tmpList);
 
 			if (newDistance >= 0 && (minDistance < 0.0 || newDistance < minDistance)) {
@@ -1478,7 +1788,7 @@ void MGM::rebuildTables(int objId) {
 	_items[idx]->movements1.clear();
 	_items[idx]->movements2.clear();
 
-	StaticANIObject *obj = g_fullpipe->_currentScene->getStaticANIObject1ById(objId, -1);
+	StaticANIObject *obj = g_fp->_currentScene->getStaticANIObject1ById(objId, -1);
 
 	if (!obj)
 		return;
@@ -1504,6 +1814,441 @@ MessageQueue *MGM::genMovement(MGMInfo *mgminfo) {
 	warning("STUB: MGM::genMovement()");
 
 	return 0;
+
+#if 0
+	if (!mgminfo->ani)
+		return 0;
+
+	mov = mgminfo->ani->_movement;
+
+	if (!mov && !mgminfo->ani->_statics)
+		return 0;
+
+	if (!(mgminfo->flags & 1)) {
+		if (mov)
+			mgminfo->staticsId1 = mov->_staticsObj2->_staticsId;
+		else
+			mgminfo->staticsId1 = mgminfo->ani->_statics->_staticsId;
+	}
+
+	if (!(mgminfo->flags & 0x10) || !(mgminfo->flags & 0x20)) {
+		int nx = mgminfo->ani->_ox;
+		int ny = mgminfo->ani->_oy;
+
+		if (mgminfo->ani->_movement) {
+			mgminfo->ani->calcNextStep(&point2);
+			nx += point2.x;
+			ny += point2.y;
+		}
+
+		if (!(mgminfo->flags & 0x10))
+			mgminfo->x2 = nx;
+
+		if (!(mgminfo->flags & 0x20))
+			mgminfo->y2 = ny;
+	}
+
+	mov = mgminfo->ani->getMovementById(mgminfo->movementId);
+
+	if (!mov)
+		return 0;
+
+	itemIdx = getItemIndexById(mgminfo->ani->_id);
+	subIdx = getStaticsIndexById(itemIdx, mgminfo->staticsId1);
+	st2idx = getStaticsIndexById(itemIdx, mov->_staticsObj1->_staticsId);
+	st1idx = getStaticsIndexById(itemIdx, mov->_staticsObj2->_staticsId);
+	subOffset = getStaticsIndexById(itemIdx, mgminfo->staticsId2);
+
+	clearMovements2(itemIdx);
+	recalcOffsets(itemIdx, subIdx, st2idx, 0, 1);
+	clearMovements2(itemIdx);
+	recalcOffsets(itemIdx, st1idx, subOffset, 0, 1);
+
+	v71 = (Message *)(28 * itemIdx);
+	v16 = items[itemIdx].objId;
+	v17 = *(_DWORD *)(v16 + offsetof(MGMItem, staticsListCount));
+	off = *(_DWORD *)(v16 + offsetof(MGMItem, subItems));
+	v18 = (MGMSubItem *)(off + 24 * (subIdx + st2idx * v17));
+	x1 = (int)&v18->movement->go.CObject.vmt;
+	v19 = (MGMSubItem *)(off + 24 * (st1idx + subOffset * v17));
+	v69 = (LONG)&v19->movement->go.CObject.vmt;
+
+	if (subIdx != st2idx && !x1)
+		return 0;
+
+	if (st1idx != subOffset && !v69)
+		return 0;
+
+	int n1x = mgminfo->x1 - mgminfo->x2 - v18->x - v19->x;
+	int n1y = mgminfo->y1 - mgminfo->y2 - v18->y - v19->y;
+
+	mov->calcSomeXY(&point1, 0);
+
+	int n2x = point1.x;
+	int n2y = point1.y;
+	int mult;
+
+	if (mgminfo->flags & 0x40) {
+		mult = mgminfo->field_10;
+		len = -1;
+		n2x *= mult;
+		n2y *= mult;
+	} else {
+		calcLength(&point, mov, n1x, n1y, &mult, &len, 1);
+		n2x = point.x;
+		n2y = point.y;
+	}
+
+	if (!(mgminfo->flags & 2)) {
+		len = -1;
+		n2x = mult * point1.x;
+		n1x = mult * point1.x;
+		mgminfo->x1 = mgminfo->x2 + mult * point1.x + v18->x + v19->x;
+	}
+
+	if (!(mgminfo->flags & 4)) {
+		n2y = mult * point1.y;
+		n1y = mult * point1.y;
+		len = -1;
+		mgminfo->y1 = mgminfo->y2 + mult * point1.y + v18->y + v19->y;
+	}
+
+	int px = 0;
+	int py = 0;
+
+	if (x1) {
+		px = countPhases(itemIdx, subIdx, st2idx, 1);
+		py = countPhases(itemIdx, subIdx, st2idx, 2);
+	}
+
+	if (mult > 1) {
+		px += (mult - 1) * mov->countPhasesWithFlag(-1, 1);
+		py += (mult - 1) * mov->countPhasesWithFlag(-1, 2);
+	}
+
+	if (mult > 0) {
+		px += mov->countPhasesWithFlag(len, 1);
+		py += mov->countPhasesWithFlag(len, 2);
+	}
+
+	if (v69) {
+		px += countPhases(itemIdx, st1idx, subOffset, 1);
+		py += countPhases(itemIdx, st1idx, subOffset, 2);
+	}
+
+	int dx1 = n1x - n2x;
+	int dy1 = n1y - n2y;
+
+	if (px) {
+		x1 = (int)((double)dx1 / (double)px);
+	} else {
+		x1 = 0;
+	}
+
+	if (py) {
+		y1 = (int)((double)dy1 / (double)py);
+	} else {
+		y1 = 0;
+	}
+
+	y2.x = dx1 - px * x1;
+	y2.y = dy1 - py * y1;
+
+	if (n1x - n2x == px * x1)
+		x2.x = 0;
+	else
+		x2.x = (dx1 - px * x1) / abs(dx1 - px * x1);
+
+	if (dy1 == py * y1)
+		x2.y = 0;
+	else
+		x2.y = (dy1 - py * y1) / abs(dy1 - py * y1);
+
+	MessageQueue *mq = new MessageQueue(g_fp->_globalMessageQueueList->compact());
+	ExCommand2 *ex2;
+
+	for (v42 = subIdx; v42 != st2idx; v42 = v43->staticsIndex) {
+		v43 = &(*(MGMSubItem **)((char *)&this->items->subItems + (unsigned int)v71))[v42 + st2idx * *(int *)((char *)&this->items->staticsListCount + (unsigned int)v71)];
+		ex2 = buildExCommand2(v43->movement, mgminfo->ani->go._id, x1, y1, &x2, &y2, -1);
+		ex2->_parId = mq->_id;
+		ex2->_keyCode = mgminfo->ani->_okeyCode;
+
+		mq->addExCommandToEnd(ex2);
+	}
+
+	for (i = 0; i < mult; ++i) {
+		int plen;
+
+		if (i == mult - 1)
+			plen = len;
+		else
+			plen = -1;
+
+		ex2 = buildExCommand2(mov, mgminfo->ani->_id, x1, y1, &x2, &y2, plen);
+		ex2->_parId = mq->_id;
+		ex2->_keyCode = mgminfo->ani->_okeyCode;
+
+		mq->addExCommandToEnd(ex2);
+	}
+
+	for (j = st1idx; j != subOffset; j = v50->staticsIndex) {
+		v50 = &(*(MGMSubItem **)((char *)&this->items->subItems + (unsigned int)v71))[j + subOffset * *(int *)((char *)&this->items->staticsListCount + (unsigned int)v71)];
+
+		ex2 = buildExCommand2(v50->movement, mgminfo->ani->_id, x1, y1, &x2, &y2, -1);
+		ex2->_parId = mq->_id;
+		ex2->_keyCode = mgminfo->ani->_okeyCode;
+
+		mq->addExCommandToEnd(ex2);
+	}
+
+	ExCommand *ex = new ExCommand(mgminfo->ani->_id, 5, -1, mgminfo->x1, mgminfo->y1, 0, 1, 0, 0, 0);
+
+	ex->_field_14 = mgminfo->field_1C;
+	ex->_keyCode = mgminfo->ani->_okeyCode;
+	ex->_field_24 = 0;
+	ex->_excFlags |= 3;
+
+	mq->addExCommandToEnd(ex);
+
+	return mq;
+#endif
+}
+
+void MGM::updateAnimStatics(StaticANIObject *ani, int staticsId) {
+	if (getItemIndexById(ani->_id) == -1)
+		return;
+
+	if (ani->_movement) {
+		ani->queueMessageQueue(0);
+		ani->_movement->gotoLastFrame();
+		ani->_statics = ani->_movement->_staticsObj2;
+
+		int x = ani->_movement->_ox;
+		int y = ani->_movement->_oy;
+
+		ani->_movement = 0;
+
+		ani->setOXY(x, y);
+	}
+
+	if (ani->_statics) {
+		Common::Point point;
+
+		getPoint(&point, ani->_id, ani->_statics->_staticsId, staticsId);
+
+		ani->setOXY(ani->_ox + point.x, ani->_oy + point.y);
+
+		ani->_statics = ani->getStaticsById(staticsId);
+	}
+}
+
+Common::Point *MGM::getPoint(Common::Point *point, int objectId, int staticsId1, int staticsId2) {
+	int idx = getItemIndexById(objectId);
+
+	if (idx == -1) {
+		point->x = -1;
+		point->y = -1;
+	} else {
+		int st1idx = getStaticsIndexById(idx, staticsId1);
+		int st2idx = getStaticsIndexById(idx, staticsId2);
+
+		if (st1idx == st2idx) {
+			point->x = 0;
+			point->y = 0;
+		} else {
+			int subidx = st1idx + st2idx * _items[idx]->statics.size();
+
+			if (!_items[idx]->subItems[subidx]->movement) {
+				clearMovements2(idx);
+				recalcOffsets(idx, st1idx, st2idx, false, true);
+
+				if (!_items[idx]->subItems[subidx]->movement) {
+					clearMovements2(idx);
+					recalcOffsets(idx, st1idx, st2idx, true, false);
+				}
+			}
+
+			MGMSubItem *sub = _items[idx]->subItems[subidx];
+
+			if (sub->movement) {
+				point->x = sub->x;
+				point->y = sub->y;
+			} else {
+				point->x = 0;
+				point->y = 0;
+			}
+		}
+	}
+
+	return point;
+}
+
+int MGM::getStaticsIndexById(int idx, int16 id) {
+	if (!_items[idx]->statics.size())
+		return -1;
+
+	for (uint i = 0; i < _items[idx]->statics.size(); i++) {
+		if (_items[idx]->statics[i]->_staticsId == id)
+			return i;
+	}
+
+	return 0;
+}
+
+int MGM::getStaticsIndex(int idx, Statics *st) {
+	if (!_items[idx]->statics.size())
+		return -1;
+
+	for (uint i = 0; i < _items[idx]->statics.size(); i++) {
+		if (_items[idx]->statics[i] == st)
+			return i;
+	}
+
+	return 0;
+}
+
+void MGM::clearMovements2(int idx) {
+	_items[idx]->movements2.clear();
+}
+
+int MGM::recalcOffsets(int idx, int st1idx, int st2idx, bool flip, bool flop) {
+	warning("STUB: MGM::recalcOffsets()");
+
+	return 0;
+}
+
+Common::Point *MGM::calcLength(Common::Point *pRes, Movement *mov, int x, int y, int *mult, int *len, int flag) {
+	Common::Point point;
+
+	mov->calcSomeXY(point, 0);
+	int p1x = point.x;
+	int p1y = point.y;
+
+	int newmult = 0;
+	int oldlen = *len;
+
+	if (abs(p1y) > abs(p1x)) {
+		if (mov->calcSomeXY(point, 0)->y)
+			newmult = (int)((double)y / point.y);
+	} else if (mov->calcSomeXY(point, 0)->x) {
+		newmult = (int)((double)x / point.y);
+	}
+
+	if (newmult < 0)
+		newmult = 0;
+
+	*mult = newmult;
+
+	int phase = 1;
+	int sz;
+
+	if (flag) {
+		if (abs(p1y) > abs(p1x)) {
+			while (abs(p1y * newmult + mov->calcSomeXY(point, 0)->y) < abs(y)) {
+				sz = mov->_currMovement ? mov->_currMovement->_dynamicPhases.size() : mov->_dynamicPhases.size();
+
+				if (phase >= sz) {
+					phase--;
+
+					break;
+				}
+
+				phase++;
+			}
+		} else {
+			while (abs(p1x * newmult + mov->calcSomeXY(point, 0)->x) < abs(x)) {
+				sz = mov->_currMovement ? mov->_currMovement->_dynamicPhases.size() : mov->_dynamicPhases.size();
+
+				if (phase >= sz) {
+					phase--;
+
+					break;
+				}
+
+				phase++;
+			}
+		}
+
+		*len = phase - 1;
+	} else {
+		*len = -1;
+	}
+
+	int p2x = 0;
+	int p2y = 0;
+
+	if (!oldlen)
+		oldlen = -1;
+
+	if (oldlen > 0) {
+		++*mult;
+
+		mov->calcSomeXY(point, 0);
+		p2x = point.x;
+		p2y = point.y;
+
+		if (abs(p1y) > abs(p1x))
+			p2x = p1x;
+		else
+			p2y = p1y;
+	}
+
+	pRes->x = p2x + p1x * newmult;
+	pRes->y = p2y + p1y * newmult;
+
+	return pRes;
+}
+
+ExCommand2 *MGM::buildExCommand2(Movement *mov, int objId, int x1, int y1, Common::Point *x2, Common::Point *y2, int len) {
+	uint cnt;
+
+	if (mov->_currMovement)
+		cnt = mov->_currMovement->_dynamicPhases.size();
+	else
+		cnt = mov->_dynamicPhases.size();
+
+	if (len > 0 && cnt > (uint)len)
+		cnt = len;
+
+	Common::Point **points = (Common::Point **)malloc(sizeof(Common::Point *) * cnt);
+
+	for (uint i = 0; i < cnt; i++) {
+		int flags = mov->getDynamicPhaseByIndex(i)->getDynFlags();
+
+		points[i] = new Common::Point;
+
+		if (flags & 1) {
+			points[i]->x = x1 + x2->x;
+
+			y2->x -= x2->x;
+
+			if (!y2->x)
+				x2->x = 0;
+		}
+
+		if (flags & 2) {
+			points[i]->y = y1 + x2->y;
+
+			y2->y -= x2->y;
+
+			if (!y2->y)
+				x2->y = 0;
+		}
+	}
+
+	ExCommand2 *ex = new ExCommand2(20, objId, points, cnt);
+	ex->_excFlags = 2;
+	ex->_messageNum = mov->_id;
+	ex->_field_14 = len;
+	ex->_field_24 = 1;
+	ex->_keyCode = -1;
+
+	for (uint i = 0; i < cnt; i++)
+		delete points[i];
+
+	free(points);
+
+	return ex;
 }
 
 MovGraphLink::MovGraphLink() {
@@ -1519,6 +2264,11 @@ MovGraphLink::MovGraphLink() {
 
 	_objtype = kObjTypeMovGraphLink;
 }
+
+MovGraphLink::~MovGraphLink() {
+	warning("STUB: MovGraphLink::~MovGraphLink()");
+}
+
 
 bool MovGraphLink::load(MfcArchive &file) {
 	debug(5, "MovGraphLink::load()");
@@ -1595,7 +2345,7 @@ void ReactParallel::createRegion() {
 	for (int i = 0; i < 4; i++)
 		_points[i] = new Common::Point;
 
-	double at = atan2((double)(_x1 - _x2), (double)(_y1 - _y2)) + 1.570796;
+	double at = atan2((double)(_x1 - _x2), (double)(_y1 - _y2)) + 1.570796; // pi/2
 	double sn = sin(at);
 	double cs = cos(at);
 
@@ -1615,20 +2365,28 @@ void ReactParallel::createRegion() {
 	// GdiObject::Attach(_rgn, CreatePolygonRgn(_points, 4, 2);
 }
 
-void ReactParallel::method14() {
-	warning("STUB: ReactParallel::method14()");
+void ReactParallel::setCenter(int x1, int y1, int x2, int y2) {
+	_x1 = x1;
+	_y1 = y1;
+	_x2 = x2;
+	_y2 = y2;
 }
 
 ReactPolygonal::ReactPolygonal() {
-	_field_C = 0;
-	_field_10 = 0;
+	_centerX = 0;
+	_centerY = 0;
+	_bbox = 0;
+}
+
+ReactPolygonal::~ReactPolygonal() {
+	delete _bbox;
 }
 
 bool ReactPolygonal::load(MfcArchive &file) {
 	debug(5, "ReactPolygonal::load()");
 
-	_field_C = file.readUint32LE();
-	_field_10 = file.readUint32LE();
+	_centerX = file.readUint32LE();
+	_centerY = file.readUint32LE();
 	_pointCount = file.readUint32LE();
 
 	if (_pointCount > 0) {
@@ -1655,9 +2413,53 @@ void ReactPolygonal::createRegion() {
 	}
 }
 
-void ReactPolygonal::method14() {
-	warning("STUB: ReactPolygonal::method14()");
+void ReactPolygonal::setCenter(int x1, int y1, int x2, int y2) {
+	int cX = (x2 + x1) / 2;
+	int cY = (y2 + y1) / 2;
+
+	if (_points) {
+		for (int i = 0; i < _pointCount; i++) {
+			_points[i]->x += cX - _centerX;
+			_points[i]->y += cY - _centerY;
+		}
+	}
+
+	_centerX = cX;
+	_centerY = cY;
 }
+
+void ReactPolygonal::getBBox(Common::Rect *rect) {
+	if (!_pointCount)
+		return;
+
+	if (_bbox) {
+		*rect = *_bbox;
+		return;
+	}
+
+	rect->left = _points[0]->x;
+	rect->top = _points[0]->y;
+	rect->right = _points[0]->x;
+	rect->bottom = _points[0]->y;
+
+	for (int i = 1; i < _pointCount; i++) {
+		if (rect->left > _points[i]->x)
+			rect->left = _points[i]->x;
+
+		if (rect->top < _points[i]->y)
+			rect->top = _points[i]->y;
+
+		if (rect->right < _points[i]->x)
+			rect->right = _points[i]->x;
+
+		if (rect->bottom > _points[i]->y)
+			rect->bottom = _points[i]->y;
+	}
+
+	_bbox = new Common::Rect;
+	*_bbox = *rect;
+}
+
 
 bool MovGraphReact::pointInRegion(int x, int y) {
 	if (_pointCount < 3) {
@@ -1668,15 +2470,15 @@ bool MovGraphReact::pointInRegion(int x, int y) {
 	double xinters;
 	Common::Point p, p1, p2;
 
-	p.x = (double)x;
-	p.y = (double)y;
+	p.x = x;
+	p.y = y;
 
-	p1.x = (double)_points[0]->x;
-	p1.y = (double)_points[0]->y;
+	p1.x = _points[0]->x;
+	p1.y = _points[0]->y;
 
 	for (int i = 1; i <= _pointCount; i++) {
-		p2.x = (double)_points[i % _pointCount]->x;
-		p2.y = (double)_points[i % _pointCount]->y;
+		p2.x = _points[i % _pointCount]->x;
+		p2.y = _points[i % _pointCount]->y;
 
 		if (p.y > MIN(p1.y, p2.y)) {
 			if (p.y <= MAX(p1.y, p2.y)) {
@@ -1701,16 +2503,20 @@ bool MovGraphReact::pointInRegion(int x, int y) {
 }
 
 int startWalkTo(int objId, int objKey, int x, int y, int a5) {
-	MctlCompound *mc = getSc2MctlCompoundBySceneId(g_fullpipe->_currentScene->_sceneId);
+	MctlCompound *mc = getSc2MctlCompoundBySceneId(g_fp->_currentScene->_sceneId);
 
 	if (mc)
-		return (mc->method34(g_fullpipe->_currentScene->getStaticANIObject1ById(objId, objKey), x, y, a5, 0) != 0);
+		return (mc->method34(g_fp->_currentScene->getStaticANIObject1ById(objId, objKey), x, y, a5, 0) != 0);
 
 	return 0;
 }
 
 int doSomeAnimation(int objId, int objKey, int a3) {
-	warning("STUB: doSomeAnimation(%d, %d, %d)", objId, objKey, a3);
+	StaticANIObject *ani = g_fp->_currentScene->getStaticANIObject1ById(objId, objKey);
+	MctlCompound *cmp = getCurrSceneSc2MotionController();
+
+	if (ani && cmp)
+		return cmp->method3C(ani, a3);
 
 	return 0;
 }

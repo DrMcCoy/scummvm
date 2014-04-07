@@ -29,9 +29,10 @@
 
 #include "graphics/font.h"
 #include "graphics/fontman.h"
-#include "graphics/decoders/pict.h"
 #include "graphics/pixelformat.h"
 #include "graphics/surface.h"
+
+#include "image/pict.h"
 
 #include "darkseed2/sprite.h"
 #include "darkseed2/imageconverter.h"
@@ -689,7 +690,7 @@ bool Sprite::loadFromPICT(Resources &resources, const Common::String &image) {
 
 	Common::SeekableReadStream *stream = resources.getResource(image);
 
-	::Graphics::PICTDecoder pict;
+	Image::PICTDecoder pict;
 	if (!pict.loadStream(*stream)) {
 		warning("Failed to decode PICT image");
 		return false;

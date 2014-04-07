@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -1301,7 +1301,6 @@ ScenePalette::ScenePalette() {
 		*palData++ = idx;
 	}
 
-	_field412 = 0;
 	_redColor = _greenColor = _blueColor = 0;
 	_aquaColor = 0;
 	_purpleColor = 0;
@@ -1313,7 +1312,6 @@ ScenePalette::~ScenePalette() {
 }
 
 ScenePalette::ScenePalette(int paletteNum) {
-	_field412 = 0;
 	_redColor = _greenColor = _blueColor = 0;
 	_aquaColor = 0;
 	_purpleColor = 0;
@@ -1565,8 +1563,13 @@ void SceneItem::synchronize(Serializer &s) {
 
 	_bounds.synchronize(s);
 	s.syncString(_msg);
-	s.syncAsSint32LE(_fieldE);
-	s.syncAsSint32LE(_field10);
+
+	if (s.getVersion() < 15) {
+		int useless = 0;
+		s.syncAsSint32LE(useless);
+		s.syncAsSint32LE(useless);
+	}
+
 	s.syncAsSint16LE(_position.x); s.syncAsSint32LE(_position.y);
 	s.syncAsSint16LE(_yDiff);
 	s.syncAsSint32LE(_sceneRegionId);
@@ -1590,12 +1593,12 @@ bool SceneItem::startAction(CursorType action, Event &event) {
 }
 
 void SceneItem::doAction(int action) {
-	const char *msg = NULL;
-
 	if (g_vm->getGameID() == GType_Ringworld2) {
 		Event dummyEvent;
 		((Ringworld2::SceneExt *)GLOBALS._sceneManager._scene)->display((CursorType)action, dummyEvent);
 	} else {
+		const char *msg = NULL;
+
 		switch ((int)action) {
 		case CURSOR_LOOK:
 			msg = LOOK_SCENE_HOTSPOT;
@@ -2119,7 +2122,7 @@ SceneObject::SceneObject() : SceneHotspot() {
 	_xs = 0;
 	_xe = 0;
 	_endFrame = 0;
-	_field68 = 0;
+	_loopCount = 0;
 	_regionIndex = 0;
 	_shadowMap = NULL;
 }
@@ -2368,7 +2371,7 @@ void SceneObject::animate(AnimateMode animMode, ...) {
 
 	case ANIM_MODE_1:
 		_frameChange = 1;
-		_field2E = _position;
+		_oldPosition = _position;
 		_endAction = 0;
 		break;
 
@@ -2416,9 +2419,9 @@ void SceneObject::animate(AnimateMode animMode, ...) {
 	case ANIM_MODE_9:
 		if (_animateMode == ANIM_MODE_9 && g_vm->getGameID() == GType_Ringworld2) {
 			_frameChange = -1;
-			_field2E = _position;
+			_oldPosition = _position;
 		} else {
-			_field68 = va_arg(va, int);
+			_loopCount = va_arg(va, int);
 			_endAction = va_arg(va, Action *);
 			_frameChange = 1;
 			_endFrame = getFrameCount();
@@ -2485,7 +2488,7 @@ void SceneObject::synchronize(Serializer &s) {
 
 	s.syncAsUint32LE(_updateStartFrame);
 	s.syncAsUint32LE(_walkStartFrame);
-	s.syncAsSint16LE(_field2E.x); s.syncAsSint16LE(_field2E.y);
+	s.syncAsSint16LE(_oldPosition.x); s.syncAsSint16LE(_oldPosition.y);
 	s.syncAsSint16LE(_percent);
 	s.syncAsSint16LE(_priority);
 	s.syncAsSint16LE(_angle);
@@ -2500,7 +2503,7 @@ void SceneObject::synchronize(Serializer &s) {
 	SYNC_ENUM(_animateMode, AnimateMode);
 	s.syncAsSint32LE(_frame);
 	s.syncAsSint32LE(_endFrame);
-	s.syncAsSint32LE(_field68);
+	s.syncAsSint32LE(_loopCount);
 	s.syncAsSint32LE(_frameChange);
 	s.syncAsSint32LE(_numFrames);
 	s.syncAsSint32LE(_regionIndex);
@@ -2587,9 +2590,9 @@ void SceneObject::dispatch() {
 		case ANIM_MODE_1:
 			if (isNoMover())
 				setFrame(1);
-			else if ((_field2E.x != _position.x) || (_field2E.y != _position.y)) {
+			else if ((_oldPosition.x != _position.x) || (_oldPosition.y != _position.y)) {
 				setFrame(changeFrame());
-				_field2E = _position;
+				_oldPosition = _position;
 
 			}
 			break;
@@ -2632,7 +2635,7 @@ void SceneObject::dispatch() {
 					_endFrame = 1;
 
 					setFrame(changeFrame());
-				} else if (!_field68 || (--_field68 > 0)) {
+				} else if (!_loopCount || (--_loopCount > 0)) {
 					_frameChange = 1;
 					_endFrame = getFrameCount();
 
@@ -2651,7 +2654,7 @@ void SceneObject::dispatch() {
 					_frameChange = -1;
 					_strip = ((_strip - 1) ^ 1) + 1;
 					_endFrame = 1;
-				} else if ((_field68 == 0) || (--_field68 != 0)) {
+				} else if (!_loopCount || (--_loopCount > 0)) {
 					_frameChange = 1;
 					_endFrame = getFrameCount();
 
@@ -2718,7 +2721,7 @@ GfxSurface SceneObject::getFrame() {
 	_visageImages.setVisage(_visage, _strip);
 	GfxSurface frame = _visageImages.getFrame(_frame);
 
-	// Reset any centroid adjustment flags, in 
+	// Reset any centroid adjustment flags, in
 	frame._flags &= ~(FRAME_FLIP_CENTROID_X | FRAME_FLIP_CENTROID_Y);
 
 	// For later games, check whether the appropriate object flags are set for flipping
@@ -2906,7 +2909,6 @@ void BackgroundSceneObject::copySceneToBackground() {
 void SceneObjectList::draw() {
 	Common::Array<SceneObject *> objList;
 	int paneNum = 0;
-	int xAmount = 0, yAmount = 0;
 
 	if (_objList.size() == 0) {
 		// Alternate draw mode
@@ -2933,6 +2935,7 @@ void SceneObjectList::draw() {
 				g_globals->_scrollFollower->_position.x - g_globals->_sceneManager._scene->_sceneBounds.left,
 				g_globals->_scrollFollower->_position.y - g_globals->_sceneManager._scene->_sceneBounds.top);
 			int loadCount = 0;
+			int xAmount = 0, yAmount = 0;
 
 			if (objPos.x >= scrollerRect.right) {
 				xAmount = 8;
@@ -2961,8 +2964,9 @@ void SceneObjectList::draw() {
 				g_globals->_sceneManager._sceneBgOffset.y);
 		}
 
-		// Set up the flag mask
-		uint32 flagMask = (paneNum == 0) ? OBJFLAG_PANE_0 : OBJFLAG_PANE_1;
+		// Set up the flag mask. Currently, paneNum is always set to 0, so the check is meaningless
+		// uint32 flagMask = (paneNum == 0) ? OBJFLAG_PANE_0 : OBJFLAG_PANE_1;
+		uint32 flagMask = OBJFLAG_PANE_0;
 
 		// Initial loop to set up object list and update object position, priority, and flags
 		for (SynchronizedList<SceneObject *>::iterator i = g_globals->_sceneObjects->begin();
@@ -3365,7 +3369,6 @@ Player::Player(): SceneObject() {
 	_canWalk = false;
 	_enabled = false;
 	_uiEnabled = false;
-	_field8C = 0;
 
 	// Return to Ringworld specific fields
 	_characterIndex = R2_NONE;
@@ -3384,15 +3387,11 @@ void Player::postInit(SceneObjectList *OwnerList) {
 	_canWalk = true;
 	_uiEnabled = true;
 	_percent = 100;
-	_field8C = 10;
 
-	if  (g_vm->getGameID() != GType_Ringworld2)
-	{
+	if  (g_vm->getGameID() != GType_Ringworld2) {
 		_moveDiff.x = 4;
 		_moveDiff.y = 2;
-	}
-	else
-	{
+	} else {
 		_moveDiff.x = 3;
 		_moveDiff.y = 2;
 		_effect = EFFECT_SHADED;
@@ -3500,7 +3499,10 @@ void Player::synchronize(Serializer &s) {
 
 	s.syncAsByte(_canWalk);
 	s.syncAsByte(_uiEnabled);
-	s.syncAsSint16LE(_field8C);
+	if (s.getVersion() < 15) {
+		int useless = 0;
+		s.syncAsSint16LE(useless);
+	}
 
 	if (g_vm->getGameID() != GType_Ringworld)
 		s.syncAsByte(_enabled);
@@ -4248,7 +4250,6 @@ double FloatSet::sqrt(FloatSet &floatSet) {
 GameHandler::GameHandler() : EventHandler() {
 	_nextWaitCtr = 1;
 	_waitCtr.setCtr(1);
-	_field14 = 10;
 }
 
 GameHandler::~GameHandler() {
@@ -4270,7 +4271,11 @@ void GameHandler::synchronize(Serializer &s) {
 	_lockCtr.synchronize(s);
 	_waitCtr.synchronize(s);
 	s.syncAsSint16LE(_nextWaitCtr);
-	s.syncAsSint16LE(_field14);
+
+	if (s.getVersion() < 14) {
+		int useless = 0;
+		s.syncAsSint16LE(useless);
+	}
 }
 
 /*--------------------------------------------------------------------------*/

@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -27,8 +27,10 @@ namespace Wintermute {
 static const PlainGameDescriptor wintermuteGames[] = {
 	{"5ld",             "Five Lethal Demons"},
 	{"5ma",             "Five Magical Amulets"},
-	{"bthreshold",      "Beyond the Threshold"},
 	{"actualdest",      "Actual Destination"},
+	{"bickadoodle",     "Bickadoodle"},
+	{"bookofgron",      "Book of Gron Part One"},
+	{"bthreshold",      "Beyond the Threshold"},
 	{"carolreed4",      "Carol Reed 4 - East Side Story"},
 	{"carolreed5",      "Carol Reed 5 - The Colour of Murder"},
 	{"carolreed6",      "Carol Reed 6 - Black Circle"},
@@ -36,23 +38,31 @@ static const PlainGameDescriptor wintermuteGames[] = {
 	{"carolreed8",      "Carol Reed 8 - Amber's Blood"},
 	{"carolreed9",      "Carol Reed 9 - Cold Case Summer"},
 	{"chivalry",        "Chivalry is Not Dead"},
+	{"corrosion",		"Corrosion: Cold Winter Waiting"},
 	{"deadcity",        "Dead City"},
 	{"dreaming",        "Des Reves Elastiques Avec Mille Insectes Nommes Georges"},
 	{"dirtysplit",      "Dirty Split"},
 	{"dreamscape",      "Dreamscape"},
 	{"escapemansion",   "Escape from the Mansion"},
+	{"framed",          "Framed"},
 	{"ghostsheet",      "Ghost in the Sheet"},
 	{"hamlet",          "Hamlet or the last game without MMORPS features, shaders and product placement"},
 	{"helga",           "Helga Deep In Trouble"},
 	{"jamesperis",      "James Peris: No License Nor Control"},
+	{"kulivocko",       "Kulivocko"},
+	{"lonelyrobot",     "Project Lonely Robot"},
 	{"looky",           "Looky"},
 	{"julia",           "J.U.L.I.A."},
 	{"mirage",          "Mirage"},
 	{"paintaria",       "Paintaria"},
 	{"pigeons",         "Pigeons in the Park"},
+	{"projectdoom",     "Project: Doom"},
 	{"reversion1",      "Reversion: The Escape"},
 	{"reversion2",      "Reversion: The Meeting"},
+	{"rhiannon",		"Rhiannon: Curse of the four Branches"},
+	{"ritter",			"1 1/2 Ritter: Auf der Suche nach der hinreissenden Herzelinde"},
 	{"rosemary",        "Rosemary"},
+	{"securanote",      "Securanote"},
 	{"shaban",          "Shaban"},
 	{"shinestar",       "The Shine of a Star"},
 	{"spaceinvaders",   "Space Invaders"},
@@ -62,6 +72,8 @@ static const PlainGameDescriptor wintermuteGames[] = {
 	{"tradestory",      "The Trader of Stories"},
 	{"twc",             "the white chamber"},
 	{"wintermute",      "Wintermute engine game"},
+	{"wtetris",         "Wilma Tetris"},
+	{"zilm",            "Zilm: A Game of Reflex"},
 	{0, 0}
 };
 
@@ -102,6 +114,36 @@ static const ADGameDescription gameDescriptions[] = {
 		"",
 		AD_ENTRY1s("data.dcp", "d49bf9ccb2e74507447c82d6ad3e2bc4", 12773712),
 		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Bickadoodle
+	{
+		"bickadoodle",
+		"",
+		AD_ENTRY1s("data.dcp", "84db4d1594cac95e25614985775d10a8", 35303844),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Bickadoodle (download from http://aethericgames.com/games/bickadoodle/download-bickadoodle/)
+	{
+		"bickadoodle",
+		"",
+		AD_ENTRY1s("data.dcp", "1584d83577c32add0fce27fae91141a2", 35337728),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Book of Gron Part One
+	{
+		"bookofgron",
+		"",
+		AD_ENTRY1s("data.dcp", "e61b2ebee044a82fa0f8ca0fce2c8946", 83129531),
+		Common::RU_RUS,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE,
 		GUIO0()
@@ -209,6 +251,16 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_TESTING,
 		GUIO0()
 	},
+	// Corrosion: Cold Winter Waiting
+	{
+		"corrosion",
+		"",
+		AD_ENTRY1s("data.dcp", "ae885b1a8faa0b27f43c0e8f0df02fc9", 525931618),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_TESTING,
+		GUIO0()
+	},
 	// Dead City (Czech)
 	{
 		"deadcity",
@@ -267,6 +319,19 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_UNSTABLE,
 		GUIO0()
 	},
+	// Dirty Split (Czech)
+	{
+		"dirtysplit",
+		"",
+		{
+			{"czech.dcp", 0, "08a71446467cf8f9444cfea446b46ad6", 127697934},
+			{"data.dcp", 0, "8b4b81b718bf65f30a67fc0b1e329eb5", 88577623},
+		},
+		Common::CZ_CZE,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
 	// Dirty Split (English)
 	{
 		"dirtysplit",
@@ -277,12 +342,52 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_UNSTABLE,
 		GUIO0()
 	},
+	// Dirty Split (French)
+	{
+		"dirtysplit",
+		"",
+		{
+			{"french.dcp", 0, "a0508dedebd0fe478d0158fa4c2a1136", 125534323},
+			{"data.dcp", 0, "e6d70c7f5d181b761cfcf974adf9186a", 88577623},
+			AD_LISTEND
+		},
+		Common::FR_FRA,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
 	// Dirty Split (German)
 	{
 		"dirtysplit",
 		"",
 		AD_ENTRY1s("data.dcp", "139d8a25579e969f8b37d20e6e3de5f9", 92668291),
 		Common::DE_DEU,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Dirty Split (Italian)
+	{
+		"dirtysplit",
+		"",
+		{
+			{"italian.dcp", 0, "8108807fbd8af70be1ec452d0fd1131b", 125513726},
+			{"data.dcp", 0, "35a150e22af274185883fdbb142c6fb1", 88577623},
+		},
+		Common::IT_ITA,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Dirty Split (Spanish)
+	{
+		"dirtysplit",
+		"",
+		{
+			{"spanish.dcp", 0, "b3982c0a5e85b42e1e38240fef004aa4", 164428596},
+			{"data.dcp", 0, "63766d6c68b9f00b632ea1736fc8a95c", 88577621},
+		},
+		Common::ES_ESP,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE,
 		GUIO0()
@@ -327,7 +432,41 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_UNSTABLE,
 		GUIO0()
 	},
-	// Ghosts in the Sheet
+	// Escape from the Mansion
+	{
+		"escapemansion",
+		"1.3",
+		AD_ENTRY1s("data.dcp",  "1e5d231b56c8a228cd15cb690f50253e", 29261972),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Framed
+	{
+		"framed",
+		"",
+		AD_ENTRY1s("data.dcp",  "e7259fb36f2c6f9f28242291e0c3de98", 34690568),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Ghost in the Sheet
+	{
+		"ghostsheet",
+		"",
+		{
+			{"english.dcp", 0, "e6d0aad2c89996bcabe416105a3d6d3a", 12221017},
+			{"data.dcp", 0, "b2f8b05328e4881e15e98e845b63f451", 168003},
+			AD_LISTEND
+		},
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Ghost in the Sheet (Demo)
 	{
 		"ghostsheet",
 		"Demo",
@@ -343,6 +482,20 @@ static const ADGameDescription gameDescriptions[] = {
 		"hamlet",
 		"",
 		AD_ENTRY1s("data.dcp", "f624add957a77c9930529fb28cc2450f", 88183022),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Helga Deep In Trouble (English)
+	{
+		"helga",
+		"",
+		{
+			{"english.dcp", 0, "bfa136b21bdbc7d8691c0770a6d40bc3", 135931},
+			{"data.dcp", 0, "25cb955a60b58326f2eeda1ce288fb37", 183251259},
+			AD_LISTEND
+		},
 		Common::EN_ANY,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE,
@@ -415,6 +568,16 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_UNSTABLE,
 		GUIO0()
 	},
+	// J.U.L.I.A. (English, Bundle in a box-version)
+	{
+		"julia",
+		"Version 1.2",
+		AD_ENTRY1s("data.dcp", "fe90023ccc22f35185b40b910e0d03a2", 10101373),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
 	// J.U.L.I.A. (English) (Demo)
 	{
 		"julia",
@@ -432,6 +595,27 @@ static const ADGameDescription gameDescriptions[] = {
 		"Greenlight Demo",
 		AD_ENTRY1s("data.dcp", "4befd448d36b0dae9c3ab1aa7cb8b78d", 7271886),
 		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE |
+		ADGF_DEMO,
+		GUIO0()
+	},
+	// Kulivocko (Czech)
+	{
+		"kulivocko",
+		"",
+		AD_ENTRY1s("data.dcp", "44306dc470e9b27474043932eccee02f", 155106392),
+		Common::CZ_CZE,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Kulivocko (Czech) (Demo)
+	{
+		"kulivocko",
+		"Demo",
+		AD_ENTRY1s("data.dcp", "63b164bdfadecbb0deb5da691afb8154", 48362234),
+		Common::CZ_CZE,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE |
 		ADGF_DEMO,
@@ -509,6 +693,27 @@ static const ADGameDescription gameDescriptions[] = {
 		Common::EN_ANY,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Project: Doom
+	{
+		"projectdoom",
+		"",
+		AD_ENTRY1s("data.dcp", "d5894b65a40706845434b99870bcab92", 99223761),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Project Lonely Robot
+	{
+		"lonelyrobot",
+		"beta",
+		AD_ENTRY1s("data.dcp", "a0cf7ad5bab957416dcda454e9f28ef0", 3420120),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE |
+		ADGF_DEMO,
 		GUIO0()
 	},
 	// Reversion: The Escape Version 1.0
@@ -839,6 +1044,56 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_UNSTABLE,
 		GUIO0()
 	},
+	// Reversion: The Meeting Version 2.0.2412 (Chinese)
+	{
+		"reversion2",
+		"Version 2.0.2412",
+		{
+			{"data.dcp", 0, "f4ffc4df24b7bebad56a24930f33a2bc", 255766600},
+			{"xlanguage_nz.dcp", 0, "17c79af4928e24484bee77a7e807cc2a", 10737127},
+			{"Linux.dcp", 0, "21858bd77dc86b03f701fd47900e2f51", 984535},
+			AD_LISTEND
+		},
+		Common::ZH_CNA,
+		Common::kPlatformLinux,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Reversion: The Meeting Version 2.0.2412 (English)
+	{
+		"reversion2",
+		"Version 2.0.2412",
+		{
+			{"data.dcp", 0, "f4ffc4df24b7bebad56a24930f33a2bc", 255766600},
+			{"xlanguage_en.dcp", 0, "0598bf752ce93b42bcaf1094df537c7b", 8533057},
+			{"Linux.dcp", 0, "21858bd77dc86b03f701fd47900e2f51", 984535},
+			AD_LISTEND
+		},
+		Common::EN_ANY,
+		Common::kPlatformLinux,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Rhiannon: Curse of the four Branches
+	{
+		"rhiannon",
+		"",
+		AD_ENTRY1s("data.dcp", "870f348900b735f1cc79c0608ce32b0e", 1046169851),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// 1 1/2 Ritter: Auf der Suche nach der hinreissenden Herzelinde
+	{
+		"ritter",
+		"",
+		AD_ENTRY1s("data.dcp", "5ac416cee605d3a30f4d59687b1cdab2", 364260278),
+		Common::DE_DEU,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
 	// Rosemary
 	{
 		"rosemary",
@@ -846,6 +1101,16 @@ static const ADGameDescription gameDescriptions[] = {
 		AD_ENTRY1s("data.dcp", "4f2631138bd4d27587d9043f8aeff3df", 29483643),
 		Common::EN_ANY,
 		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Securanote
+	{
+		"securanote",
+		"",
+		AD_ENTRY1s("data.dcp",  "5213d3e59b9e95b7fbd5c56f7de5341a", 2625554),
+		Common::EN_ANY,
+		Common::kPlatformIOS,
 		ADGF_UNSTABLE,
 		GUIO0()
 	},
@@ -927,6 +1192,26 @@ static const ADGameDescription gameDescriptions[] = {
 		"",
 		AD_ENTRY1s("data.dcp", "0011d01142547c61e51ba24dc42b579e", 186451273),
 		Common::UNK_LANG,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Wilma Tetris
+	{
+		"wtetris",
+		"",
+		AD_ENTRY1s("data.dcp", "946e3a0496e6c12fb344c9ed861ff015", 2780093),
+		Common::EN_ANY,
+		Common::kPlatformWindows,
+		ADGF_UNSTABLE,
+		GUIO0()
+	},
+	// Zilm: A Game of Reflex 1.0
+	{
+		"Zilm",
+		"1.0",
+		AD_ENTRY1s("data.dcp",  "098dffaf03d8adbb4cb5633e4733e63c", 351726),
+		Common::EN_ANY,
 		Common::kPlatformWindows,
 		ADGF_UNSTABLE,
 		GUIO0()

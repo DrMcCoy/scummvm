@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -183,6 +183,20 @@ public:
 };
 
 class Scene1337 : public SceneExt {
+	class OptionsDialog: public GfxDialog {
+	private:
+		GfxButton _autoplay;
+		GfxButton _restartGame;
+		GfxButton _quitGame;
+		GfxButton _continueGame;
+
+		OptionsDialog();
+		virtual ~OptionsDialog() {}
+		virtual GfxButton *execute(GfxButton *defaultButton);
+	public:
+		static void show();
+	};
+
 	class Card: public SceneHotspot {
 	public:
 		SceneObject _card;
@@ -270,16 +284,6 @@ class Scene1337 : public SceneExt {
 		void signal();
 	};
 public:
-	typedef void (Scene1337::*FunctionPtrType)();
-	FunctionPtrType _unkFctPtr412;
-
-	ASound _aSound1;
-	ASound _aSound2;
-	SceneActor _helpIcon;
-	bool _autoplay;
-	GameBoardSide _gameBoardSide[4];
-	SceneItem _item1;
-	SceneObject _currentPlayerArrow;
 	Action1 _action1;
 	Action2 _action2;
 	Action3 _action3;
@@ -293,34 +297,46 @@ public:
 	Action11 _action11;
 	Action12 _action12;
 	Action13 _action13;
-	Card _animatedCard;
-	Card _shuffleAnimation;
-	Card _item4;
-	SceneActor _stockPile;
-	int _cardsAvailableNumb;
+
+	typedef void (Scene1337::*FunctionPtrType)();
+	FunctionPtrType _delayedFunction;
+
+	bool _autoplay;
+	bool _shuffleEndedFl;
+	bool _showPlayerTurn;
+	bool _displayHelpFl;
+	bool _instructionsDisplayedFl;
 
 	// Discarded cards are put in the available cards pile, with an higher index so there no conflict
 	int _currentDiscardIndex;
 	int _availableCardsPile[100];
-	Card *_discardCard;
-	Card *_field3EF4;
-	Card *_field3EF8;
-	Card _item5;
-	Card _selectedCard;
-	Card _discardPile;
-	Card _stockCard;
-	bool _shuffleEndedFl;
+	int _cardsAvailableNumb;
 	int _currentPlayerNumb;
-	int _field4240;
-	int _field4242;
-	bool _showPlayerTurn;
-	bool _field4246;
-	int _field424A;
-	bool _instructionsDisplayedFl;
+	int _actionIdx1;
+	int _actionIdx2;
+	int _winnerId;
 	int _instructionsWaitCount;
 	int _cursorCurRes;
 	int _cursorCurStrip;
 	int _cursorCurFrame;
+
+	ASound _aSound1;
+	ASound _aSound2;
+	GameBoardSide _gameBoardSide[4];
+	SceneActor _helpIcon;
+	SceneActor _stockPile;
+	SceneItem _actionItem;
+	SceneObject _currentPlayerArrow;
+
+	Card *_actionCard1;
+	Card *_actionCard2;
+	Card *_actionCard3;
+	Card _animatedCard;
+	Card _shuffleAnimation;
+	Card _discardedPlatformCard;
+	Card _selectedCard;
+	Card _discardPile;
+	Card _stockCard;
 
 	SceneObject _upperDisplayCard[8];
 	SceneObject _lowerDisplayCard[8];
@@ -328,34 +344,32 @@ public:
 	Scene1337();
 	virtual void synchronize(Serializer &s);
 
-	void actionDisplay(int resNum, int lineNum, int x, int y, int arg5, int width, int textMode, int fontNum, int colFG, int colBGExt, int colFGExt);
-	void setAnimationInfo(Card *subObj);
-	void subC20E5();
-	void subC20F9();
-	void subC2586();
-	bool subC264B(int arg1);
-	bool subC2687(int arg1);
-	int  subC26CB(int arg1, int arg2);
-	int  subC2719(int arg1);
-	int  subC274D(int arg1);
-	int  subC2781(int arg1);
-	int  subC27B5(int arg1);
-	int  subC27F9(int arg1);
-	void subC2835(int arg1);
-	void subC2C2F();
-	void subC318B(int arg1, Card *subObj2, int arg3);
-	int  subC3257(int arg1);
-	bool subC32B1(int arg1, int arg2);
-	int  subC331B(int arg1);
-	bool subC3386(int arg1, int arg2);
-	void subC33C0(Card *subObj1, Card *subObj2);
-	void subC3456(Card *subObj1, Card *subObj2);
-	void subC340B(Card *subObj1, Card *subObj2);
-	void subC34A1(Card *subObj1, Card *subObj2);
-	Card *subC34EC(int arg1);
-	void subC358E(Card *subObj1, int arg2);
-	int  subC3E92(int arg1);
-	void subC4A39(Card *subObj);
+	void actionDisplay(int resNum, int lineNum, int x, int y, int keepOnScreen, int width, int textMode, int fontNum, int colFG, int colBGExt, int colFGExt);
+	void setAnimationInfo(Card *card);
+	void handleNextTurn();
+	void handlePlayerTurn();
+	bool isStationCard(int cardId);
+	bool isStopConstructionCard(int cardId);
+	int  getStationId(int playerId, int handCardId);
+	int  findPlatformCardInHand(int playerId);
+	int  findCard13InHand(int playerId);
+	int  checkThieftCard(int playerId);
+	int  isDelayCard(int cardId);
+	int  getStationCardId(int cardId);
+	void handlePlayer01Discard(int playerId);
+	void playThieftCard(int playerId, Card *card, int victimId);
+	int  getPreventionCardId(int cardId);
+	bool isAttackPossible(int victimId, int cardId);
+	int  getPlayerWithOutpost(int playerId);
+	bool checkAntiDelayCard(int delayCardId, int cardId);
+	void playStationCard(Card *station, Card *platform);
+	void playDelayCard(Card *card, Card *dest);
+	void playPlatformCard(Card *card, Card *dest);
+	void playAntiDelayCard(Card *card, Card *dest);
+	Card *getStationCard(int arg1);
+	void playCounterTrickCard(Card *card, int playerId);
+	int  getFreeHandCard(int playerId);
+	void discardCard(Card *card);
 	void subC4CD2();
 	void subC4CEC();
 	void subC51A0(Card *subObj1, Card *subObj2);
@@ -365,20 +379,19 @@ public:
 	void suggestInstructions();
 	void shuffleCards();
 	void dealCards();
-	void subCD193();
-	void subCDB90(int arg1, Common::Point pt);
-	void subCF31D();
-	void subCF979();
-	void subD026D();
-	void subD0281();
-	void subD02CA();
-	void subD183F(int arg1, int arg2);
+	void showOptionsDialog();
+	void handleClick(int arg1, Common::Point pt);
+	void handlePlayer0();
+	void handlePlayer1();
+	void handlePlayer2();
+	void handlePlayer3();
+	void handleAutoplayPlayer2();
+	void updateCursorId(int arg1, bool arg2);
 	void setCursorData(int resNum, int rlbNum, int frameNum);
 	void subD18F5();
 	void subD1917();
 	void subD1940(bool flag);
 	void subD1975(int arg1, int arg2);
-	void subD1A48(int arg1);
 
 	virtual void postInit(SceneObjectList *OwnerList = NULL);
 	virtual void remove();

@@ -33,9 +33,11 @@ namespace Common {
 class SeekableReadStream;
 }
 
-namespace Video {
-
+namespace Image {
 class Codec;
+}
+
+namespace Video {
 
 class SegaFILMDecoder : public VideoDecoder {
 public:
@@ -70,7 +72,7 @@ private:
 		uint32 _nextFrameStartTime;
 
 		uint32 _frameCount;
-		Codec *_codec;
+		Image::Codec *_codec;
 		uint16 _width, _height;
 		int _curFrame;
 	};

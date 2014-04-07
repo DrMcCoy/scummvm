@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -137,7 +137,7 @@ SciEngine::SciEngine(OSystem *syst, const ADGameDescription *desc, SciGameId gam
 	SearchMan.addSubDirectoryMatching(gameDataDir, "duk");	// Duck movie files in Phantasmagoria 2
 	SearchMan.addSubDirectoryMatching(gameDataDir, "Robot Folder"); // Mac robot files
 	SearchMan.addSubDirectoryMatching(gameDataDir, "Sound Folder"); // Mac audio files
-	SearchMan.addSubDirectoryMatching(gameDataDir, "Voices Folder"); // Mac audio36 files
+	SearchMan.addSubDirectoryMatching(gameDataDir, "Voices Folder", 0, 2, true); // Mac audio36 files (recursive for Torin)
 	SearchMan.addSubDirectoryMatching(gameDataDir, "Voices"); // Mac audio36 files
 	SearchMan.addSubDirectoryMatching(gameDataDir, "VMD Folder"); // Mac VMD files
 
@@ -285,6 +285,11 @@ Common::Error SciEngine::run() {
 		initStackBaseWithSelector(SELECTOR(play));
 		// We set this, so that the game automatically quit right after init
 		_gamestate->variables[VAR_GLOBAL][4] = TRUE_REG;
+
+		// Jones only initializes its menus when restarting/restoring, thus set
+		// the gameIsRestarting flag here before initializing. Fixes bug #6536.
+		if (g_sci->getGameId() == GID_JONES)
+			_gamestate->gameIsRestarting = GAMEISRESTARTING_RESTORE;
 
 		_gamestate->_executionStackPosChanged = false;
 		run_vm(_gamestate);
@@ -576,7 +581,7 @@ bool SciEngine::initGame() {
 
 	// Script 0 should always be at segment 1
 	if (script0Segment != 1) {
-		debug(2, "Failed to instantiate script.000");
+		debug(2, "Failed to instantiate script 0");
 		return false;
 	}
 
@@ -886,12 +891,12 @@ void SciEngine::syncSoundSettings() {
 	}
 }
 
-// used by Script Patcher. Used to find out, if Laura Bow 2 needs patching for Speech+Subtitles - or not
+// used by Script Patcher. Used to find out, if Laura Bow 2/King's Quest 6 need patching for Speech+Subtitles - or not
 bool SciEngine::speechAndSubtitlesEnabled() {
 	bool subtitlesOn = ConfMan.getBool("subtitles");
 	bool speechOn = !ConfMan.getBool("speech_mute");
 	
-	if (subtitlesOn && speechOn)
+	if (isCD() && subtitlesOn && speechOn)
 		return true;
 	return false;
 }
@@ -913,13 +918,10 @@ void SciEngine::syncIngameAudioOptions() {
 			case GID_FREDDYPHARKAS:
 			case GID_ECOQUEST:
 			case GID_LSL6:
-				// TODO: The following need script patches for simultaneous speech and subtitles
-				//  GID_KQ6
+			case GID_LAURABOW2:
+			case GID_KQ6:
 				_gamestate->variables[VAR_GLOBAL][90] = make_reg(0, 3);	// speech + subtitles
 				break;
-			case GID_LAURABOW2:
-				// Laura Bow 2 gets patched when speech and subtitles are enabled
-				//  It then does both, when the user has "speech" selected. That's why we select speech here
 			default:
 				// Game does not support speech and subtitles, set it to speech
 				_gamestate->variables[VAR_GLOBAL][90] = make_reg(0, 2);	// speech
@@ -933,8 +935,6 @@ void SciEngine::updateScummVMAudioOptions() {
 	// depending on the in-game settings
 	if (isCD() && getSciVersion() == SCI_VERSION_1_1) {
 		uint16 ingameSetting = _gamestate->variables[VAR_GLOBAL][90].getOffset();
-		bool subtitlesOn = ConfMan.getBool("subtitles");
-		bool speechOn = !ConfMan.getBool("speech_mute");
 		
 		switch (ingameSetting) {
 		case 1:
@@ -944,16 +944,6 @@ void SciEngine::updateScummVMAudioOptions() {
 			break;
 		case 2:
 			// speech
-			switch (_gameId) {
-			case GID_LAURABOW2:
-				// We don't sync "speech" for Laura Bow 2 in case the user choose "both" in the setting
-				//  Because "speech" (2) within SCI means "speech + subtitles" for Laura Bow 2
-				if (subtitlesOn && speechOn)
-					return;
-				break;
-			default:
-				break;
-			}
 			ConfMan.setBool("subtitles", false);
 			ConfMan.setBool("speech_mute", false);
 			break;

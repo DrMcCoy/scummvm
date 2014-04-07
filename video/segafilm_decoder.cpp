@@ -32,15 +32,16 @@
 #include "audio/audiostream.h"
 #include "audio/decoders/raw.h"
 
+#include "image/codecs/cinepak.h"
+
 #include "video/segafilm_decoder.h"
-#include "video/codecs/cinepak.h"
 
 namespace Video {
 
 // TODO: Think about moving this to a separate codecs/raw.h file
 // For raw video, it seems to always be 24bpp RGB
 // We just convert to the current screen format for ease of use
-class SegaFilmRawCodec : public Video::Codec {
+class SegaFilmRawCodec : public Image::Codec {
 public:
 	SegaFilmRawCodec(uint16 width, uint16 height, byte bitsPerPixel) {
 		_surface = new Graphics::Surface();
@@ -53,21 +54,21 @@ public:
 		delete _surface;
 	}
 
-	const Graphics::Surface *decodeImage(Common::SeekableReadStream *stream) {
+	const Graphics::Surface *decodeFrame(Common::SeekableReadStream &stream) {
 		if (_bitsPerPixel != 24) {
 			warning("Unhandled %d bpp", _bitsPerPixel);
 			return 0;
 		}
 
-		if (stream->size() != _surface->w * _surface->h * (_bitsPerPixel >> 3)) {
+		if (stream.size() != _surface->w * _surface->h * (_bitsPerPixel >> 3)) {
 			warning("Mismatched raw video size");
 			return 0;
 		}
 
 		for (int32 i = 0; i < _surface->w * _surface->h; i++) {
-			byte r = stream->readByte();
-			byte g = stream->readByte();
-			byte b = stream->readByte();
+			byte r = stream.readByte();
+			byte g = stream.readByte();
+			byte b = stream.readByte();
 
 			if (_surface->format.bytesPerPixel == 2)
 				*((uint16 *)_surface->getPixels() + i) = _surface->format.RGBToColor(r, g, b);
@@ -224,7 +225,7 @@ SegaFILMDecoder::SegaFILMVideoTrack::SegaFILMVideoTrack(uint32 width, uint32 hei
 
 	// Create the Cinepak decoder, if we're using it
 	if (codecTag == MKTAG('c', 'v', 'i', 'd'))
-		_codec = new Video::CinepakDecoder();
+		_codec = new Image::CinepakDecoder();
 	else if (codecTag == MKTAG('r', 'a', 'w', ' '))
 		_codec = new SegaFilmRawCodec(_width, _height, bitsPerPixel);
 	else if (codecTag != 0)
@@ -240,7 +241,7 @@ Graphics::PixelFormat SegaFILMDecoder::SegaFILMVideoTrack::getPixelFormat() cons
 }
 
 void SegaFILMDecoder::SegaFILMVideoTrack::decodeFrame(Common::SeekableReadStream *stream, uint32 duration) {
-	_surface = _codec->decodeImage(stream);
+	_surface = _codec->decodeFrame(*stream);
 	_curFrame++;
 	_nextFrameStartTime += duration; // Add the frame's duration to the next frame start
 }

@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -213,6 +213,14 @@ char const *const ACCESS_CODE_REQUIRED = "access code required";
 char const *const INVALID_ACCESS_CODE = "invalid access code";
 char const *const FOREIGN_OBJECT_EXTRACTED = "foreign object extracted";
 
+// Scene 1330/7 Options dialog messages
+char const *const AUTO_PLAY_ON = "Auto-Play is On";
+char const *const AUTO_PLAY_OFF = "Auto-Play is Off";
+char const *const START_NEW_CARD_GAME = "Start a new game";
+char const *const QUIT_CARD_GAME = "Quit Outpost Alpha";
+char const *const CONTINUE_CARD_GAME = "Continue Outpost Alpha";
+
+//
 char const *const HELP_MSG = "\x1\rRETURN TO\r RINGWORLD\x14";
 char const *const CHAR_TITLE = "\x01Select Character:";
 char const *const CHAR_QUINN_MSG = "  Quinn  ";
@@ -245,6 +253,8 @@ char const *const USE_INTERCEPTOR = "Do you want to use your interceptor card?";
 char const *const USE_DOUBLE_AGENT = "Do you want to use your double agent?";
 char const *const NEED_INSTRUCTIONS = "Do you want instructions?";
 char const *const WRONG_ANSWER_MSG = "Wrong respond value sent.";
+char const *const BUY_FULL_GAME_MSG = "To order the complete game, RETURN TO RINGWORLD, call 1-800-482-3766!";
+
 const byte scene1550JunkLocationsDefault[] = {
 	20, 7,  41, 6,
 	3,  6,  42, 11,

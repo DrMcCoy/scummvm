@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -815,10 +815,9 @@ void Animation::callSpecial(uint16 which) {
 		}
 		break;
 	case 4: // This is the ghost room link.
-		_vm->fadeOut();
-		_sprites[0]->turn(kDirRight); // you'll see this after we get back from bootstrap
+		_sprites[0]->turn(kDirRight); // You'll see this after we get back.
 		_vm->_timer->addTimer(1, Timer::kProcGhostRoomPhew, Timer::kReasonGhostRoomPhew);
-		//_vm->_enid->backToBootstrap(3); TODO: Replace it with proper ScummVM-friendly function(s)!  Do not remove until then!
+		_vm->_ghostroom->run();
 		break;
 	case 5:
 		if (_vm->_friarWillTieYouUp) {
@@ -1206,7 +1205,7 @@ void Animation::drawSprites() {
  * @remarks	Originally called 'trippancy_link'
  */
 void Animation::animLink() {
-	if (_vm->_menu->isActive() || _vm->_seeScroll)
+	if (_vm->_dropdown->isActive() || _vm->_seeScroll)
 		return;
 	for (int16 i = 0; i < kSpriteNumbMax; i++) {
 		AnimationType *curSpr = _sprites[i];
@@ -1330,7 +1329,7 @@ void Animation::handleMoveKey(const Common::Event &event) {
 	if (!_vm->_userMovesAvvy)
 		return;
 
-	if (_vm->_menu->_activeMenuItem._activeNow)
+	if (_vm->_dropdown->_activeMenuItem._activeNow)
 		_vm->_parser->tryDropdown();
 	else {
 		switch (event.kbd.keycode) {
@@ -1399,6 +1398,69 @@ void Animation::handleMoveKey(const Common::Event &event) {
 	}
 }
 
+/**
+* Draws a part of the lightning bolt for thunder().
+* @remarks	Originally called 'zl'
+*/
+void Animation::drawLightning(int16 x1, int16 y1, int16 x2, int16 y2) {
+	_vm->_graphics->drawLine(x1, y1 - 1, x2, y2 - 1, 1, 3, kColorBlue);
+	_vm->_graphics->drawLine(x1, y1, x2, y2, 1, 1, kColorLightcyan);
+}
+
+/**
+* Plays the actual thunder animation when Avvy (the player) swears too much.
+* @remarks	Originally called 'zonk'
+*/
+void Animation::thunder() {
+	_vm->_graphics->setBackgroundColor(kColorYellow);
+
+	_vm->_graphics->saveScreen();
+
+	int x = _vm->_animation->_sprites[0]->_x + _vm->_animation->_sprites[0]->_xLength / 2;
+	int y = _vm->_animation->_sprites[0]->_y;
+
+	for (int i = 0; i < 256; i++) {
+		_vm->_sound->playNote(270 - i, 1);
+
+		drawLightning(640, 0, 0, y / 4);
+		drawLightning(0, y / 4, 640, y / 2);
+		drawLightning(640, y / 2, x, y);
+		_vm->_graphics->refreshScreen();
+
+		_vm->_sound->playNote(2700 - 10 * i, 5);
+		_vm->_system->delayMillis(5);
+		_vm->_sound->playNote(270 - i, 1);
+
+		_vm->_graphics->restoreScreen();
+		_vm->_sound->playNote(2700 - 10 * i, 5);
+		_vm->_system->delayMillis(5);
+	}
+
+	_vm->_graphics->restoreScreen();
+	_vm->_graphics->removeBackup();
+
+	_vm->_graphics->setBackgroundColor(kColorBlack);
+}
+
+/**
+* Makes the screen wobble.
+*/
+void Animation::wobble() {
+	_vm->_graphics->saveScreen();
+
+	for (int i = 0; i < 26; i++) {
+		_vm->_graphics->shiftScreen();
+		_vm->_graphics->refreshScreen();
+		_vm->_system->delayMillis(i * 7);
+
+		_vm->_graphics->restoreScreen();
+		_vm->_system->delayMillis(i * 7);
+	}
+
+	_vm->_graphics->restoreScreen();
+	_vm->_graphics->removeBackup();
+}
+
 void Animation::setDirection(Direction dir) {
 	_direction = dir;
 }
@@ -1433,6 +1495,7 @@ int Animation::getAvvyClothes() {
 }
 
 void Animation::resetVariables() {
+	setDirection(kDirUp);
 	_geidaSpin = 0;
 	_geidaTime = 0;
 	_arrowTriggered = false;
