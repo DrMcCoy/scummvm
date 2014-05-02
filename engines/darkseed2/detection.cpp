@@ -153,7 +153,7 @@ static const ADGameDescription fallbackDescs[] = {
 		"unknown",
 		AD_ENTRY1(0, 0),
 		UNK_LANG,
-		kPlatformDOS,
+		kPlatformWindows,
 		ADGF_NO_FLAGS,
 		GUIO0()
 	},
