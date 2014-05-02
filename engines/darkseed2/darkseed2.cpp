@@ -194,7 +194,7 @@ void DarkSeed2Engine::syncSoundSettings() {
 }
 
 bool DarkSeed2Engine::getScreenResolution(int32 &width, int32 &height) const {
-	if (isWindowsPC() || isMac()) {
+	if (isWindows() || isMac()) {
 		width  = 640;
 		height = 480;
 		return true;
@@ -237,7 +237,7 @@ bool DarkSeed2Engine::init(int32 width, int32 height) {
 	_music           = new Music(*_mixer, *_midiDriver);
 
 	// The cursors need to be created after Resources but before Graphics
-	if (isWindowsPC()) {
+	if (isWindows()) {
 		if (isDemo())
 			_cursors = new CursorsWindows("ds2_demo.exe");
 		else
@@ -266,7 +266,7 @@ bool DarkSeed2Engine::init(int32 width, int32 height) {
 		}
 
 		_resources->setGameVersion(kGameVersionSaturn, getLanguage());
-	} else if (isWindowsPC()) {
+	} else if (isWindows()) {
 		if (isDemo()) {
 			if (!_resources->indexDemo()) {
 				warning("DarkSeed2Engine::init(): Couldn't index resources");
@@ -381,7 +381,7 @@ void DarkSeed2Engine::clearAll() {
 	_scriptRegister->clear();
 }
 
-bool DarkSeed2Engine::isWindowsPC() const {
+bool DarkSeed2Engine::isWindows() const {
 	return getPlatform() == Common::kPlatformWindows;
 }
 

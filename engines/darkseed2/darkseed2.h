@@ -106,7 +106,7 @@ public:
 	/** Show the load dialog. */
 	bool doLoadDialog();
 
-	bool isWindowsPC() const;
+	bool isWindows() const;
 	bool isSaturn() const;
 	bool isMac() const;
 	bool isDemo() const;
