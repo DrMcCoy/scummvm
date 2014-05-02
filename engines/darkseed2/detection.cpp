@@ -132,6 +132,18 @@ static const ADGameDescription gameDescriptions[] = {
 		ADGF_MACRESFORK,
 		GUIO0()
 	},
+	{ // Japanese PlayStation version
+		"darkseed2",
+		"",
+		{
+			{"DARKHEAD.BIN",  0, "4ccc88006197f5906b27e31a8e5b395b", 17480},
+			{"DARKPS.BIN",  0, "e86c7167349b167cb01c35dc3e437fbd", 63287296}
+		},
+		JA_JPN,
+		kPlatformPSX,
+		ADGF_NO_FLAGS,
+		GUIO1(GUIO_NOSPEECH)
+	},
 	AD_TABLE_END_MARKER
 };
 
