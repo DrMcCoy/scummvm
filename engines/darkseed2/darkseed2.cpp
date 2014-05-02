@@ -242,10 +242,14 @@ bool DarkSeed2Engine::init(int32 width, int32 height) {
 			_cursors = new CursorsWindows("ds2_demo.exe");
 		else
 			_cursors = new CursorsWindows("dark0001.exe");
-	} else if (isSaturn())
+	} else if (isSaturn()) {
 		_cursors     = new CursorsSaturn(*_resources);
-	else if (isMac())
+	} else if (isMac()) {
 		_cursors     = new CursorsMac(*_macExeResFork);
+	} else {
+		warning("Unknown platform for cursors");
+		return false;
+	}
 
 	_graphics        = new Graphics(width, height, *_resources, *_variables, *_cursors, *_fontMan);
 	_talkMan         = new TalkManager(_resources->getVersionFormats(), *_sound, *_graphics, *_fontMan);
