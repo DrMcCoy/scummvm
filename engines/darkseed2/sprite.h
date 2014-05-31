@@ -36,7 +36,6 @@
 
 #include "darkseed2/darkseed2.h"
 #include "darkseed2/saveable.h"
-#include "darkseed2/versionformats.h"
 #include "darkseed2/palette.h"
 #include "darkseed2/font.h"
 
@@ -195,8 +194,6 @@ private:
 	void updateTransparencyMap();
 
 	void fillImage(byte cP, uint32 cT);
-
-	bool loadFromImage(Resources &resources, const Common::String &image, ImageType imageType);
 
 	/** Load a sprite from a BMP. */
 	bool loadFromBMP(Resources &resources, const Common::String &bmp);

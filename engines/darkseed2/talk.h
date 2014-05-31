@@ -29,7 +29,6 @@
 #include "common/str.h"
 
 #include "darkseed2/darkseed2.h"
-#include "darkseed2/versionformats.h"
 
 namespace Common {
 	class SeekableReadStream;
@@ -37,7 +36,6 @@ namespace Common {
 
 namespace DarkSeed2 {
 
-class VersionFormats;
 class Resources;
 class Graphics;
 
@@ -93,8 +91,8 @@ private:
 /** The talk manager. */
 class TalkManager {
 public:
-	TalkManager(const VersionFormats &versionFormats, Sound &sound,
-			Graphics &graphics, const FontManager &fontManager);
+	TalkManager(Sound &sound, Graphics &graphics, const FontManager &fontManager,
+			Common::Platform platform);
 	~TalkManager();
 
 	/** Speak the given line. */
@@ -117,7 +115,7 @@ public:
 	void updateStatus();
 
 private:
-	const VersionFormats *_versionFormats;
+	Common::Platform _platform;
 
 	Sound    *_sound;
 	Graphics *_graphics;
@@ -135,6 +133,8 @@ private:
 	int _waitTextUntil;  ///< Time to wait until this line is considered finished.
 
 	bool talkInternal(const TalkLine &talkLine);
+
+	const char *getSpeakerSeparator() const;
 };
 
 } // End of namespace DarkSeed2

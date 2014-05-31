@@ -33,7 +33,6 @@
 #include "common/hashmap.h"
 
 #include "darkseed2/darkseed2.h"
-#include "darkseed2/versionformats.h"
 
 namespace Common {
 	class SeekableReadStream;
@@ -247,20 +246,11 @@ private:
 /** The resource manager. */
 class Resources {
 public:
-	Resources();
+	Resources(Common::Platform platform, Common::Language language, bool isDemo);
 	~Resources();
 
-	/** Index all resources, based on a resource index file. */
-	bool index(const char *fileName);
-
-	/** Index all available demo resources.  */
-	bool indexDemo();
-
-	/** Index all availabe PGF resources. */
-	bool indexPGF();
-
-	/** Index all available Mac resources. */
-	bool indexMacResources();
+	/** Index all resources for the given platform. */
+	bool index();
 
 	/** Clear all resource information. */
 	void clear();
@@ -274,21 +264,38 @@ public:
 	/** Remove the file data from unused compressed archives. */
 	void clearUncompressedData();
 
-	/** Set the specific game version. */
-	void setGameVersion(GameVersion gameVersion, Common::Language language);
+	/** Get the platform */
+	Common::Platform getPlatform() const { return _platform; }
 
-	/** Get the information class about which formats the game uses. */
-	const VersionFormats &getVersionFormats();
+	/** Get the language */
+	Common::Language getLanguage() const { return _language; }
 
 	static Common::String addExtension(const Common::String &name, const Common::String &extension);
 
 private:
-	VersionFormats _versionFormats;
+	/** The game's platform */
+	Common::Platform _platform;
+	/** The game's language */
+	Common::Language _language;
+	/** Is this the demo? */
+	bool _isDemo;
 
 	/** All indexed archives. */
 	Common::Array<Archive *> _archives;
 	/** All indexed resources. */
 	ResourceMap _resources;
+
+	/** Index all resources, based on a resource index file. */
+	bool indexWindows();
+
+	/** Index all available demo resources.  */
+	bool indexWindowsDemo();
+
+	/** Index all availabe PGF resources. */
+	bool indexSaturn();
+
+	/** Index all available Mac resources. */
+	bool indexMac();
 
 	/** Read the index file's header. */
 	bool readIndexHeader(Common::File &indexFile, uint16 &resCount);

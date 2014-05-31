@@ -58,7 +58,7 @@ TalkLine::TalkLine(Resources &resources, const Common::String &talkName) {
 	if (_resources->hasResource(txtFile)) {
 		Common::SeekableReadStream *txt = _resources->getResource(txtFile);
 
-		if (_resources->getVersionFormats().getLanguage() == Common::JA_JPN) {
+		if (_resources->getLanguage() == Common::JA_JPN) {
 			_txt = new TextLine(*txt);
 		} else {
 			Common::String str;
@@ -136,10 +136,9 @@ void TalkLine::setSpeaker(uint8 speakerNum, const TextLine &speaker) {
 }
 
 
-TalkManager::TalkManager(const VersionFormats &versionFormats, Sound &sound,
-		Graphics &graphics, const FontManager &fontManager) {
-
-	_versionFormats = &versionFormats;
+TalkManager::TalkManager(Sound &sound, Graphics &graphics,
+		const FontManager &fontManager, Common::Platform platform) {
+	_platform = platform;
 
 	_sound    = &sound;
 	_graphics = &graphics;
@@ -179,7 +178,7 @@ bool TalkManager::talkInternal(const TalkLine &talkLine) {
 		TextLine *textLine;
 		if (speaker) {
 			textLine = new TextLine(*speaker);
-			textLine->append(_versionFormats->getSpeakerSeparator());
+			textLine->append(Common::String(getSpeakerSeparator()));
 			textLine->append(text);
 		} else
 			textLine = new TextLine(text);
@@ -276,6 +275,16 @@ void TalkManager::updateStatus() {
 			endTalk();
 
 		_curTalk = -_curTalk - 2;
+	}
+}
+
+const char *TalkManager::getSpeakerSeparator() const {
+	switch (_platform) {
+	case Common::kPlatformSaturn:
+		return "\n";
+	case Common::kPlatformWindows:
+	default: // TODO: Check other platforms
+		return ":\n";
 	}
 }
 

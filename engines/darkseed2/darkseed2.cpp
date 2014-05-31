@@ -68,7 +68,6 @@
 namespace DarkSeed2 {
 
 // Files
-static const char *kResourceIndex = "gfile.hdr";
 static const char *kVariableIndex = "GAMEVAR";
 
 DarkSeed2Engine::DarkSeed2Engine(OSystem *syst, const ADGameDescription *gameDesc) :
@@ -194,16 +193,20 @@ void DarkSeed2Engine::syncSoundSettings() {
 }
 
 bool DarkSeed2Engine::getScreenResolution(int32 &width, int32 &height) const {
-	if (isWindows() || isMac()) {
+	switch (getPlatform()) {
+	case Common::kPlatformWindows:
+	case Common::kPlatformMacintosh:
 		width  = 640;
 		height = 480;
 		return true;
-	} else if (isSaturn()) {
+	case Common::kPlatformSaturn:
 		width  = 320;
 		height = 240;
 		return true;
-	} else
+	default:
 		warning("DarkSeed2Engine::getScreenResolution(): Unknown game version");
+		break;
+	}
 
 	return false;
 }
@@ -219,7 +222,7 @@ bool DarkSeed2Engine::init(int32 width, int32 height) {
 
 	debug(-1, "Creating subclasses...");
 
-	if (isMac()) {
+	if (getPlatform() == Common::kPlatformMacintosh) {
 		// Open up the Mac resource fork for the executable
 		_macExeResFork = new Common::MacResManager();
 		if (!_macExeResFork->open("Dark Seed II/Dark Seed II")) {
@@ -231,28 +234,32 @@ bool DarkSeed2Engine::init(int32 width, int32 height) {
 	_options         = new Options();
 	_variables       = new Variables(*_rnd);
 	_scriptRegister  = new ScriptRegister();
-	_resources       = new Resources();
+	_resources       = new Resources(getPlatform(), getLanguage(), isDemo());
 	_fontMan         = new FontManager(*_resources);
-	_sound           = new Sound(*_mixer, *_variables);
-	_music           = new Music(*_mixer, *_midiDriver);
+	_sound           = new Sound(getPlatform(), *_mixer, *_variables);
+	_music           = new Music(getPlatform(), *_mixer, *_midiDriver);
 
 	// The cursors need to be created after Resources but before Graphics
-	if (isWindows()) {
+	switch (getPlatform()) {
+	case Common::kPlatformWindows:
 		if (isDemo())
 			_cursors = new CursorsWindows("ds2_demo.exe");
 		else
 			_cursors = new CursorsWindows("dark0001.exe");
-	} else if (isSaturn()) {
-		_cursors     = new CursorsSaturn(*_resources);
-	} else if (isMac()) {
-		_cursors     = new CursorsMac(*_macExeResFork);
-	} else {
+		break;
+	case Common::kPlatformSaturn:
+		_cursors = new CursorsSaturn(*_resources);
+		break;
+	case Common::kPlatformMacintosh:
+		_cursors = new CursorsMac(*_macExeResFork);
+		break;
+	default:
 		warning("Unknown platform for cursors");
 		return false;
 	}
 
 	_graphics        = new Graphics(width, height, *_resources, *_variables, *_cursors, *_fontMan);
-	_talkMan         = new TalkManager(_resources->getVersionFormats(), *_sound, *_graphics, *_fontMan);
+	_talkMan         = new TalkManager(*_sound, *_graphics, *_fontMan, getPlatform());
 	_mike            = new Mike(*_resources, *_variables, *_graphics);
 	_movie           = new Movie(*_mixer, *_graphics, *_cursors, *_sound, getPlatform());
 	_roomConfMan     = new RoomConfigManager(*this);
@@ -263,45 +270,17 @@ bool DarkSeed2Engine::init(int32 width, int32 height) {
 
 	debug(-1, "Indexing resources...");
 
-	if (isSaturn()) {
-		if (!_resources->indexPGF()) {
-			warning("DarkSeed2Engine::init(): Couldn't index resources");
-			return false;
-		}
-
-		_resources->setGameVersion(kGameVersionSaturn, getLanguage());
-	} else if (isWindows()) {
-		if (isDemo()) {
-			if (!_resources->indexDemo()) {
-				warning("DarkSeed2Engine::init(): Couldn't index resources");
-				return false;
-			}
-		} else {
-			if (!_resources->index(kResourceIndex)) {
-				warning("DarkSeed2Engine::init(): Couldn't index resources");
-				return false;
-			}
-		}
-
-		_resources->setGameVersion(kGameVersionWindows, getLanguage());
-	} else if (isMac()) {
-		if (!_resources->indexMacResources()) {
-			warning("DarkSeed2Engine::init(): Indexing Mac resources not yet supported");
-			return false;
-		}
-
-		_resources->setGameVersion(kGameVersionMac, getLanguage());
+	if (!_resources->index()) {
+		warning("DarkSeed2Engine::init(): Couldn't index resources");
+		return false;
 	}
-
-	_sound->init(_resources->getVersionFormats().getSoundType());
-	_music->init(_resources->getVersionFormats().getMusicType());
 
 	if (!_cursors->load()) {
 		warning("DarkSeed2Engine::init(): Couldn't load cursors");
 		return false;
 	}
 
-	if (!_fontMan->init(_resources->getVersionFormats().getGameVersion(), getLanguage())) {
+	if (!_fontMan->init(getPlatform(), getLanguage())) {
 		warning("DarkSeed2Engine::init(): Couldn't initialize the font manager");
 		return false;
 	}
@@ -313,7 +292,7 @@ bool DarkSeed2Engine::init(int32 width, int32 height) {
 
 	debug(-1, "Initializing game variables...");
 
-	if (isMac()) {
+	if (getPlatform() == Common::kPlatformMacintosh) {
 		Common::SeekableReadStream *stream = _macExeResFork->getResource(kVariableIndex);
 		if (!_variables->loadFromIDX(*stream)) {
 			delete stream;
@@ -326,7 +305,7 @@ bool DarkSeed2Engine::init(int32 width, int32 height) {
 		return false;
 	}
 
-	bool needPalette = !isSaturn();
+	bool needPalette = getPlatform() != Common::kPlatformSaturn;
 	if (!_mike->init(needPalette)) {
 		warning("DarkSeed2Engine::init(): Couldn't initialize Mike");
 		return false;
@@ -383,18 +362,6 @@ void DarkSeed2Engine::clearAll() {
 	_graphics->getConversationBox().stop();
 
 	_scriptRegister->clear();
-}
-
-bool DarkSeed2Engine::isWindows() const {
-	return getPlatform() == Common::kPlatformWindows;
-}
-
-bool DarkSeed2Engine::isSaturn() const {
-	return getPlatform() == Common::kPlatformSaturn;
-}
-
-bool DarkSeed2Engine::isMac() const {
-	return getPlatform() == Common::kPlatformMacintosh;
 }
 
 bool DarkSeed2Engine::canLoadGameStateCurrently() {

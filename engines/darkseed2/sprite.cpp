@@ -260,62 +260,63 @@ void Sprite::updateTransparencyMap() {
 }
 
 bool Sprite::loadFromImage(Resources &resources, const Common::String &image) {
-	return loadFromImage(resources, image, resources.getVersionFormats().getImageType());
-}
-
-bool Sprite::loadFromRoomImage(Resources &resources, const Common::String &image) {
-	return loadFromImage(resources, image, resources.getVersionFormats().getRoomImageType());
-}
-
-bool Sprite::loadFromInvItemImage(Resources &resources, const Common::String &image) {
-	return loadFromImage(resources, image, resources.getVersionFormats().getInvItemImageType());
-}
-
-bool Sprite::loadFromBoxImage(Resources &resources, const Common::String &image,
-		int32 width, int32 height) {
-
-	switch (resources.getVersionFormats().getBoxImageType()) {
-	case kImageTypeBMP:
+	switch (resources.getPlatform()) {
+	case Common::kPlatformWindows:
 		return loadFromBMP(resources, image);
-
-	case kImageTypeRGB:
+	case Common::kPlatformSaturn:
 		return loadFromRGB(resources, image);
-
-	case kImageTypeBDP:
-		return loadFromBDP(resources, image);
-
-	case kImageType256:
-		return loadFrom256(resources, image, width, height);
-
-	case kImageTypePICT:
-		return loadFromPICT(resources, image);
-
-	default:
+	case Common::kPlatformMacintosh:
+		// TODO: Unknown format
 		return false;
+	default:
+		break;
 	}
 
 	return false;
 }
 
-bool Sprite::loadFromImage(Resources &resources, const Common::String &image, ImageType imageType) {
-	switch (imageType) {
-	case kImageTypeBMP:
+bool Sprite::loadFromRoomImage(Resources &resources, const Common::String &image) {
+	switch (resources.getPlatform()) {
+	case Common::kPlatformWindows:
 		return loadFromBMP(resources, image);
-
-	case kImageTypeRGB:
-		return loadFromRGB(resources, image);
-
-	case kImageTypeBDP:
+	case Common::kPlatformSaturn:
 		return loadFromBDP(resources, image);
-
-	case kImageTypeMacRoom:
+	case Common::kPlatformMacintosh:
 		return loadFromMacRoomImage(resources, image);
-
-	case kImageTypePICT:
-		return loadFromPICT(resources, image);
-
 	default:
-		return false;
+		break;
+	}
+
+	return false;
+}
+
+bool Sprite::loadFromInvItemImage(Resources &resources, const Common::String &image) {
+	switch (resources.getPlatform()) {
+	case Common::kPlatformWindows:
+		return loadFromBMP(resources, image);
+	case Common::kPlatformSaturn:
+		return loadFromRGB(resources, image);
+	case Common::kPlatformMacintosh:
+		return loadFromPICT(resources, image);
+	default:
+		break;
+	}
+
+	return false;
+}
+
+bool Sprite::loadFromBoxImage(Resources &resources, const Common::String &image,
+		int32 width, int32 height) {
+
+	switch (resources.getPlatform()) {
+	case Common::kPlatformWindows:
+		return loadFromBMP(resources, image);
+	case Common::kPlatformSaturn:
+		return loadFrom256(resources, image, width, height);
+	case Common::kPlatformMacintosh:
+		return loadFromPICT(resources, image);
+	default:
+		break;
 	}
 
 	return false;
@@ -535,8 +536,7 @@ uint32 Sprite::readColor555(Common::SeekableReadStream &stream, uint8 *transp) c
 }
 
 bool Sprite::loadFromBMP(Resources &resources, const Common::String &bmp) {
-	Common::String bmpFile = Resources::addExtension(bmp,
-			resources.getVersionFormats().getImageExtension(kImageTypeBMP));
+	Common::String bmpFile = Resources::addExtension(bmp, "BMP");
 
 	if (!resources.hasResource(bmpFile))
 		return false;
@@ -553,8 +553,7 @@ bool Sprite::loadFromBMP(Resources &resources, const Common::String &bmp) {
 }
 
 bool Sprite::loadFromRGB(Resources &resources, const Common::String &rgb) {
-	Common::String rgbFile = Resources::addExtension(rgb,
-			resources.getVersionFormats().getImageExtension(kImageTypeRGB));
+	Common::String rgbFile = Resources::addExtension(rgb, "RGB");
 	if (!resources.hasResource(rgbFile))
 		return false;
 
@@ -570,8 +569,7 @@ bool Sprite::loadFromRGB(Resources &resources, const Common::String &rgb) {
 }
 
 bool Sprite::loadFromBDP(Resources &resources, const Common::String &bdp) {
-	Common::String bdpFile = Resources::addExtension(bdp,
-			resources.getVersionFormats().getImageExtension(kImageTypeBDP));
+	Common::String bdpFile = Resources::addExtension(bdp, "BDP");
 	if (!resources.hasResource(bdpFile))
 		return false;
 
@@ -587,8 +585,7 @@ bool Sprite::loadFromBDP(Resources &resources, const Common::String &bdp) {
 }
 
 bool Sprite::loadFrom256(Resources &resources, const Common::String &f256, int32 width, int32 height) {
-	Common::String f256File = Resources::addExtension(f256,
-			resources.getVersionFormats().getImageExtension(kImageType256));
+	Common::String f256File = Resources::addExtension(f256, "256");
 	if (!resources.hasResource(f256File))
 		return false;
 

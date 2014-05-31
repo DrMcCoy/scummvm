@@ -32,7 +32,6 @@
 #include "graphics/font.h"
 
 #include "darkseed2/darkseed2.h"
-#include "darkseed2/versionformats.h"
 
 namespace Common {
 	class SeekableReadStream;
@@ -169,7 +168,7 @@ public:
 	~FontManager();
 
 	/** Initialize the font manager for the specified game version and language. */
-	bool init(GameVersion gameVersion, Common::Language language);
+	bool init(Common::Platform platform, Common::Language language);
 
 	/** Draw a text line onto a surface. */
 	void drawText(::Graphics::Surface &surface, const TextLine &text, int32 x, int32 y, uint32 color) const;

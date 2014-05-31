@@ -27,7 +27,6 @@
 #include "common/textconsole.h"
 
 #include "darkseed2/room.h"
-#include "darkseed2/versionformats.h"
 #include "darkseed2/variables.h"
 #include "darkseed2/resources.h"
 #include "darkseed2/graphics.h"
@@ -159,7 +158,8 @@ Animation *Room::getAnimation(const Common::String &animation) {
 }
 
 bool Room::parse(Resources &resources, DATFile &room, DATFile &objects) {
-	_clipScale = resources.getVersionFormats().getHotspotScale();
+	if (resources.getPlatform() == Common::kPlatformSaturn)
+		_clipScale = 2;
 
 	const Common::String *cmd, *args;
 	while (room.nextLine(cmd, args)) {
@@ -261,8 +261,12 @@ bool Room::parse(Resources &resources, const Common::String &base) {
 
 	debugC(-1, kDebugRooms, "Parsing room \"%s\"", _name.c_str());
 
-	return parse(resources, Resources::addExtension("ROOM" + base, resources.getVersionFormats().getDATFileExtension()),
-			Resources::addExtension("OBJ_" + base, resources.getVersionFormats().getDATFileExtension()));
+	Common::String suffix;
+	if (resources.getPlatform() != Common::kPlatformMacintosh)
+		suffix = "DAT";
+
+	return parse(resources, Resources::addExtension("ROOM" + base, suffix),
+			Resources::addExtension("OBJ_" + base, suffix));
 }
 
 bool Room::setBackground(const Common::String &args) {
@@ -378,22 +382,24 @@ bool Room::loadSprites(Resources &resources) {
 		return false;
 	}
 
-	switch (resources.getVersionFormats().getWalkMapType()) {
-	case kWalkMapTypeMAP:
+	switch (resources.getPlatform()) {
+	case Common::kPlatformSaturn:
 		warning("TODO: Sega Saturn walk maps");
 		break;
-	case kWalkMapTypeMac:
+	case Common::kPlatformMacintosh:
 		if (!_walkMap->loadFromMacWalkMap(resources, _walkMapFile)) {
 			warning("Room::setup(): Can't load walk map");
 			return false;
 		}
 		break;
-	case kWalkMapTypeBMP:
+	case Common::kPlatformWindows:
 		if (!_walkMap->loadFromImage(resources, _walkMapFile)) {
 			warning("Room::setup(): Can't load walk map");
 			return false;
 		}
 		break;
+	default:
+		return false;
 	}
 
 	return true;

@@ -49,7 +49,7 @@ InventoryBox::InventoryBox(Resources &resources, Variables &variables, ScriptReg
 	_talkMan        = &talkManager;
 	_cursors        = &cursors;
 
-	fillInBoxProperties(resources.getVersionFormats().getGameVersion());
+	fillInBoxProperties();
 
 	initInventory();
 
@@ -91,10 +91,10 @@ int32 InventoryBox::getHeight() const {
 	return _boxProps.height;
 }
 
-void InventoryBox::fillInBoxProperties(GameVersion gameVersion) {
-	switch (gameVersion) {
-	case kGameVersionWindows:
-	case kGameVersionMac:
+void InventoryBox::fillInBoxProperties() {
+	switch (_resources->getPlatform()) {
+	case Common::kPlatformWindows:
+	case Common::kPlatformMacintosh:
 		_boxProps.width =  640;
 		_boxProps.height =  70;
 
@@ -130,7 +130,7 @@ void InventoryBox::fillInBoxProperties(GameVersion gameVersion) {
 
 		break;
 
-	case kGameVersionSaturn:
+	case Common::kPlatformSaturn:
 		_boxProps.width =  320;
 		_boxProps.height =  48;
 
@@ -183,9 +183,7 @@ void InventoryBox::updateColors() {
 }
 
 void InventoryBox::loadSprites() {
-	ImageType boxImageType = _resources->getVersionFormats().getBoxImageType();
-
-	if (boxImageType == kImageType256) {
+	if (_resources->getPlatform() == Common::kPlatformSaturn) {
 		bool loaded0, loaded1, loaded2, loaded3, loaded4, loaded5, loaded6, loaded7;
 
 		Palette palette;

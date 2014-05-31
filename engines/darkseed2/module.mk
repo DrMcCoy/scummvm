@@ -33,8 +33,7 @@ MODULE_OBJS := \
 	sound.o \
 	sprite.o \
 	talk.o \
-	variables.o \
-	versionformats.o
+	variables.o
 
 # This module can be built as a plugin
 ifeq ($(ENABLE_DARKSEED2), DYNAMIC_PLUGIN)

@@ -416,9 +416,9 @@ bool RoomConfigSprite::updateStatus() {
 			if ((x >= 0) && (y >= 0)) {
 				// Has positional values, set the position and scaling accordingly
 
-				if (!(_status[0] & 8)) {
-					x /= _resources->getVersionFormats().getHotspotScale();
-					y /= _resources->getVersionFormats().getHotspotScale();
+				if (!(_status[0] & 8) && _resources->getPlatform() == Common::kPlatformSaturn) {
+					x /= 2;
+					y /= 2;
 				}
 
 				_animation->moveFeetTo(x, y);

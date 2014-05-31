@@ -427,9 +427,9 @@ FontManager::~FontManager() {
 	delete _font;
 }
 
-bool FontManager::init(GameVersion gameVersion, Common::Language language) {
+bool FontManager::init(Common::Platform platform, Common::Language language) {
 	if (language == Common::JA_JPN) {
-		if (gameVersion == kGameVersionSaturn) {
+		if (platform == Common::kPlatformSaturn) {
 			Saturn2Byte *kanji = new Saturn2Byte();
 
 			if (!kanji->load(*_resources, "KANJI")) {

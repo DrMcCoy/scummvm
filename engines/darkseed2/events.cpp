@@ -441,8 +441,13 @@ void Events::mouseClickedLeft(int32 x, int32 y) {
 
 	// Did we click any objects? (But ignore if we're doing something important)
 	if (_vm->_variables->get("SysCall") == 0) {
-		int32 sX = x * _vm->_resources->getVersionFormats().getHotspotScale();
-		int32 sY = y * _vm->_resources->getVersionFormats().getHotspotScale();
+		int32 sX = x;
+		int32 sY = y;
+
+		if (_vm->getPlatform() == Common::kPlatformSaturn) {
+			sX *= 2;
+			sY *= 2;
+		}
 
 		Object *curObject = _vm->_graphics->getRoom().findObject(sX, sY);
 		if (curObject)
@@ -471,8 +476,11 @@ void Events::checkHotspot(int32 x, int32 y) {
 
 	bool cursorActive = false;
 
-	x *= _vm->_resources->getVersionFormats().getHotspotScale();
-	y *= _vm->_resources->getVersionFormats().getHotspotScale();
+	if (_vm->getPlatform() == Common::kPlatformSaturn) {
+		x *= 2;
+		y *= 2;
+	}
+
 	Object *curObject = _vm->_graphics->getRoom().findObject(x, y);
 	if (curObject) {
 		if (curObject->hasActiveVerb(cursorModeToObjectVerb(_cursorMode)))

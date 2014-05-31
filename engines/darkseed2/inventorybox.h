@@ -157,8 +157,8 @@ private:
 
 	bool _scrolled; ///< Has a scroll-button been pressed?
 
-	/** Fill in the box poperties struct, depending on the game version. */
-	void fillInBoxProperties(GameVersion gameVersion);
+	/** Fill in the box properties struct, depending on the game version. */
+	void fillInBoxProperties();
 
 	/** Initialize the inventory. */
 	void initInventory();

@@ -31,7 +31,6 @@
 #include "audio/mixer.h"
 
 #include "darkseed2/darkseed2.h"
-#include "darkseed2/versionformats.h"
 
 namespace Common {
 	class SeekableReadStream;
@@ -46,11 +45,8 @@ class Resource;
 
 class Sound {
 public:
-	Sound(Audio::Mixer &mixer, Variables &variables);
+	Sound(Common::Platform platform, Audio::Mixer &mixer, Variables &variables);
 	~Sound();
-
-	/** Set the sound type */
-	void init(SoundType soundType);
 
 	bool playSound(Common::SeekableReadStream &stream, int *id = 0,
 			Audio::Mixer::SoundType type = Audio::Mixer::kSFXSoundType, bool autoFree = false);
@@ -95,9 +91,9 @@ private:
 		uint32 dummyPlaysUntil;
 	};
 
+	Common::Platform _platform;
 	Audio::Mixer *_mixer;
 	Variables *_variables;
-	SoundType _soundType;
 
 	int _id; ///< The next ID.
 

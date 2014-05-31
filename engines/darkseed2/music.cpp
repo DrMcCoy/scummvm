@@ -36,12 +36,35 @@
 
 namespace DarkSeed2 {
 
-Music::Music(Audio::Mixer &mixer, MidiDriver &driver) : _mixer(&mixer), _midiDriver(&driver) {
-	_midiParser = 0;
+Music::Music(Common::Platform platform, Audio::Mixer &mixer, MidiDriver &driver) : _platform(platform), _mixer(&mixer), _midiDriver(&driver) {
 	_midiDriver->open();
-
 	_midiMode = kMidiModeGM;
 	_midiData = 0;
+	_midiParser = 0;
+
+	switch (_platform) {
+	case Common::kPlatformWindows:
+		_midiParser = MidiParser::createParser_SMF();
+		break;
+	case Common::kPlatformSaturn:
+		warning("Unhandled Saturn SEQ files");
+		break;
+	case Common::kPlatformMacintosh:
+		_midiParser = MidiParser::createParser_QT();
+		break;
+	case Common::kPlatformPSX:
+		warning("Unhandled PSX SEQ files");
+		break;
+	default:
+		warning("Unknown MIDI files");
+		break;
+	}
+
+	if (_midiParser) {
+		_midiParser->setMidiDriver(_midiDriver);
+		_midiParser->setTimerRate(_midiDriver->getBaseTempo());
+		_midiParser->property(MidiParser::mpAutoLoop, 1);
+	}
 
 	// TODO: Load cmf.ins with the instrument table.  It seems that an
 	// interface for such an operation is supported for Adlib.  Maybe for
@@ -56,28 +79,6 @@ Music::~Music() {
 	if (_midiParser) {
 		_midiParser->setMidiDriver(0);
 		delete _midiParser;
-	}
-}
-
-void Music::init(MusicType musicType) {
-	_musicType = musicType;
-
-	switch (_musicType) {
-	case kMusicTypeSMF:
-		_midiParser = MidiParser::createParser_SMF();
-		break;
-	case kMusicTypeSEQ:
-		warning("Unhandled Saturn SEQ files");
-		break;
-	case kMusicTypeQT:
-		_midiParser = MidiParser::createParser_QT();
-		break;
-	}
-
-	if (_midiParser) {
-		_midiParser->setMidiDriver(_midiDriver);
-		_midiParser->setTimerRate(_midiDriver->getBaseTempo());
-		_midiParser->property(MidiParser::mpAutoLoop, 1);
 	}
 }
 
@@ -120,15 +121,21 @@ bool Music::playMID(Resources &resources, const Common::String &mid) {
 
 	Common::String midFile = mid;
 
-	if (_musicType == kMusicTypeSMF) {
-		if      (_midiMode == kMidiModeGM)
+	switch (_platform) {
+	case Common::kPlatformWindows:
+		if (_midiMode == kMidiModeGM)
 			midFile += "gm";
 		else if (_midiMode == kMidiModeFM)
 			midFile += "fm";
-	}
 
-	midFile = Resources::addExtension(midFile,
-			resources.getVersionFormats().getMusicExtension(_musicType));
+		midFile = Resources::addExtension(midFile, "MID");
+		break;
+	case Common::kPlatformSaturn:
+		midFile = Resources::addExtension(midFile, "SEQ");
+		break;
+	default:
+		break;
+	}
 
 	if (!resources.hasResource(midFile))
 		return false;

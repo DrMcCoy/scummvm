@@ -701,7 +701,8 @@ Common::SeekableReadStream *MacRoomArchive::getStream(const Common::String &file
 	return 0;
 }
 
-Resources::Resources() {
+Resources::Resources(Common::Platform platform, Common::Language language, bool isDemo)
+		: _platform(platform), _language(language), _isDemo(isDemo) {
 	clear();
 }
 
@@ -709,23 +710,30 @@ Resources::~Resources() {
 	clear();
 }
 
-void Resources::setGameVersion(GameVersion gameVersion, Common::Language language) {
-	_versionFormats.setGameVersion(gameVersion);
-	_versionFormats.setLanguage(language);
-}
-
-const VersionFormats &Resources::getVersionFormats() {
-	return _versionFormats;
-}
-
-bool Resources::index(const char *fileName) {
-	debugC(1, kDebugResources, "Resource index file \"%s\"", fileName);
-
+bool Resources::index() {
 	clear();
 
+	switch (_platform) {
+	case Common::kPlatformWindows:
+		if (_isDemo)
+			return indexWindowsDemo();
+
+		return indexWindows();
+	case Common::kPlatformMacintosh:
+		return indexMac();
+	case Common::kPlatformSaturn:
+		return indexSaturn();
+	default:
+		break;
+	}
+
+	return false;
+}
+
+bool Resources::indexWindows() {
 	Common::File indexFile;
 
-	if (!indexFile.open(fileName))
+	if (!indexFile.open("GFILE.HDR"))
 		return false;
 
 	uint16 resCount = 0;
@@ -741,7 +749,7 @@ bool Resources::index(const char *fileName) {
 	return true;
 }
 
-bool Resources::indexDemo() {
+bool Resources::indexWindowsDemo() {
 	// Find all archives
 	Common::ArchiveMemberList files;
 	SearchMan.listMatchingMembers(files, "GL00_???.000");
@@ -766,7 +774,7 @@ bool Resources::indexDemo() {
 	return true;
 }
 
-bool Resources::indexPGF() {
+bool Resources::indexSaturn() {
 	// Find all PGFs
 
 	Common::ArchiveMemberList pgfs;
@@ -832,11 +840,9 @@ bool Resources::addMacRoomArchive(const Common::String &fileName) {
 	return true;
 }
 
-bool Resources::indexMacResources() {
+bool Resources::indexMac() {
 	static const char* soundFiles[] = { "da", "db", "dc", "dd", "dg", "dh", "di", "dj", "dk", "dm",
 	                                    "dm2", "dn", "dn2", "do", "dp", "dr", "ds", "dt", "du", "se"};
-
-	clear();
 
 	// Resource forks with 'snd ' resources in the sound folder (Voices/Sound Effects)
 	for (int i = 0; i < ARRAYSIZE(soundFiles); i++)

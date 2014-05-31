@@ -174,8 +174,10 @@ void Mike::getPosition(int32 &x, int32 &y) const {
 }
 
 void Mike::setPosition(int32 x, int32 y) {
-	x /= _resources->getVersionFormats().getHotspotScale();
-	y /= _resources->getVersionFormats().getHotspotScale();
+	if (_resources->getPlatform() == Common::kPlatformSaturn) {
+		x /= 2;
+		y /= 2;
+	}
 
 	// Sanity checks
 	assert((ABS(x) <= 0x7FFF) && (ABS(y) <= 0x7FFF));
@@ -198,7 +200,8 @@ frac_t Mike::getScale() const {
 }
 
 frac_t Mike::calculateScale(int32 y) const {
-	y *= _resources->getVersionFormats().getHotspotScale();
+	if (_resources->getPlatform() == Common::kPlatformSaturn)
+		y *= 2;
 
 	// Sanity checks
 	assert(ABS(y) <= 0x7FFF);
@@ -417,8 +420,10 @@ void Mike::advanceWalk() {
 }
 
 void Mike::go(int32 x, int32 y, Direction direction) {
-	x /= _resources->getVersionFormats().getHotspotScale();
-	y /= _resources->getVersionFormats().getHotspotScale();
+	if (_resources->getPlatform() == Common::kPlatformSaturn) {
+		x /= 2;
+		y /= 2;
+	}
 
 	// Sanity checks
 	assert((ABS(x) <= 0x7FFF) && (ABS(y) <= 0x7FFF));
@@ -498,7 +503,10 @@ int32 Mike::getStepOffsetX() const {
 	if (scaledOffset == 1)
 		return 1;
 
-	return scaledOffset / _resources->getVersionFormats().getHotspotScale();
+	if (_resources->getPlatform() == Common::kPlatformSaturn)
+		scaledOffset /= 2;
+
+	return scaledOffset;
 }
 
 int32 Mike::getStepOffsetY() const {
@@ -550,7 +558,10 @@ int32 Mike::getStepOffsetY() const {
 	if (scaledOffset == 1)
 		return 1;
 
-	return scaledOffset / _resources->getVersionFormats().getHotspotScale();
+	if (_resources->getPlatform() == Common::kPlatformSaturn)
+		scaledOffset /= 2;
+
+	return scaledOffset;
 }
 
 Mike::Direction Mike::getDirection(int32 x1, int32 y1, int32 x2, int32 y2) {

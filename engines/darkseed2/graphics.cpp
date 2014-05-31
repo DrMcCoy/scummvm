@@ -149,12 +149,15 @@ bool Graphics::init(TalkManager &talkManager, ScriptRegister &scriptRegister,
 
 	// Conversation box
 
-	GameVersion gameVersion = _resources->getVersionFormats().getGameVersion();
-	if        (gameVersion == kGameVersionWindows || gameVersion == kGameVersionMac) {
+	switch (_resources->getPlatform()) {
+	case Common::kPlatformWindows:
+	case Common::kPlatformMacintosh:
 		_conversationBox = new ConversationBoxWindows(*_resources, *_variables, *this, talkManager, *_fontMan);
-	} else if (gameVersion == kGameVersionSaturn) {
+		break;
+	case Common::kPlatformSaturn:
 		_conversationBox = new ConversationBoxSaturn(*_resources, *_variables, *this, talkManager, *_fontMan);
-	} else {
+		break;
+	default:
 		warning("Graphics::init(): Unknown game version");
 		return false;
 	}

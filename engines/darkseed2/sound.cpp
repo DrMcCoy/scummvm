@@ -39,10 +39,10 @@
 
 namespace DarkSeed2 {
 
-Sound::Sound(Audio::Mixer &mixer, Variables &variables) {
+Sound::Sound(Common::Platform platform, Audio::Mixer &mixer, Variables &variables) {
+	_platform  = platform;
 	_mixer     = &mixer;
 	_variables = &variables;
-	_soundType = kSoundTypeWAV;
 
 	_id = 0;
 
@@ -57,15 +57,21 @@ Sound::~Sound() {
 	stopAll();
 }
 
-void Sound::init(SoundType soundType) {
-	_soundType = soundType;
-}
-
 bool Sound::playSound(Resources &resources, const Common::String &sound, int *id,
 		Audio::Mixer::SoundType type) {
 
-	Common::String fileName = Resources::addExtension(sound,
-			resources.getVersionFormats().getSoundExtension(_soundType));
+	Common::String fileName;
+
+	switch (_platform) {
+	case Common::kPlatformWindows:
+		fileName = Resources::addExtension(sound, "WAV");
+		break;
+	case Common::kPlatformSaturn:
+		fileName = Resources::addExtension(sound, "AIF");
+		break;
+	default:
+		fileName = sound;
+	}
 
 	debugC(-1, kDebugSound, "Playing sound \"%s\"", fileName.c_str());
 
@@ -241,13 +247,15 @@ void Sound::updateStatus() {
 Audio::AudioStream *Sound::createAudioStream(Common::SeekableReadStream &stream, bool autoFree) {
 	DisposeAfterUse::Flag dispose = autoFree ? DisposeAfterUse::YES : DisposeAfterUse::NO;
 
-	switch (_soundType) {
-	case kSoundTypeWAV:
+	switch (_platform) {
+	case Common::kPlatformWindows:
 		return Audio::makeWAVStream(&stream, dispose);
-	case kSoundTypeAIF:
+	case Common::kPlatformSaturn:
 		return Audio::makeAIFFStream(&stream, dispose);
-	case kSoundTypeSND:
+	case Common::kPlatformMacintosh:
 		return Audio::makeMacSndStream(&stream, dispose);
+	default:
+		break;
 	}
 
 	return 0;

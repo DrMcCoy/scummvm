@@ -173,7 +173,11 @@ bool Inventory::parseUse(Item &item, ScriptChunk &useScript) {
 }
 
 bool Inventory::parse(Resources &resources, const Common::String &inv) {
-	Common::String datFile = Resources::addExtension(inv, resources.getVersionFormats().getDATFileExtension());
+	Common::String suffix;
+	if (resources.getPlatform() != Common::kPlatformMacintosh)
+		suffix = "DAT";
+
+	Common::String datFile = Resources::addExtension(inv, suffix);
 	if (!resources.hasResource(datFile))
 		return false;
 

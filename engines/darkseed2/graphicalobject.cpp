@@ -353,13 +353,23 @@ const Common::String &Animation::getName() const {
 bool Animation::load(Resources &resources, const Common::String &base) {
 	clear();
 
-	const VersionFormats &formats = resources.getVersionFormats();
+	Common::String suffix;
+	switch (resources.getPlatform()) {
+	case Common::kPlatformWindows:
+		suffix = "BMP";
+		break;
+	case Common::kPlatformSaturn:
+		suffix = "RGB";
+		break;
+	default:
+		break;
+	}
 
 	// Find the frame with the biggest number that still exists
 	uint8 count = 0;
 	for (int i = 99; i > 0; i--) {
 		if (resources.hasResource(Resources::addExtension(base + Common::String::format("%02d", i),
-						formats.getImageExtension(formats.getImageType())))) {
+						suffix))) {
 			count = i;
 			break;
 		}
@@ -368,8 +378,7 @@ bool Animation::load(Resources &resources, const Common::String &base) {
 	// None found
 	if (count == 0) {
 		// Try to open the file without a frame number attached
-		if (!resources.hasResource(Resources::addExtension(base,
-						formats.getImageExtension(formats.getImageType())))) {
+		if (!resources.hasResource(Resources::addExtension(base, suffix))) {
 			warning("Animation::load(): No such animation \"%s\"", base.c_str());
 			return false;
 		}
