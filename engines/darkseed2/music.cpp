@@ -43,6 +43,7 @@ Music::Music(Common::Platform platform, Audio::Mixer &mixer, MidiDriver &driver)
 	_midiParser = 0;
 
 	switch (_platform) {
+	case Common::kPlatformPSX:
 	case Common::kPlatformWindows:
 		_midiParser = MidiParser::createParser_SMF();
 		break;
@@ -51,9 +52,6 @@ Music::Music(Common::Platform platform, Audio::Mixer &mixer, MidiDriver &driver)
 		break;
 	case Common::kPlatformMacintosh:
 		_midiParser = MidiParser::createParser_QT();
-		break;
-	case Common::kPlatformPSX:
-		warning("Unhandled PSX SEQ files");
 		break;
 	default:
 		warning("Unknown MIDI files");
@@ -92,10 +90,17 @@ bool Music::playMID(Common::SeekableReadStream &mid) {
 		return false;
 	}
 
-	_midiData = new byte[mid.size()];
-	mid.read(_midiData, mid.size());
+	uint32 size = 0;
 
-	_midiParser->loadMusic(_midiData, mid.size());
+	if (_platform == Common::kPlatformPSX) {
+		_midiData = convertSEQ(mid, size);
+	} else {
+		size = mid.size();
+		_midiData = new byte[size];
+		mid.read(_midiData, size);
+	}
+
+	_midiParser->loadMusic(_midiData, size);
 	_midiDriver->setTimerCallback(_midiParser, MidiParser::timerCallback);
 	return true;
 }
@@ -130,6 +135,7 @@ bool Music::playMID(Resources &resources, const Common::String &mid) {
 
 		midFile = Resources::addExtension(midFile, "MID");
 		break;
+	case Common::kPlatformPSX:
 	case Common::kPlatformSaturn:
 		midFile = Resources::addExtension(midFile, "SEQ");
 		break;
@@ -180,6 +186,48 @@ bool Music::loading(Resources &resources) {
 	playMID(resources, name);
 
 	return true;
+}
+
+byte *Music::convertSEQ(Common::SeekableReadStream &mid, uint32 &size) {
+	// Convert from PSX SEQ to normal SMF
+
+	// Check the header
+	if (mid.readUint32LE() != MKTAG('S', 'E', 'Q', 'p'))
+		error("Failed to find SEQp tag");
+
+	// Make sure we don't have a SEP file (with multiple SEQ's inside)
+	if (mid.readUint32BE() != 1)
+		error("Can only play SEQ files, not SEP");
+
+	uint16 ppqn = mid.readUint16BE();
+	uint32 tempo = mid.readUint16BE() << 8;
+	tempo |= mid.readByte();
+	/* uint16 beat = */ mid.readUint16BE();
+
+	// Calculate the SMF size
+	uint32 bodySize = mid.size() - 15;
+	size = bodySize + 7 + 22; // Body + fake tempo change + header
+
+	byte *buffer = new byte[size];
+
+	// Construct the header
+	WRITE_BE_UINT32(buffer, MKTAG('M', 'T', 'h', 'd'));
+	WRITE_BE_UINT32(buffer + 4, 6); // header size
+	WRITE_BE_UINT16(buffer + 8, 0); // type 0
+	WRITE_BE_UINT16(buffer + 10, 1); // one track
+	WRITE_BE_UINT16(buffer + 12, ppqn);
+	WRITE_BE_UINT32(buffer + 14, MKTAG('M', 'T', 'r', 'k'));
+	WRITE_BE_UINT32(buffer + 18, bodySize + 7); // SEQ data size + tempo change event size
+
+	// Add a fake tempo change event
+	WRITE_BE_UINT32(buffer + 22, 0x00FF5103); // no delta, meta event, tempo change, param size = 3
+	WRITE_BE_UINT16(buffer + 26, tempo >> 8);
+	buffer[28] = tempo & 0xFF;
+
+	// Read in the rest of the body
+	mid.read(buffer + 29, bodySize);
+
+	return buffer;
 }
 
 } // End of namespace DarkSeed2
