@@ -28,6 +28,7 @@
 #include "common/textconsole.h"
 
 #include "video/avi_decoder.h"
+#include "video/psx_decoder.h"
 #include "video/qt_decoder.h"
 #include "video/segafilm_decoder.h"
 
@@ -55,7 +56,6 @@ Movie::Movie(Audio::Mixer &mixer, Graphics &graphics, Cursors &cursors, Sound &s
 	_y = 0;
 
 	_decoder = 0;
-	//ecoder = new ::Graphics::AviDecoder(_mixer, Audio::Mixer::kSFXSoundType);
 }
 
 Movie::~Movie() {
@@ -88,7 +88,9 @@ Video::VideoDecoder *Movie::createDecoder(const Common::String &file) const {
 		decoder = new Video::QuickTimeDecoder();
 		break;
 	case Common::kPlatformPSX:
-		// TODO: Probably PlayStation streams :P
+		// PSX Stream videos (all played at 2x)
+		realFile = Resources::addExtension(file, "STR");
+		decoder = new Video::PSXStreamDecoder(Video::PSXStreamDecoder::kCD2x);
 		break;
 	default:
 		break;
