@@ -701,6 +701,74 @@ Common::SeekableReadStream *MacRoomArchive::getStream(const Common::String &file
 	return 0;
 }
 
+PSXArchive::~PSXArchive() {
+	for (uint32 i = 0; i < _subArchives.size(); i++)
+		delete _subArchives[i];
+}
+
+bool PSXArchive::open(const Common::String &fileName, Archive *parentArchive) {
+	if (!_indexFile.open("DARKHEAD.BIN"))
+		return false;
+
+	if (!_mainFile.open(fileName))
+		return false;
+
+	_fileName = fileName;
+	return true;
+}
+
+void PSXArchive::index(ResourceMap &map) {
+	if (_isIndexed || !_indexFile.isOpen())
+		return;
+
+	debugC(3, kDebugResources, "Reading contents of PSX index file");
+
+	uint32 fileCount = _indexFile.size() / (32 + 4 + 4);
+	_resources.resize(fileCount);
+
+	debugC(4, kDebugResources, "Has %d resources", fileCount);
+
+	for (uint32 i = 0; i < fileCount; i++) {
+		char buffer[33];
+
+		// Resource's file name
+		_indexFile.read(buffer, 32);
+		buffer[32] = '\0';
+
+		// Find the last backslash
+		const char *backslash = strrchr(buffer, '\\');
+		if (!backslash) {
+			warning("Invalid PSX file name '%s' found", buffer);
+			return;
+		}
+
+		Common::String resFile(backslash + 1);
+		map[resFile] = this;
+
+		_resources[i].fileName = resFile;
+		_resources[i].offset = _indexFile.readUint32LE();
+		_resources[i].size = _indexFile.readUint32LE();
+
+		debugC(5, kDebugResources, "Resource \"%s\", offset %d, size %d",
+				resFile.c_str(), _resources[i].offset, _resources[i].size);
+	}
+
+	_isIndexed = true;
+	_indexFile.close();
+}
+
+Common::SeekableReadStream *PSXArchive::getStream(const Common::String &fileName) {
+	for (uint32 i = 0; i < _resources.size(); i++) {
+		if (_resources[i].fileName.equalsIgnoreCase(fileName)) {
+			_mainFile.seek(_resources[i].offset);
+			return _mainFile.readStream(_resources[i].size);
+		}
+	}
+
+	return 0;
+}
+
+
 Resources::Resources(Common::Platform platform, Common::Language language, bool isDemo)
 		: _platform(platform), _language(language), _isDemo(isDemo) {
 	clear();
@@ -723,6 +791,8 @@ bool Resources::index() {
 		return indexMac();
 	case Common::kPlatformSaturn:
 		return indexSaturn();
+	case Common::kPlatformPSX:
+		return indexPSX();
 	default:
 		break;
 	}
@@ -894,6 +964,20 @@ bool Resources::indexMac() {
 	for (Common::ArchiveMemberList::const_iterator it = roomList.begin(); it != roomList.end(); it++)
 		if (!addMacRoomArchive("rooms/" + (*it)->getName()))
 			return false;
+
+	return true;
+}
+
+bool Resources::indexPSX() {
+	Archive *archive = new PSXArchive();
+	if (!archive->open("DARKPS.BIN")) {
+		warning("Failed to open PSX main data file");
+		delete archive;
+		return false;
+	} else {
+		archive->index(_resources);
+		_archives.push_back(archive);
+	}
 
 	return true;
 }

@@ -243,6 +243,27 @@ private:
 	Common::File _file;
 };
 
+class PSXArchive : public Archive {
+public:
+	PSXArchive() : Archive() {}
+	~PSXArchive();
+
+	bool open(const Common::String &fileName, Archive *parentArchive = 0);
+	void index(ResourceMap &map);
+	Common::SeekableReadStream *getStream(const Common::String &fileName);
+
+private:
+	struct ResourceEntry {
+		Common::String fileName;
+		uint32 offset;
+		uint32 size;
+	};
+
+	Common::File _indexFile, _mainFile;
+	Common::Array<ResourceEntry> _resources;
+	Common::Array<Archive *> _subArchives;
+};
+
 /** The resource manager. */
 class Resources {
 public:
@@ -296,6 +317,9 @@ private:
 
 	/** Index all available Mac resources. */
 	bool indexMac();
+
+	/** Index all available PSX resources. */
+	bool indexPSX();
 
 	/** Read the index file's header. */
 	bool readIndexHeader(Common::File &indexFile, uint16 &resCount);
