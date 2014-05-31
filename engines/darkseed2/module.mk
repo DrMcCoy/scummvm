@@ -33,6 +33,7 @@ MODULE_OBJS := \
 	sound.o \
 	sprite.o \
 	talk.o \
+	tim.o \
 	variables.o
 
 # This module can be built as a plugin
