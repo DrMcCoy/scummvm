@@ -161,14 +161,14 @@ void Movie::updateStatus() {
 
 	const ::Graphics::Surface *frame = _decoder->decodeNextFrame();
 
-	if (frame)
-		_screen.copyFrom((const byte *)frame->getPixels(), frame->format.bytesPerPixel, false);
-
 	if (_decoder->hasDirtyPalette()) {
 		Palette newPalette;
 		newPalette.copyFrom(_decoder->getPalette(), 256);
 		_screen.setPalette(newPalette);
 	}
+
+	if (frame)
+		_screen.copyFrom((const byte *)frame->getPixels(), frame->format.bytesPerPixel, false);
 
 	_graphics->requestRedraw(_area);
 }
