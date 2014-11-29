@@ -55,6 +55,8 @@ public:
 		const Sprite  *sprite;     ///< The item's sprite.
 
 		Common::String text;  ///< The text to be spooken.
+
+		ItemLook();
 	};
 
 	/** An item use. */
@@ -66,6 +68,8 @@ public:
 		const Cursors::Cursor *cursor;     ///< The item's cursor.
 
 		Common::List<Common::String> changes; ///< The changes brought in by the use.
+
+		ItemUse();
 	};
 
 	/** An item. */
@@ -77,6 +81,8 @@ public:
 
 		ItemLook *curLook; ///< The currently active look, or 0 if none.
 		ItemUse  *curUse;  ///< The currently active use, or 0 if none.
+
+		Item();
 	};
 
 	Inventory(Resources &resources, Variables &variables,

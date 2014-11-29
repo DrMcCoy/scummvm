@@ -35,6 +35,18 @@
 
 namespace DarkSeed2 {
 
+Inventory::ItemLook::ItemLook() : sprite(0) {
+}
+
+
+Inventory::ItemUse::ItemUse() : cursor(0) {
+}
+
+
+Inventory::Item::Item() : curLook(0), curUse(0) {
+}
+
+
 Inventory::Inventory(Resources &resources, Variables &variables,
 		ScriptRegister &scriptRegister, Graphics &graphics, Cursors &cursors) :
 	ObjectContainer(variables, scriptRegister) {
