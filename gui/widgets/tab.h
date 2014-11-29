@@ -29,6 +29,11 @@
 
 namespace GUI {
 
+enum {
+	kTabForwards = 1,
+	kTabBackwards = -1
+};
+
 class TabWidget : public Widget {
 	typedef Common::String String;
 	struct Tab {
@@ -109,6 +114,8 @@ protected:
 	virtual void drawWidget();
 
 	virtual Widget *findWidget(int x, int y);
+
+	virtual void adjustTabs(int value);
 };
 
 } // End of namespace GUI

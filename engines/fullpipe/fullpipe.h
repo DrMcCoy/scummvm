@@ -32,7 +32,7 @@
 
 #include "audio/mixer.h"
 
-#include "graphics/surface.h"
+#include "graphics/transparent_surface.h"
 
 #include "engines/engine.h"
 
@@ -91,6 +91,7 @@ public:
 	GUI::Debugger *getDebugger() { return _console; }
 
 	void initialize();
+	void restartGame();
 
 	void setMusicAllowed(int val) { _musicAllowed = val; }
 
@@ -98,7 +99,6 @@ public:
 	const ADGameDescription *_gameDescription;
 	const char *getGameId() const;
 	Common::Platform getPlatform() const;
-	bool hasFeature(EngineFeature f) const;
 
 	Common::RandomSource *_rnd;
 
@@ -108,6 +108,7 @@ public:
 	void updateEvents();
 
 	Graphics::Surface _backgroundSurface;
+	Graphics::PixelFormat *_origFormat;
 
 	GameLoader *_gameLoader;
 	GameProject *_gameProject;
@@ -125,6 +126,7 @@ public:
 	bool _flgGameIsRunning;
 	bool _inputArFlag;
 	bool _recordEvents;
+	bool _mainMenu_debugEnabled;
 
 	Common::Rect _sceneRect;
 	int _sceneWidth;
@@ -149,18 +151,32 @@ public:
 	int _currSoundListCount;
 	bool _soundEnabled;
 	bool _flgSoundList;
+	char _sceneTracks[10][260];
+	int _numSceneTracks;
+	bool _sceneTrackHasSequence;
+	int _musicMinDelay;
+	int _musicMaxDelay;
+	int _musicLocal;
+	char _trackName[2600];
+	int _trackStartDelay;
+	char _sceneTracksCurrentTrack[260];
+	bool _sceneTrackIsPlaying;
 
 	void stopAllSounds();
 	void toggleMute();
 	void playSound(int id, int flag);
 	void playTrack(GameVar *sceneVar, const char *name, bool delayed);
+	int getSceneTrack();
 	void startSceneTrack();
+	void startSoundStream1(char *trackName);
 	void stopSoundStream2();
 	void stopAllSoundStreams();
 	void stopAllSoundInstances(int id);
 	void updateSoundVolume();
+	void setMusicVolume(int vol);
 
 	int _sfxVolume;
+	int _musicVolume;
 
 	GlobalMessageQueueList *_globalMessageQueueList;
 	MessageHandler *_messageHandlers;
@@ -227,6 +243,7 @@ public:
 	int (*_updateCursorCallback)();
 
 	void drawAlphaRectangle(int x1, int y1, int x2, int y2, int alpha);
+	void sceneFade(Scene *sc, bool direction);
 
 	int _cursorId;
 	int _minCursorId;
@@ -296,6 +313,7 @@ public:
 
 	GameVar *_musicGameVar;
 	Audio::SoundHandle _sceneTrackHandle;
+
 public:
 
 	bool _isSaveAllowed;

@@ -219,7 +219,7 @@ Common::Error SciEngine::run() {
 	// Add the after market GM patches for the specified game, if they exist
 	_resMan->addNewGMPatch(_gameId);
 	_gameObjectAddress = _resMan->findGameObject();
-	
+
 	_scriptPatcher = new ScriptPatcher();
 	SegManager *segMan = new SegManager(_resMan, _scriptPatcher);
 
@@ -511,6 +511,7 @@ void SciEngine::patchGameSaveRestore() {
 	case GID_HOYLE1: // gets confused, although the game doesnt support saving/restoring at all
 	case GID_HOYLE2: // gets confused, see hoyle1
 	case GID_JONES: // gets confused, when we patch us in, the game is only able to save to 1 slot, so hooking is not required
+	case GID_MOTHERGOOSE: // mother goose EGA saves/restores directly and has no save/restore dialogs
 	case GID_MOTHERGOOSE256: // mother goose saves/restores directly and has no save/restore dialogs
 	case GID_PHANTASMAGORIA: // has custom save/load code
 	case GID_SHIVERS: // has custom save/load code
@@ -895,7 +896,7 @@ void SciEngine::syncSoundSettings() {
 bool SciEngine::speechAndSubtitlesEnabled() {
 	bool subtitlesOn = ConfMan.getBool("subtitles");
 	bool speechOn = !ConfMan.getBool("speech_mute");
-	
+
 	if (isCD() && subtitlesOn && speechOn)
 		return true;
 	return false;
@@ -935,7 +936,7 @@ void SciEngine::updateScummVMAudioOptions() {
 	// depending on the in-game settings
 	if (isCD() && getSciVersion() == SCI_VERSION_1_1) {
 		uint16 ingameSetting = _gamestate->variables[VAR_GLOBAL][90].getOffset();
-		
+
 		switch (ingameSetting) {
 		case 1:
 			// subtitles

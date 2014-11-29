@@ -284,7 +284,7 @@ static void syncOverlays2(Common::Serializer &s) {
 
 				if (ovlRestoreData[i]._sBssSize) {
 					ovlRestoreData[i]._pBss = (uint8 *) mallocAndZero(ovlRestoreData[i]._sBssSize);
-					ASSERT(ovlRestoreData[i]._pBss);
+					assert(ovlRestoreData[i]._pBss);
 
 					s.syncBytes(ovlRestoreData[i]._pBss, ovlRestoreData[i]._sBssSize);
 				}
@@ -293,7 +293,7 @@ static void syncOverlays2(Common::Serializer &s) {
 
 				if (ovlRestoreData[i]._sNumObj) {
 					ovlRestoreData[i]._pObj = (objectParams *) mallocAndZero(ovlRestoreData[i]._sNumObj * sizeof(objectParams));
-					ASSERT(ovlRestoreData[i]._pObj);
+					assert(ovlRestoreData[i]._pObj);
 
 					for (int j = 0; j < ovlRestoreData[i]._sNumObj; j++) {
 						s.syncAsSint16LE(ovlRestoreData[i]._pObj[j].X);
@@ -735,7 +735,7 @@ void initVars() {
 	resetBackgroundIncrustList(&backgroundIncrustHead);
 
 	vblLimit = 0;
-	remdo = 0;
+	remdo = false;
 	songLoaded = 0;
 	songPlayed = 0;
 	songLoop = 1;
@@ -777,7 +777,7 @@ void initVars() {
 	buttonDown = 0;
 	var41 = 0;
 	playerMenuEnabled = 0;
-	PCFadeFlag = 0;
+	PCFadeFlag = false;
 }
 
 Common::Error saveSavegameData(int saveGameIdx, const Common::String &saveName) {
@@ -881,17 +881,15 @@ Common::Error loadSavegameData(int saveGameIdx) {
 
 	for (int i = 0; i < NUM_FILE_ENTRIES; i++) {
 		if (filesDatabase[i].subData.ptr) {
-			int j;
-			int k;
-
-			for (j = i + 1; j < NUM_FILE_ENTRIES &&
+			int j = i + 1;
+			for (; j < NUM_FILE_ENTRIES &&
 			        filesDatabase[j].subData.ptr &&
 			        !strcmp(filesDatabase[i].subData.name, filesDatabase[j].subData.name) &&
 			        (filesDatabase[j].subData.index == (j - i));
 			        j++)
 				;
 
-			for (k = i; k < j; k++) {
+			for (int k = i; k < j; k++) {
 				filesDatabase[k].subData.ptr = NULL;
 				filesDatabase[k].subData.ptrMask = NULL;
 			}
@@ -917,17 +915,14 @@ Common::Error loadSavegameData(int saveGameIdx) {
 
 	while (currentcellHead) {
 		if (currentcellHead->type == 5) {
+			assert(0);
+#if 0
 			uint8 *ptr = mainProc14(currentcellHead->overlay, currentcellHead->idx);
-
-			ASSERT(0);
-
-			if (ptr) {
-				ASSERT(0);
-				//*(int16 *)(currentcellHead->datas+0x2E) = getSprite(ptr,*(int16 *)(currentcellHead->datas+0xE));
-			} else {
-				ASSERT(0);
-				//*(int16 *)(currentcellHead->datas+0x2E) = 0;
-			}
+			if (ptr)
+				*(int16 *)(currentcellHead->datas+0x2E) = getSprite(ptr,*(int16 *)(currentcellHead->datas+0xE));
+			else
+				*(int16 *)(currentcellHead->datas+0x2E) = 0;
+#endif
 		}
 
 		currentcellHead = currentcellHead->next;
@@ -952,7 +947,7 @@ Common::Error loadSavegameData(int saveGameIdx) {
 	// to finish
 
 	changeCursor(CURSOR_NORMAL);
-	mainDraw(1);
+	mainDraw(true);
 	flipScreen();
 
 	return Common::kNoError;

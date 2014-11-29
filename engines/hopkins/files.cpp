@@ -51,12 +51,13 @@ byte *FileManager::loadFile(const Common::String &file) {
 
 	// Allocate space for the file contents
 	size_t filesize = f.size();
-	byte *data = _vm->_globals->allocMemory(filesize);
+	byte *data = _vm->_globals->allocMemory(filesize+1);
 	if (!data)
 		error("Error allocating space for file being loaded - %s", file.c_str());
 
 	readStream(f, data, filesize);
 	f.close();
+	data[filesize] = '\0';
 
 	return data;
 }
@@ -73,7 +74,7 @@ int FileManager::readStream(Common::ReadStream &stream, void *buf, size_t nbytes
  * It's now using the config manager and a per-engine GUI option.
  */
 void FileManager::initCensorship() {
-	_vm->_globals->_censorshipFl = ConfMan.getBool("enable_gore");
+	_vm->_globals->_censorshipFl = !ConfMan.getBool("enable_gore");
 }
 
 /**

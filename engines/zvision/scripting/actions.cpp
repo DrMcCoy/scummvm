@@ -123,7 +123,7 @@ ActionDisableControl::ActionDisableControl(const Common::String &line) {
 
 bool ActionDisableControl::execute(ZVision *engine) {
 	debug("Disabling control %u", _key);
-	
+
 	ScriptManager *scriptManager = engine->getScriptManager();
 	scriptManager->setStateFlags(_key, scriptManager->getStateFlags(_key) | ScriptManager::DISABLED);
 
@@ -155,7 +155,7 @@ bool ActionEnableControl::execute(ZVision *engine) {
 
 ActionMusic::ActionMusic(const Common::String &line) : _volume(255) {
 	uint type;
-	char fileNameBuffer[25];
+	char fileNameBuffer[26];
 	uint loop;
 	uint volume = 255;
 
@@ -194,7 +194,7 @@ bool ActionMusic::execute(ZVision *engine) {
 	} else {
 		audioStream = makeRawZorkStream(_fileName, engine);
 	}
-	
+
 	if (_loop) {
 		Audio::LoopingAudioStream *loopingAudioStream = new Audio::LoopingAudioStream(audioStream, 0, DisposeAfterUse::YES);
 		engine->_mixer->playStream(_soundType, 0, loopingAudioStream, -1, _volume);
@@ -211,7 +211,7 @@ bool ActionMusic::execute(ZVision *engine) {
 //////////////////////////////////////////////////////////////////////////////
 
 ActionPreloadAnimation::ActionPreloadAnimation(const Common::String &line) {
-	char fileName[25];
+	char fileName[26];
 
 	// The two %*u are always 0 and dont seem to have a use
 	sscanf(line.c_str(), "%*[^:]:%*[^:]:%u(%25s %*u %*u %u %u)", &_key, fileName, &_mask, &_framerate);
@@ -238,7 +238,7 @@ bool ActionPreloadAnimation::execute(ZVision *engine) {
 //////////////////////////////////////////////////////////////////////////////
 
 ActionPlayAnimation::ActionPlayAnimation(const Common::String &line) {
-	char fileName[25];
+	char fileName[26];
 
 	// The two %*u are always 0 and dont seem to have a use
 	sscanf(line.c_str(),
@@ -312,7 +312,7 @@ bool ActionRandom::execute(ZVision *engine) {
 //////////////////////////////////////////////////////////////////////////////
 
 ActionSetPartialScreen::ActionSetPartialScreen(const Common::String &line) {
-	char fileName[25];
+	char fileName[26];
 	uint color;
 
 	sscanf(line.c_str(), "%*[^(](%u %u %25s %*u %u)", &_x, &_y, fileName, &color);
@@ -327,7 +327,7 @@ ActionSetPartialScreen::ActionSetPartialScreen(const Common::String &line) {
 
 bool ActionSetPartialScreen::execute(ZVision *engine) {
 	RenderManager *renderManager = engine->getRenderManager();
-	
+
 	if (_backgroundColor > 0) {
 		renderManager->clearWorkingWindowTo555Color(_backgroundColor);
 	}
@@ -342,7 +342,7 @@ bool ActionSetPartialScreen::execute(ZVision *engine) {
 //////////////////////////////////////////////////////////////////////////////
 
 ActionSetScreen::ActionSetScreen(const Common::String &line) {
-	char fileName[25];
+	char fileName[26];
 	sscanf(line.c_str(), "%*[^(](%25[^)])", fileName);
 
 	_fileName = Common::String(fileName);
@@ -360,7 +360,7 @@ bool ActionSetScreen::execute(ZVision *engine) {
 //////////////////////////////////////////////////////////////////////////////
 
 ActionStreamVideo::ActionStreamVideo(const Common::String &line) {
-	char fileName[25];
+	char fileName[26];
 	uint skippable;
 
 	sscanf(line.c_str(), "%*[^(](%25s %u %u %u %u %u %u)", fileName, &_x1, &_y1, &_x2, &_y2, &_flags, &skippable);

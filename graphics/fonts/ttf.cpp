@@ -101,7 +101,7 @@ public:
 	TTFFont();
 	virtual ~TTFFont();
 
-	bool load(Common::SeekableReadStream &stream, int size, uint dpi, bool monochrome, const uint32 *mapping);
+	bool load(Common::SeekableReadStream &stream, int size, uint dpi, TTFRenderMode renderMode, const uint32 *mapping);
 
 	virtual int getFontHeight() const;
 
@@ -110,6 +110,8 @@ public:
 	virtual int getCharWidth(uint32 chr) const;
 
 	virtual int getKerningOffset(uint32 left, uint32 right) const;
+
+	virtual Common::Rect getBoundingBox(uint32 chr) const;
 
 	virtual void drawChar(Surface *dst, uint32 chr, int x, int y, uint32 color) const;
 private:
@@ -135,13 +137,15 @@ private:
 	bool _allowLateCaching;
 	void assureCached(uint32 chr) const;
 
-	bool _monochrome;
+	FT_Int32 _loadFlags;
+	FT_Render_Mode _renderMode;
 	bool _hasKerning;
 };
 
 TTFFont::TTFFont()
     : _initialized(false), _face(), _ttfFile(0), _size(0), _width(0), _height(0), _ascent(0),
-      _descent(0), _glyphs(), _monochrome(false), _hasKerning(false), _allowLateCaching(false) {
+      _descent(0), _glyphs(), _loadFlags(FT_LOAD_TARGET_NORMAL), _renderMode(FT_RENDER_MODE_NORMAL),
+      _hasKerning(false), _allowLateCaching(false) {
 }
 
 TTFFont::~TTFFont() {
@@ -158,7 +162,7 @@ TTFFont::~TTFFont() {
 	}
 }
 
-bool TTFFont::load(Common::SeekableReadStream &stream, int size, uint dpi, bool monochrome, const uint32 *mapping) {
+bool TTFFont::load(Common::SeekableReadStream &stream, int size, uint dpi, TTFRenderMode renderMode, const uint32 *mapping) {
 	if (!g_ttf.isInitialized())
 		return false;
 
@@ -203,7 +207,22 @@ bool TTFFont::load(Common::SeekableReadStream &stream, int size, uint dpi, bool 
 		return false;
 	}
 
-	_monochrome = monochrome;
+	switch (renderMode) {
+	case kTTFRenderModeNormal:
+		_loadFlags = FT_LOAD_TARGET_NORMAL;
+		_renderMode = FT_RENDER_MODE_NORMAL;
+		break;
+
+	case kTTFRenderModeLight:
+		_loadFlags = FT_LOAD_TARGET_LIGHT;
+		_renderMode = FT_RENDER_MODE_LIGHT;
+		break;
+
+	case kTTFRenderModeMonochrome:
+		_loadFlags = FT_LOAD_TARGET_MONO;
+		_renderMode = FT_RENDER_MODE_MONO;
+		break;
+	}
 
 	FT_Fixed yScale = _face->size->metrics.y_scale;
 	_ascent = ftCeil26_6(FT_MulFix(_face->ascender, yScale));
@@ -290,6 +309,19 @@ int TTFFont::getKerningOffset(uint32 left, uint32 right) const {
 	FT_Vector kerningVector;
 	FT_Get_Kerning(_face, leftGlyph, rightGlyph, FT_KERNING_DEFAULT, &kerningVector);
 	return (kerningVector.x / 64);
+}
+
+Common::Rect TTFFont::getBoundingBox(uint32 chr) const {
+	assureCached(chr);
+	GlyphCache::const_iterator glyphEntry = _glyphs.find(chr);
+	if (glyphEntry == _glyphs.end()) {
+		return Common::Rect();
+	} else {
+		const int xOffset = glyphEntry->_value.xOffset;
+		const int yOffset = glyphEntry->_value.yOffset;
+		const Graphics::Surface &image = glyphEntry->_value.image;
+		return Common::Rect(xOffset, yOffset, xOffset + image.w, yOffset + image.h);
+	}
 }
 
 namespace {
@@ -413,33 +445,19 @@ bool TTFFont::cacheGlyph(Glyph &glyph, uint32 chr) const {
 	// We use the light target and render mode to improve the looks of the
 	// glyphs. It is most noticable in FreeSansBold.ttf, where otherwise the
 	// 't' glyph looks like it is cut off on the right side.
-	if (FT_Load_Glyph(_face, slot, (_monochrome ? FT_LOAD_TARGET_MONO : FT_LOAD_TARGET_LIGHT)))
+	if (FT_Load_Glyph(_face, slot, _loadFlags))
 		return false;
 
-	if (FT_Render_Glyph(_face->glyph, (_monochrome ? FT_RENDER_MODE_MONO : FT_RENDER_MODE_LIGHT)))
+	if (FT_Render_Glyph(_face->glyph, _renderMode))
 		return false;
 
 	if (_face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
 		return false;
 
-	FT_Glyph_Metrics &metrics = _face->glyph->metrics;
-
 	glyph.xOffset = _face->glyph->bitmap_left;
-	int xMax = glyph.xOffset + ftCeil26_6(metrics.width);
 	glyph.yOffset = _ascent - _face->glyph->bitmap_top;
 
 	glyph.advance = ftCeil26_6(_face->glyph->advance.x);
-
-	// In case we got a negative xMin we adjust that, this might make some
-	// characters make a bit odd, but it's the only way we can assure no
-	// invalid memory writes with the current font API
-	if (glyph.xOffset < 0) {
-		xMax -= glyph.xOffset;
-		glyph.xOffset = 0;
-
-		if (xMax > glyph.advance)
-			glyph.advance = xMax;
-	}
 
 	const FT_Bitmap &bitmap = _face->glyph->bitmap;
 	glyph.image.create(bitmap.width, bitmap.rows, PixelFormat::createFormatCLUT8());
@@ -503,10 +521,10 @@ void TTFFont::assureCached(uint32 chr) const {
 	}
 }
 
-Font *loadTTFFont(Common::SeekableReadStream &stream, int size, uint dpi, bool monochrome, const uint32 *mapping) {
+Font *loadTTFFont(Common::SeekableReadStream &stream, int size, uint dpi, TTFRenderMode renderMode, const uint32 *mapping) {
 	TTFFont *font = new TTFFont();
 
-	if (!font->load(stream, size, dpi, monochrome, mapping)) {
+	if (!font->load(stream, size, dpi, renderMode, mapping)) {
 		delete font;
 		return 0;
 	}

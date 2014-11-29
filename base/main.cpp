@@ -222,7 +222,9 @@ static Common::Error runGame(const EnginePlugin *plugin, OSystem &system, const 
 	Common::StringTokenizer tokenizer(edebuglevels, " ,");
 	while (!tokenizer.empty()) {
 		Common::String token = tokenizer.nextToken();
-		if (!DebugMan.enableDebugChannel(token))
+		if (token.equalsIgnoreCase("all"))
+			DebugMan.enableAllDebugChannels();
+		else if (!DebugMan.enableDebugChannel(token))
 			warning(_("Engine does not support debug level '%s'"), token.c_str());
 	}
 
@@ -321,7 +323,7 @@ static void setupKeymapper(OSystem &system) {
 	act = new Action(primaryGlobalKeymap, "REMP", _("Remap keys"));
 	act->addEvent(EVENT_KEYMAPPER_REMAP);
 
-	act = new Action(primaryGlobalKeymap, "FULS", _("Toggle FullScreen"));
+	act = new Action(primaryGlobalKeymap, "FULS", _("Toggle fullscreen"));
 	act->addKeyEvent(KeyState(KEYCODE_RETURN, ASCII_RETURN, KBD_ALT));
 
 	mapper->addGlobalKeymap(primaryGlobalKeymap);

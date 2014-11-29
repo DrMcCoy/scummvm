@@ -294,7 +294,7 @@ static const MohawkGameDescription gameDescriptions[] = {
 	},
 
 	// Riven: The Sequel to Myst
-	// Version 1.? (5CD)
+	// Version 1.? (5CD) - Spanish
 	// From jvprat
 	{
 		{
@@ -302,6 +302,24 @@ static const MohawkGameDescription gameDescriptions[] = {
 			"",
 			AD_ENTRY1("a_Data.MHK", "249e8c995d191b03ee94c892c0eac775"),
 			Common::ES_ESP,
+			Common::kPlatformWindows,
+			ADGF_UNSTABLE,
+			GUIO1(GUIO_NOASPECT)
+		},
+		GType_RIVEN,
+		0,
+		0,
+	},
+
+	// Riven: The Sequel to Myst
+	// Version 1.0 (5CD) - Italian
+	// From dodomorandi on bug #6629
+	{
+		{
+			"riven",
+			"",
+			AD_ENTRY1("a_Data.MHK", "0e21e89df7788f32056b6521abf2e81a"),
+			Common::IT_ITA,
 			Common::kPlatformWindows,
 			ADGF_UNSTABLE,
 			GUIO1(GUIO_NOASPECT)

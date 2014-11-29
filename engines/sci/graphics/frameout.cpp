@@ -524,6 +524,10 @@ void GfxFrameout::showVideo() {
 	RobotDecoder *videoDecoder = g_sci->_robotDecoder;
 	uint16 x = videoDecoder->getPos().x;
 	uint16 y = videoDecoder->getPos().y;
+	uint16 screenWidth = _screen->getWidth();
+	uint16 screenHeight = _screen->getHeight();
+	uint16 outputWidth;
+	uint16 outputHeight;
 
 	if (videoDecoder->hasDirtyPalette())
 		g_system->getPaletteManager()->setPalette(videoDecoder->getPalette(), 0, 256);
@@ -532,7 +536,11 @@ void GfxFrameout::showVideo() {
 		if (videoDecoder->needsUpdate()) {
 			const Graphics::Surface *frame = videoDecoder->decodeNextFrame();
 			if (frame) {
-				g_system->copyRectToScreen(frame->getPixels(), frame->pitch, x, y, frame->w, frame->h);
+				// We need to clip here
+				//  At least Phantasmagoria shows a 640x390 video on a 630x450 screen during the intro
+				outputWidth = frame->w > screenWidth ? screenWidth : frame->w;
+				outputHeight = frame->h > screenHeight ? screenHeight : frame->h;
+				g_system->copyRectToScreen(frame->getPixels(), frame->pitch, x, y, outputWidth, outputHeight);
 
 				if (videoDecoder->hasDirtyPalette())
 					g_system->getPaletteManager()->setPalette(videoDecoder->getPalette(), 0, 256);
@@ -782,11 +790,12 @@ void GfxFrameout::kernelFrameout() {
 
 					// TODO: For some reason, the top left nsRect coordinates get
 					// swapped in the GK1 inventory screen, investigate why.
-					// HACK: Fix the coordinates by explicitly setting them here.
-					Common::Rect objNSRect = g_sci->_gfxCompare->getNSRect(itemEntry->object);
-					if (objNSRect.top == nsRect.left && objNSRect.left == nsRect.top && nsRect.top != 0 && nsRect.left != 0) {
+					// This is also needed for GK1 rooms 710 and 720 (catacombs, inner and
+					// outer circle), for handling the tiles and talking to Wolfgang.
+					// HACK: Fix the coordinates by explicitly setting them here for GK1.
+					// Also check bug #6729, for another case where this is needed.
+					if (g_sci->getGameId() == GID_GK1)
 						g_sci->_gfxCompare->setNSRect(itemEntry->object, nsRect);
-					}
 				}
 
 				// Don't attempt to draw sprites that are outside the visible
@@ -852,21 +861,21 @@ void GfxFrameout::printPlaneList(Console *con) {
 		Common::Rect r = p.upscaledPlaneRect;
 		Common::Rect cr = p.upscaledPlaneClipRect;
 
-		con->DebugPrintf("%04x:%04x (%s): prio %d, lastprio %d, offsetX %d, offsetY %d, pic %d, mirror %d, back %d\n",
+		con->debugPrintf("%04x:%04x (%s): prio %d, lastprio %d, offsetX %d, offsetY %d, pic %d, mirror %d, back %d\n",
 							PRINT_REG(p.object), curPlaneName.c_str(),
 							(int16)p.priority, (int16)p.lastPriority,
 							p.planeOffsetX, p.planeOffsetY, p.pictureId,
 							p.planePictureMirrored, p.planeBack);
-		con->DebugPrintf("  rect: (%d, %d, %d, %d), clip rect: (%d, %d, %d, %d)\n",
+		con->debugPrintf("  rect: (%d, %d, %d, %d), clip rect: (%d, %d, %d, %d)\n",
 							r.left, r.top, r.right, r.bottom,
 							cr.left, cr.top, cr.right, cr.bottom);
 
 		if (p.pictureId != 0xffff && p.pictureId != 0xfffe) {
-			con->DebugPrintf("Pictures:\n");
+			con->debugPrintf("Pictures:\n");
 
 			for (PlanePictureList::iterator pictureIt = _planePictures.begin(); pictureIt != _planePictures.end(); pictureIt++) {
 				if (pictureIt->object == p.object) {
-					con->DebugPrintf("    Picture %d: x %d, y %d\n", pictureIt->pictureId, pictureIt->startX, pictureIt->startY);
+					con->debugPrintf("    Picture %d: x %d, y %d\n", pictureIt->pictureId, pictureIt->startX, pictureIt->startY);
 				}
 			}
 		}
@@ -883,7 +892,7 @@ void GfxFrameout::printPlaneItemList(Console *con, reg_t planeObject) {
 			Common::Rect icr = e->celRect;
 			GuiResourceId picId = e->picture ? e->picture->getResourceId() : 0;
 
-			con->DebugPrintf("%d: %04x:%04x (%s), view %d, loop %d, cel %d, x %d, y %d, z %d, "
+			con->debugPrintf("%d: %04x:%04x (%s), view %d, loop %d, cel %d, x %d, y %d, z %d, "
 							 "signal %d, scale signal %d, scaleX %d, scaleY %d, rect (%d, %d, %d, %d), "
 							 "pic %d, picX %d, picY %d, visible %d\n",
 							 e->givenOrderNr, PRINT_REG(e->object), curItemName.c_str(),

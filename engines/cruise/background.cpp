@@ -65,12 +65,10 @@ int loadCVT(uint8 **ptr) {
 	char *localPtr = (char *) * ptr;
 
 	if (!strcmp(localPtr, "CVT")) {
-		int i;
 		localPtr += 4;
 
-		for (i = 0; i < 0x20; i++) {
+		for (int i = 0; i < 0x20; i++)
 			cvtPalette[i] = *(localPtr++);
-		}
 
 		*ptr = (uint8 *) localPtr;
 
@@ -180,7 +178,7 @@ int loadBackground(const char *name, int idx) {
 			break;
 
 		default:
-			ASSERT(0);
+			assert(0);
 		}
 
 		gfxModuleData_setPal256(palScreen[idx]);

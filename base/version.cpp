@@ -56,9 +56,18 @@
  * to properly work in exports (i.e. release tar balls etc.).
  */
 const char *gScummVMVersion = SCUMMVM_VERSION;
+#ifdef __amigaos4__
+static const char *version_cookie __attribute__((used)) = "$VER: ScummVM " SCUMMVM_VERSION " (" __DATE__ ", " __TIME__ ")";
+#endif
+#ifdef __PLAYSTATION2__
+const char *gScummVMBuildDate = "Git Master"; /* ScummVM Git Master */
+const char *gScummVMVersionDate = SCUMMVM_VERSION " - PlayStation2";
+const char *gScummVMFullVersion = "ScummVM " SCUMMVM_VERSION " - PlayStation2";
+#else
 const char *gScummVMBuildDate = __DATE__ " " __TIME__;
 const char *gScummVMVersionDate = SCUMMVM_VERSION " (" __DATE__ " " __TIME__ ")";
 const char *gScummVMFullVersion = "ScummVM " SCUMMVM_VERSION " (" __DATE__ " " __TIME__ ")";
+#endif
 const char *gScummVMFeatures = ""
 #ifdef TAINTED_BUILD
 	// TAINTED means the build contains engines/subengines not enabled by default
@@ -136,5 +145,13 @@ const char *gScummVMFeatures = ""
 
 #ifdef USE_PNG
 	"PNG "
+#endif
+
+#ifdef ENABLE_KEYMAPPER
+	"keymapper "
+#endif
+
+#ifdef ENABLE_VKEYBD
+	"virtual keyboard "
 #endif
 	;

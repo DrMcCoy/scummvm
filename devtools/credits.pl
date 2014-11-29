@@ -562,6 +562,12 @@ begin_credits("Credits");
 				add_person("Arnaud Boutonn&eacute;", "Strangerke", "");
 				add_person("Paul Gilbert", "dreammaster", "");
 			end_section();
+			
+			begin_section("CGE2");
+				add_person("Peter Bozs&oacute;", "uruk", "");
+				add_person("Arnaud Boutonn&eacute;", "Strangerke", "");
+				add_person("Paul Gilbert", "dreammaster", "");
+			end_section();
 
 			begin_section("Cine");
 				add_person("Vincent Hamm", "yaz0r", "(retired)");
@@ -642,6 +648,12 @@ begin_credits("Credits");
 
 			begin_section("MADE");
 				add_person("Benjamin Haisch", "john_doe", "");
+				add_person("Filippos Karapetis", "[md5]", "");
+			end_section();
+
+			begin_section("MADS");
+				add_person("Arnaud Boutonn&eacute;", "Strangerke", "");
+				add_person("Paul Gilbert", "dreammaster", "");
 				add_person("Filippos Karapetis", "[md5]", "");
 			end_section();
 
@@ -767,8 +779,14 @@ begin_credits("Credits");
 				add_person("Gregory Montoir", "cyx", "(retired)");
 			end_section();
 
+			begin_section("Voyeur");
+				add_person("Arnaud Boutonn&eacute;", "Strangerke", "");
+				add_person("Paul Gilbert", "dreammaster", "");
+			end_section();
+
 			begin_section("Wintermute");
 				add_person("Einar Johan T. S&oslash;m&aring;en", "somaen", "");
+				add_person("Tobia Tesan", "t0by", "");
 			end_section();
             
 			begin_section("ZVision");
@@ -842,6 +860,7 @@ begin_credits("Credits");
 			begin_section("SymbianOS");
 				add_person("Jurgen Braam", "SumthinWicked", "");
 				add_person("Lars Persson", "AnotherGuest", "");
+				add_person("Fedor Strizhniou", "zanac", "");
 			end_section();
 
 			begin_section("Tizen / BADA");
@@ -942,7 +961,7 @@ begin_credits("Credits");
 			end_section();
 
 			begin_section("BeOS");
-				add_person("Stefan Parviainen", "", "");
+				add_person("Stefan Parviainen", "", "(retired)");
 				add_person("Luc Schrijvers", "Begasus", "");
 			end_section();
 
@@ -953,6 +972,10 @@ begin_credits("Credits");
 
 			begin_section("Fedora / RedHat");
 				add_person("Willem Jan Palenstijn", "wjp", "");
+			end_section();
+
+			begin_section("Haiku");
+				add_person("Luc Schrijvers", "Begasus", "");
 			end_section();
 
 			begin_section("Mac OS X");
@@ -1013,6 +1036,9 @@ begin_credits("Credits");
 				end_section();
 				begin_section("Danish");
 					add_person("Steffen Nyeland", "", "");
+				end_section();
+				begin_section("Dutch");
+					add_person("Ben Castricum", "", "");
 				end_section();
 				begin_section("Finnish");
 					add_person("Toni Saarela", "catnose", "");
@@ -1180,7 +1206,7 @@ begin_credits("Credits");
 			add_person("Ivan Dubrov", "", "For contributing the initial version of the Gobliiins engine");
 			add_person("Henrik Engqvist", "qvist", "For generously providing hosting for our buildbot, SVN repository, planet and doxygen sites as well as tons of HD space");
 			add_person("DOSBox Team", "", "For their awesome OPL2 and OPL3 emulator");
-			add_person("Yusuke Kamiyamane", "", "For contributing some GUI icons ");
+			add_person("Yusuke Kamiyamane", "", "For contributing some GUI icons");
 			add_person("Till Kresslein", "Krest", "For design of modern ScummVM GUI");
 			add_person("", "Jezar", "For his freeverb filter implementation");
 			add_person("Jim Leiterman", "", "Various info on his FM-TOWNS/Marty SCUMM ports");

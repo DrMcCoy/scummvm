@@ -383,7 +383,7 @@ Vars::Vars() {
 	scene29_shooter2 = 0;
 	scene29_ass = 0;
 	scene29_manIsRiding = false;
-	scene29_var10 = false;
+	scene29_arcadeIsOn = false;
 	scene29_reachedFarRight = false;
 	scene29_rideBackEnabled = false;
 	scene29_shootCountdown = 0;
@@ -391,9 +391,9 @@ Vars::Vars() {
 	scene29_manIsHit = 0;
 	scene29_scrollSpeed = 0;
 	scene29_scrollingDisabled = 0;
-	scene29_var18 = 0;
-	scene29_var20 = 0;
-	scene29_var21 = 0;
+	scene29_hitBall = 0;
+	scene29_manX = 0;
+	scene29_manY = 0;
 
 	scene30_leg = 0;
 	scene30_liftFlag = 1;
@@ -590,10 +590,8 @@ bool FullpipeEngine::sceneSwitcher(EntranceInfo *entrance) {
 
 	scene->setPictureObjectsFlag4();
 
-	for (PtrList::iterator s = scene->_staticANIObjectList1.begin(); s != scene->_staticANIObjectList1.end(); ++s) {
-		StaticANIObject *o = (StaticANIObject *)*s;
-		o->setFlags(o->_flags & 0xFE7F);
-	}
+	for (uint i = 0; i < scene->_staticANIObjectList1.size(); i++)
+		scene->_staticANIObjectList1[i]->_flags &= 0xFE7F;
 
 	PictureObject *p = accessScene(SC_INV)->getPictureObjectById(PIC_INV_MENU, 0);
 	p->setFlags(p->_flags & 0xFFFB);
@@ -1106,10 +1104,6 @@ int defaultUpdateCursor() {
 	return g_fp->_cursorId;
 }
 
-void FullpipeEngine::processArcade(ExCommand *ex) {
-	warning("STUB: FullpipeEngine::processArcade()");
-}
-
 void FullpipeEngine::updateMapPiece(int mapId, int update) {
 	for (int i = 0; i < 200; i++) {
 		int hiWord = (_mapTable[i] >> 16) & 0xffff;
@@ -1460,13 +1454,57 @@ void BallChain::init(Ball **ball) {
 }
 
 Ball *BallChain::sub04(Ball *ballP, Ball *ballN) {
-	warning("STUB: BallChain::sub04");
+	if (!pTail) {
+		if (!cPlexLen)
+			error("BallChain::sub04: cPlexLen is 0");
 
-	return pTail;
+		cPlex = (byte *)calloc(cPlexLen, sizeof(Ball));
+
+		Ball *runPtr = (Ball *)&cPlex[(cPlexLen - 1) * sizeof(Ball)];
+
+		for (int i = 0; i < cPlexLen; i++) {
+			runPtr->p0 = pTail;
+			pTail = runPtr;
+
+			runPtr--;
+		}
+	}
+
+	Ball *res = pTail;
+
+	pTail = res->p0;
+	res->p1 = ballP;
+	res->p0 = ballN;
+	numBalls++;
+	res->ani = 0;
+
+	return res;
 }
 
-void BallChain::sub05(Ball *ball) {
-	warning("STUB: BallChain::sub05");
+void BallChain::removeBall(Ball *ball) {
+	if (ball == pHead)
+		pHead = ball->p0;
+	else
+		ball->p1->p0 = ball->p0;
+
+	if (ball == field_8)
+		field_8 = ball->p1;
+	else
+		ball->p0->p1 = ball->p1;
+
+	ball->p0 = pTail;
+	pTail = ball;
+
+	numBalls--;
+
+	if (!numBalls) {
+		numBalls = 0;
+		pTail = 0;
+		field_8 = 0;
+		pHead = 0;
+		free(cPlex);
+		cPlex = 0;
+	}
 }
 
 

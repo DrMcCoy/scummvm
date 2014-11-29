@@ -50,7 +50,7 @@ int32 getLineHeight(int16 charCount, const FontEntry *fontPtr) {
 }
 
 /**
- * This function determins how many lines the text will have
+ * This function determines how many lines the text will have
  */
 int32 getTextLineCount(int32 rightBorder_X, int16 wordSpacingWidth,
                        const FontEntry *fontData, const char *textString) {
@@ -58,6 +58,9 @@ int32 getTextLineCount(int32 rightBorder_X, int16 wordSpacingWidth,
 	const char *tempPtr = textString;
 	uint8 ch;
 	int32 total = 0, lineLength = 0;
+
+	if (rightBorder_X == 0)
+		error("getTextLineCount() - invalid parameter");
 
 	if (!*textString)
 		return (0);
@@ -88,6 +91,7 @@ int32 getTextLineCount(int32 rightBorder_X, int16 wordSpacingWidth,
 
 	if (lineLength > 0)
 		total += rightBorder_X;
+
 
 	return (total / rightBorder_X);
 }
@@ -176,30 +180,26 @@ void bigEndianLongToNative(void *var) {
 }
 
 void flipGen(void *var, int32 length) {
-	int i;
 	short int *varPtr = (int16 *) var;
 
-	for (i = 0; i < (length / 2); i++) {
+	for (int i = 0; i < (length / 2); i++) {
 		bigEndianShortToNative(&varPtr[i]);
 	}
 }
 
 void renderWord(const uint8 *fontPtr_Data, uint8 *outBufferPtr, int xOffset, int yOffset,
                 int32 height, int32 param4, int32 stringRenderBufferSize, int32 width, int32 charWidth) {
-	int i;
-	int j;
 	const uint8 *fontPtr_Data2 = fontPtr_Data + height * 2;
-
 	outBufferPtr += yOffset * width + xOffset;
 
-	for (i = 0; i < height; i++) {	// y++
+	for (int i = 0; i < height; i++) {	// y++
 		uint16 bitSet1 = READ_BE_UINT16(fontPtr_Data);
 		uint16 bitSet2 = READ_BE_UINT16(fontPtr_Data2);
 
 		fontPtr_Data += sizeof(uint16);
 		fontPtr_Data2 += sizeof(uint16);
 
-		for (j = 0; j < charWidth; j++) {
+		for (int j = 0; j < charWidth; j++) {
 			*outBufferPtr = ((bitSet1 >> 15) & 1) | ((bitSet2 >> 14) & 2);
 			outBufferPtr++;
 

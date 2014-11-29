@@ -57,6 +57,7 @@ private:
 	bool processBlockSoundMono(ROQBlockHeader &blockHeader);
 	bool processBlockSoundStereo(ROQBlockHeader &blockHeader);
 	bool processBlockAudioContainer(ROQBlockHeader &blockHeader);
+	bool playFirstFrame() { return _alpha && !_flagTwo; }
 
 	void paint2(byte i, int destx, int desty);
 	void paint4(byte i, int destx, int desty);
@@ -71,18 +72,21 @@ private:
 	// Codebooks
 	uint16 _num2blocks;
 	uint16 _num4blocks;
-	byte _codebook2[256 * 10];
+	uint32 _codebook2[256 * 4];
 	byte _codebook4[256 * 4];
 
+	// Flags
+	bool _flagTwo;
+
 	// Buffers
-	Graphics::Surface *_bg;
+	Graphics::Surface *_fg, *_bg;
 	Graphics::Surface *_currBuf, *_prevBuf;
 	void buildShowBuf();
 	byte _scaleX, _scaleY;
 	byte _offScale;
 	bool _dirty;
 	byte _alpha;
-
+	bool _firstFrame;
 };
 
 } // End of Groovie namespace

@@ -324,15 +324,15 @@ void sceneHandler04_walkClimbLadder(ExCommand *ex) {
 	g_vars->scene04_ladder->addObject(g_fp->_aniMan);
 
 	if (g_vars->scene04_soundPlaying) {
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpStart = MV_MAN_STARTLADDER2;
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpGo = MV_MAN_GOLADDER2;
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpStop = MV_MAN_STOPLADDER2;
-		g_vars->scene04_ladder->_movements.front()->staticIds[2] = ST_MAN_GOLADDER2;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpStart = MV_MAN_STARTLADDER2;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpGo = MV_MAN_GOLADDER2;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpStop = MV_MAN_STOPLADDER2;
+		g_vars->scene04_ladder->_ladmovements.front()->staticIds[2] = ST_MAN_GOLADDER2;
 	} else {
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpStart = MV_MAN_STARTLADDER;
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpGo = MV_MAN_GOLADDER;
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpStop = MV_MAN_STOPLADDER;
-		g_vars->scene04_ladder->_movements.front()->staticIds[2] = ST_MAN_GOLADDER;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpStart = MV_MAN_STARTLADDER;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpGo = MV_MAN_GOLADDER;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpStop = MV_MAN_STOPLADDER;
+		g_vars->scene04_ladder->_ladmovements.front()->staticIds[2] = ST_MAN_GOLADDER;
 	}
 
 	g_fp->_aniMan->_priority = 12;
@@ -633,6 +633,7 @@ MessageQueue *sceneHandler04_kozFly5(StaticANIObject *ani, double phase) {
 		mq1->addExCommandToEnd(mq2->getExCommandByIndex(0)->createClone());
 
 		delete mq2;
+		mq2 = 0;
 
 		ExCommand *ex = new ExCommand(ANI_KOZAWKA, 1, MV_KZW_STANDUP, 0, 0, 0, 1, 0, 0, 0);
 		ex->_excFlags |= 2;
@@ -661,6 +662,9 @@ MessageQueue *sceneHandler04_kozFly5(StaticANIObject *ani, double phase) {
 		ex->_keyCode = ani->_okeyCode;
 		mq1->addExCommandToEnd(ex);
 	}
+
+	if (mq2)
+		delete mq2;
 
 	return mq1;
 }

@@ -38,32 +38,31 @@ struct Bitmap {
 	int _type;
 	int _dataSize;
 	int _flags;
+	Graphics::TransparentSurface *_surface;
+	int _flipping;
 
 	Bitmap();
 	Bitmap(Bitmap *src);
 	~Bitmap();
 
 	void load(Common::ReadStream *s);
-	void putDib(int x, int y, int32 *palette);
-	bool putDibRB(int32 *palette, int x = -1, int y = -1);
+	void decode(int32 *palette);
+	void putDib(int x, int y, int32 *palette, int alpha);
+	bool putDibRB(int32 *palette);
 	void putDibCB(int32 *palette);
 
-	void colorFill(uint16 *dest, int len, int32 color);
-	void paletteFill(uint16 *dest, byte *src, int len, int32 *palette);
-	void copierKeyColor(uint16 *dest, byte *src, int len, int keyColor, int32 *palette, bool cb05_format);
-	void copier(uint16 *dest, byte *src, int len, int32 *palette, bool cb05_format);
+	void colorFill(uint32 *dest, int len, int32 color);
+	void paletteFill(uint32 *dest, byte *src, int len, int32 *palette);
+	void copierKeyColor(uint32 *dest, byte *src, int len, int keyColor, int32 *palette, bool cb05_format);
+	void copier(uint32 *dest, byte *src, int len, int32 *palette, bool cb05_format);
 
-	Bitmap *reverseImage();
-	Bitmap *reverseImageRB();
-	Bitmap *reverseImageCB();
-	Bitmap *reverseImageCB05();
+	Bitmap *reverseImage(bool flip = true);
 	Bitmap *flipVertical();
 
-	void drawShaded(int type, int x, int y, byte *palette);
-	void drawRotated(int x, int y, int angle, byte *palette);
+	void drawShaded(int type, int x, int y, byte *palette, int alpha);
+	void drawRotated(int x, int y, int angle, byte *palette, int alpha);
 
 	bool isPixelHitAtPos(int x, int y);
-	bool isPixelAtHitPosRB(int x, int y);
 };
 
 class Picture : public MemoryObject {
@@ -92,7 +91,7 @@ class Picture : public MemoryObject {
 
 	virtual bool load(MfcArchive &file);
 	void setAOIDs();
-	void init();
+	virtual void init();
 	void getDibInfo();
 	Bitmap *getPixelData();
 	virtual void draw(int x, int y, int style, int angle);
@@ -141,7 +140,8 @@ class GameObject : public CObject {
 
 	virtual bool load(MfcArchive &file);
 	void setOXY(int x, int y);
-	void renumPictures(PtrList *lst);
+	void renumPictures(Common::Array<StaticANIObject *> *lst);
+	void renumPictures(Common::Array<PictureObject *> *lst);
 	void setFlags(int16 flags) { _flags = flags; }
 	void clearFlags() { _flags = 0; }
 	const char *getName() { return _objectName; }
@@ -153,7 +153,7 @@ class GameObject : public CObject {
 class PictureObject : public GameObject {
   public:
 	Picture *_picture;
-	PtrList *_pictureObject2List;
+	Common::Array<GameObject *> *_pictureObject2List;
 	int _ox2;
 	int _oy2;
 
@@ -178,7 +178,7 @@ class PictureObject : public GameObject {
 
 class Background : public CObject {
   public:
-	PtrList _picObjList;
+	Common::Array<PictureObject *> _picObjList;
 
 	char *_bgname;
 	int _x;

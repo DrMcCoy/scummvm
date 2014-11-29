@@ -232,7 +232,7 @@ struct BallChain {
 
 	void init(Ball **ball);
 	Ball *sub04(Ball *ballP, Ball *ballN);
-	void sub05(Ball *ball);
+	void removeBall(Ball *ball);
 	void reset() { pHead = 0; pTail = 0; field_8 = 0; numBalls = 0; free(cPlex); cPlex = 0; cPlexLen = 0; }
 };
 
@@ -600,7 +600,7 @@ public:
 	BallChain scene29_flyingRedBalls;
 	BallChain scene29_greenBalls;
 	bool scene29_manIsRiding;
-	bool scene29_var10;
+	bool scene29_arcadeIsOn;
 	bool scene29_reachedFarRight;
 	bool scene29_rideBackEnabled;
 	int scene29_shootCountdown;
@@ -608,10 +608,10 @@ public:
 	int scene29_manIsHit;
 	int scene29_scrollSpeed;
 	bool scene29_scrollingDisabled;
-	int scene29_var18;
-	Common::Array<WalkingBearder *> scene29_var19;
-	int scene29_var20;
-	int scene29_var21;
+	int scene29_hitBall;
+	Common::Array<WalkingBearder *> scene29_bearders;
+	int scene29_manX;
+	int scene29_manY;
 	MGM scene29_mgm;
 
 	StaticANIObject *scene30_leg;

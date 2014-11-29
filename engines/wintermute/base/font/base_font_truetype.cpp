@@ -234,7 +234,7 @@ void BaseFontTT::drawText(const byte *text, int x, int y, int width, TTextAlign 
 				color = BYTETORGBA(RGBCOLGetR(color), RGBCOLGetG(color), RGBCOLGetB(color), RGBCOLGetA(renderer->_forceAlphaColor));
 				renderer->_forceAlphaColor = 0;
 			}
-			surface->displayTransOffset(x, y - textOffset, rc, color, BLEND_NORMAL, false, false, _layers[i]->_offsetX, _layers[i]->_offsetY);
+			surface->displayTransOffset(x, y - textOffset, rc, color, Graphics::BLEND_NORMAL, false, false, _layers[i]->_offsetX, _layers[i]->_offsetY);
 
 			renderer->_forceAlphaColor = origForceAlpha;
 		}
@@ -625,6 +625,8 @@ bool BaseFontTT::initFont() {
 		warning("Looking for %s", fontName.c_str());
 		_font = FontMan.getFontByName(fontName);
 	}
+#else
+	warning("BaseFontTT::InitFont - FreeType2-support not compiled in, TTF-fonts will not be loaded");
 #endif // USE_FREETYPE2
 
 	// Fallback4: Just use the Big GUI-font. (REALLY undesireable)

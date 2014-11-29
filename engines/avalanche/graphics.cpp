@@ -198,7 +198,7 @@ void GraphicManager::drawToolbar() {
 
 Common::Point GraphicManager::drawArc(Graphics::Surface &surface, int16 x, int16 y, int16 stAngle, int16 endAngle, uint16 radius, Color color) {
 	Common::Point endPoint;
-	const double convfac = M_PI / 180.0;
+	const float convfac = (float)M_PI / 180.0f;
 
 	int32 xRadius = radius;
 	int32 yRadius = radius * kScreenWidth / (8 * kScreenHeight); // Just don't ask why...
@@ -231,7 +231,7 @@ Common::Point GraphicManager::drawArc(Graphics::Surface &surface, int16 x, int16
 	uint16 numOfPixels = (uint16)floor(sqrt(3.0) * sqrt(pow(double(xRadius), 2) + pow(double(yRadius), 2)) + 0.5);
 
 	// Calculate the angle precision required.
-	float delta = 90.0 / numOfPixels;
+	float delta = 90.0f / numOfPixels;
 
 	// Always just go over the first 90 degrees. Could be optimized a
 	// bit if startAngle and endAngle lie in the same quadrant, left as an
@@ -527,64 +527,65 @@ void GraphicManager::nimFree() {
 	_nimLogo.free();
 }
 
-void GraphicManager::ghostDrawGhost(byte ghostArr[2][66][26], uint16 destX, int16 destY) {
+void GraphicManager::ghostDrawMonster(byte ***picture, uint16 destX, int16 destY, MonsterType type) {
+	uint16 height = 0;
+	uint16 width = 0;
+	// Only for the Ghost:
 	const byte kPlaneToUse[4] = { 0, 0, 0, 1 };
-	// Constants from the original code:
-	uint16 height = 66;
-	const uint16 width = 26 * 8;
-
-	// We have to mess around with the coords and the sizes since
-	// the ghost isn't always placed fully on the screen.
 	int yStart = 0;
-	if (destY < 0) {
-		yStart = abs(destY);
-		height -= yStart;
-		destY = 0;
-	}
 
-	Graphics::Surface ghostPic;
-	ghostPic.create(width, height, Graphics::PixelFormat::createFormatCLUT8());
-
-	for (int y = 0; y < height; y++) {
-		for (int plane = 0; plane < 4; plane++) {
-			for (uint16 x = 0; x < width / 8; x ++) {
-				byte pixel = ghostArr[kPlaneToUse[plane]][y + yStart][x];
-				for (int bit = 0; bit < 8; bit++) {
-					byte pixelBit = (pixel >> bit) & 1;
-					*(byte *)ghostPic.getBasePtr(x * 8 + 7 - bit, y) += (pixelBit << plane);
-				}
-			}
-		}
-	}
-
-	drawPicture(_surface, ghostPic, destX, destY);
-
-	ghostPic.free();
-}
-
-void GraphicManager::ghostDrawGlerk(byte glerkArr[4][35][9], uint16 destX, uint16 destY) {
 	// Constants from the original code:
-	const uint16 height = 35;
-	const uint16 width = 9 * 8;
+	switch (type) {
+	case kMonsterTypeGhost:
+		height = 66;
+		width = 208; // 26 * 8
 
-	Graphics::Surface glerkPic;
-	glerkPic.create(width, height, Graphics::PixelFormat::createFormatCLUT8());
+		// We have to mess around with the coords and the sizes since
+		// the ghost isn't always placed fully on the screen.
+		if (destY < 0) {
+			yStart = abs(destY);
+			height -= yStart;
+			destY = 0;
+		}
+		break;
+	case kMonsterTypeGlerk:
+		height = 35;
+		width = 72; // 9 * 8
+		break;
+	default:
+		break;
+	}
+
+	Graphics::Surface monsterPicture;
+	monsterPicture.create(width, height, Graphics::PixelFormat::createFormatCLUT8());
 
 	for (int y = 0; y < height; y++) {
 		for (int plane = 0; plane < 4; plane++) {
 			for (uint16 x = 0; x < width / 8; x++) {
-				byte pixel = glerkArr[plane][y][x];
+				byte pixel = 0;
+
+				switch (type) {
+				case kMonsterTypeGhost:
+					pixel = picture[kPlaneToUse[plane]][y + yStart][x];
+					break;
+				case kMonsterTypeGlerk:
+					pixel = picture[plane][y][x];
+					break;
+				default:
+					break;
+				}
+
 				for (int bit = 0; bit < 8; bit++) {
 					byte pixelBit = (pixel >> bit) & 1;
-					*(byte *)glerkPic.getBasePtr(x * 8 + 7 - bit, y) += (pixelBit << plane);
+					*(byte *)monsterPicture.getBasePtr(x * 8 + 7 - bit, y) += (pixelBit << plane);
 				}
 			}
 		}
 	}
 
-	drawPicture(_surface, glerkPic, destX, destY);
+	drawPicture(_surface, monsterPicture, destX, destY);
 
-	glerkPic.free();
+	monsterPicture.free();
 }
 
 /**
@@ -819,7 +820,7 @@ void GraphicManager::menuLoadPictures() {
 
 	int height = 33;
 	int width = 9 * 8;
-	
+
 	for (int plane = 0; plane < 4; plane++) {
 		// The icons themselves:
 		int n = 0;
@@ -852,7 +853,7 @@ void GraphicManager::menuLoadPictures() {
 		_menu.fillRect(Common::Rect(114, 70 + i * 33, 584, 73 + i * 33), kColorWhite);
 		_menu.fillRect(Common::Rect(114, 100 + i * 33, 584, 103 + i * 33), kColorDarkgray);
 	}
-	
+
 	file.close();
 
 	// The title on the top of the screen:

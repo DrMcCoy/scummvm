@@ -789,13 +789,7 @@ void Scene::loadScene(LoadSceneParams &loadSceneParams) {
 
 		if (_vm->getGameId() == GID_ITE) {
 			if (_sceneDescription.musicResourceId >= 0) {
-				event.type = kEvTOneshot;
-				event.code = kMusicEvent;
-				event.param = _sceneDescription.musicResourceId;
-				event.param2 = MUSIC_DEFAULT;
-				event.op = kEventPlay;
-				event.time = 0;
-				_vm->_events->queue(event);
+				_vm->_events->queueMusic(_sceneDescription.musicResourceId);
 			} else {
 				event.type = kEvTOneshot;
 				event.code = kMusicEvent;
@@ -1220,7 +1214,7 @@ void Scene::cmdSceneChange(int argc, const char **argv) {
 	scene_num = atoi(argv[1]);
 
 	if ((scene_num < 1) || (uint(scene_num) >= _sceneLUT.size())) {
-		_vm->_console->DebugPrintf("Invalid scene number.\n");
+		_vm->_console->debugPrintf("Invalid scene number.\n");
 		return;
 	}
 

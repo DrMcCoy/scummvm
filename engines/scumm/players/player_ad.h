@@ -68,7 +68,10 @@ private:
 	Audio::Mixer *const _mixer;
 	const int _rate;
 	Audio::SoundHandle _soundHandle;
+
 	void setupVolume();
+	int _musicVolume;
+	int _sfxVolume;
 
 	OPL::OPL *_opl2;
 
@@ -78,7 +81,21 @@ private:
 	int _samplesTillCallbackRemainder;
 
 	int _soundPlaying;
-	int _engineMusicTimer;
+	int32 _engineMusicTimer;
+
+	struct SfxSlot;
+
+	struct HardwareChannel {
+		bool allocated;
+		int priority;
+		SfxSlot *sfxOwner;
+	} _hwChannels[9];
+	int _numHWChannels;
+	static const int _operatorOffsetToChannel[22];
+
+	int allocateHWChannel(int priority, SfxSlot *owner = nullptr);
+	void freeHWChannel(int channel);
+	void limitHWChannels(int newCount);
 
 	// AdLib register utilities
 	uint8 _registerBackUpTable[256];
@@ -86,40 +103,43 @@ private:
 	uint8 readReg(int r) const;
 
 	// Instrument setup
-	void setupChannel(const uint channel, uint instrOffset) {
-		setupChannel(channel, _resource + instrOffset);
-	}
 	void setupChannel(const uint channel, const byte *instrOffset);
 	void setupOperator(const uint opr, const byte *&instrOffset);
 	static const int _operatorOffsetTable[18];
 
-	// Sound data
-	const byte *_resource;
-
 	// Music handling
 	void startMusic();
+	void stopMusic();
 	void updateMusic();
+	bool parseCommand();
+	uint parseVLQ();
 	void noteOff(uint channel);
-	int findFreeChannel();
 	void setupFrequency(uint channel, int8 frequency);
 	void setupRhythm(uint rhythmInstr, uint instrOffset);
 
+	const byte *_musicData;
 	uint _timerLimit;
 	uint _musicTicks;
-	uint _musicTimer;
-	uint _internalMusicTimer;
+	uint32 _musicTimer;
+	uint32 _internalMusicTimer;
 	bool _loopFlag;
 	uint _musicLoopStart;
 	uint _instrumentOffset[16];
-	uint _channelLastEvent[9];
-	uint _channelFrequency[9];
-	uint _channelB0Reg[9];
+
+	struct VoiceChannel {
+		uint lastEvent;
+		uint frequency;
+		uint b0Reg;
+	} _voiceChannels[9];
+	void freeVoiceChannel(uint channel);
+
+	void musicSeekTo(const uint position);
+	bool _isSeeking;
 
 	uint _mdvdrState;
-	uint _voiceChannels;
-	
-	uint _curOffset;
-	uint _nextEventTimer;
+
+	uint32 _curOffset;
+	uint32 _nextEventTimer;
 
 	static const uint _noteFrequencies[12];
 	static const uint _mdvdrTable[6];
@@ -127,34 +147,14 @@ private:
 	static const uint _rhythmChannelTable[6];
 
 	// SFX handling
-	void startSfx();
-	void updateSfx();
-	void clearChannel(int channel);
-	void updateChannel(int channel);
-	void parseSlot(int channel);
-	void updateSlot(int channel);
-	void parseNote(int channel, int num, const byte *offset);
-	bool processNote(int note, const byte *offset);
-	void noteOffOn(int channel);
-	void writeRegisterSpecial(int note, uint8 value, int offset);
-	uint8 readRegisterSpecial(int note, uint8 defaultValue, int offset);
-	void setupNoteEnvelopeState(int note, int steps, int adjust);
-	bool processNoteEnvelope(int note, int &instrumentValue);
-
-	int _sfxTimer;
-
-	int _sfxResource[3];
-	int _sfxPriority[3];
-
-	struct Channel {
-		int state;
-		const byte *currentOffset;
-		const byte *startOffset;
-		uint8 instrumentData[7];
-	} _channels[11];
-
-	uint8 _rndSeed;
-	uint8 getRnd();
+	enum {
+		kNoteStatePreInit = -1,
+		kNoteStateAttack = 0,
+		kNoteStateDecay = 1,
+		kNoteStateSustain = 2,
+		kNoteStateRelease = 3,
+		kNoteStateOff = 4
+	};
 
 	struct Note {
 		int state;
@@ -164,14 +164,60 @@ private:
 		int bias;
 		int preIncrease;
 		int adjust;
-		
+
 		struct Envelope {
 			int stepIncrease;
 			int step;
 			int stepCounter;
 			int timer;
 		} envelope;
-	} _notes[22];
+	};
+
+	enum {
+		kChannelStateOff = 0,
+		kChannelStateParse = 1,
+		kChannelStatePlay = 2
+	};
+
+	struct Channel {
+		int state;
+		const byte *currentOffset;
+		const byte *startOffset;
+		uint8 instrumentData[7];
+
+		Note notes[2];
+
+		int hardwareChannel;
+	};
+
+	struct SfxSlot {
+		int resource;
+		int priority;
+
+		Channel channels[3];
+	} _sfx[3];
+
+	SfxSlot *allocateSfxSlot(int priority);
+	bool startSfx(SfxSlot *sfx, const byte *resource);
+	void stopSfx(SfxSlot *sfx);
+
+	void updateSfx();
+	void clearChannel(const Channel &channel);
+	void updateChannel(Channel *channel);
+	void parseSlot(Channel *channel);
+	void updateSlot(Channel *channel);
+	void parseNote(Note *note, const Channel &channel, const byte *offset);
+	bool processNote(Note *note, const Channel &channel, const byte *offset);
+	void noteOffOn(int channel);
+	void writeRegisterSpecial(int channel, uint8 value, int offset);
+	uint8 readRegisterSpecial(int channel, uint8 defaultValue, int offset);
+	void setupNoteEnvelopeState(Note *note, int steps, int adjust);
+	bool processNoteEnvelope(Note *note);
+
+	int _sfxTimer;
+
+	uint8 _rndSeed;
+	uint8 getRnd();
 
 	static const uint _noteBiasTable[7];
 	static const uint _numStepsTable[16];

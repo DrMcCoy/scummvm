@@ -68,7 +68,9 @@ void Blinker::timeChanged(const TimeValue time) {
 	}
 }
 
-static const NotificationFlags kEnergyExpiredFlag = 1;
+enum {
+	kEnergyExpiredFlag = 1
+};
 
 EnergyMonitor *g_energyMonitor = 0;
 
@@ -269,6 +271,7 @@ void EnergyMonitor::calibrateEnergyBar() {
 	// Make sure warning light is hidden...
 	_energyLight.hide();
 	while (getCurrentEnergy() != (int32)kMaxJMPEnergy) {
+		InputDevice.pumpEvents();
 		vm->checkCallBacks();
 		vm->refreshDisplay();
 		g_system->delayMillis(10);
